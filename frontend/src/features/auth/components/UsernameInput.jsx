@@ -1,10 +1,9 @@
-// === ADJUST THESE VALUES TO MATCH YOUR IMAGE ===
 const POS = {
-  left: '17%',
-  top: '49%',
-  width: '22%',
-  height: '6.5%',
-  fontSize: 'clamp(11px, 1.1vw, 16px)',
+  left: '25%',
+  top: '78%',
+  width: '24%',
+  height: '6%',
+  fontSize: 'clamp(16px, 1.5vw, 22px)',
 };
 
 const UsernameInput = ({ value, onChange, onKeyDown }) => {
@@ -15,7 +14,7 @@ const UsernameInput = ({ value, onChange, onKeyDown }) => {
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={onKeyDown}
       autoComplete="username"
-      className="absolute bg-transparent border-none outline-none text-transparent caret-white cursor-text p-0 m-0"
+      className="absolute bg-transparent outline-none text-white caret-white cursor-text p-1 m-0 min-h-[44px] border-2 border-dashed border-red-400/70"
       style={{
         left: POS.left,
         top: POS.top,

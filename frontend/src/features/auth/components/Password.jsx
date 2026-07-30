@@ -1,10 +1,10 @@
 // === ADJUST THESE VALUES TO MATCH YOUR IMAGE ===
 const POS = {
-  left: '17%',
-  top: '57%',
-  width: '22%',
-  height: '6.5%',
-  fontSize: 'clamp(11px, 1.1vw, 16px)',
+  left: "25%",
+  top: "89%",
+  width: "24%",
+  height: "5.8%",
+  fontSize: "clamp(16px, 1.5vw, 22px)",
 };
 
 const PasswordInput = ({ value, onChange, onKeyDown }) => {
@@ -15,7 +15,7 @@ const PasswordInput = ({ value, onChange, onKeyDown }) => {
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={onKeyDown}
       autoComplete="current-password"
-      className="absolute bg-transparent border-none outline-none text-transparent caret-white cursor-text p-0 m-0"
+      className="absolute  border-none outline-none text-transparent caret-white cursor-text p-0 m-0 min-h-[44px]"
       style={{
         left: POS.left,
         top: POS.top,

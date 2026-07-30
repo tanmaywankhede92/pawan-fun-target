@@ -3,12 +3,10 @@ import loginBg from "@assets/images/login/login-bg.png";
 const GameBackground = () => {
   return (
     <div
-      className="absolute inset-0"
+      className="absolute inset-0 bg-center bg-no-repeat"
       style={{
         backgroundImage: `url(${loginBg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
+        backgroundSize: "100% 100%",
       }}
     />
   );

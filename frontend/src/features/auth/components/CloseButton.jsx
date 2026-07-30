@@ -1,9 +1,11 @@
 // === ADJUST THESE VALUES TO MATCH YOUR IMAGE ===
 const POS = {
-  right: '1%',
-  top: '1%',
-  width: '3%',
-  height: '4%',
+  right: "10%",
+  top: "92%",
+  width: "13%",
+  height: "6%",
+  minWidth: "36px",
+  minHeight: "36px",
 };
 
 const CloseButton = ({ onClick }) => {
@@ -13,17 +15,20 @@ const CloseButton = ({ onClick }) => {
       onClick={onClick}
       aria-label="Close"
       className="
-        absolute bg-transparent border-none outline-none p-0 m-0 cursor-pointer
-        opacity-0 hover:opacity-30 active:opacity-60
-        transition-opacity duration-100
+        absolute flex items-center justify-center cursor-pointer
+        border-2 border-dashed border-pink-400/90
+        bg-black/30 text-white/80 hover:text-white hover:bg-black/50
+        transition-colors duration-150
       "
       style={{
         right: POS.right,
         top: POS.top,
         width: POS.width,
         height: POS.height,
+        minWidth: POS.minWidth,
+        minHeight: POS.minHeight,
       }}
-    />
+    ></button>
   );
 };
 

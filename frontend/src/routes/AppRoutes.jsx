@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
+import MainLayout from '@components/layouts/MainLayout';
 import HomePage from '@pages/HomePage';
 import LoginPage from '@features/auth/pages/LoginPage';
 
@@ -19,7 +20,9 @@ const AppRoutes = () => {
         path="/game"
         element={
           <ProtectedRoute>
-            <HomePage />
+            <MainLayout>
+              <HomePage />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -27,7 +30,9 @@ const AppRoutes = () => {
         path="/"
         element={
           <ProtectedRoute>
-            <HomePage />
+            <MainLayout>
+              <HomePage />
+            </MainLayout>
           </ProtectedRoute>
         }
       />

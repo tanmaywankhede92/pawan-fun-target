@@ -1,11 +1,9 @@
-import { Outlet } from 'react-router-dom';
-
-const MainLayout = () => {
+const MainLayout = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Outlet />
+      {children}
     </div>
   );
 };
 
-export default MainLayout;
+export default MainLayout; 
