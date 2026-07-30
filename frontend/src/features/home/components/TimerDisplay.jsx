@@ -1,29 +1,15 @@
-import { useState, useEffect } from "react";
-
 const POS = {
-  left: "60%",
-  top: "5%",
+  left: "9%",
+  top: "32.5%",
   width: "15%",
   height: "8%",
-  fontSize: "clamp(18px, 2vw, 28px)",
+  fontSize: "clamp(18px, 2vw, 52px)",
 };
 
-const TimerDisplay = () => {
-  const [time, setTime] = useState(60);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setTime((prev) => {
-        if (prev <= 1) return 60;
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(id);
-  }, []);
-
+const TimerDisplay = ({ time }) => {
   return (
     <div
-      className="absolute pointer-events-none text-white font-bold flex items-center border-2 border-dashed border-green-400/70"
+      className="absolute pointer-events-none text-gray-900 font-bold flex items-center text-center z-10"
       style={{
         left: POS.left,
         top: POS.top,
@@ -32,7 +18,7 @@ const TimerDisplay = () => {
         fontSize: POS.fontSize,
       }}
     >
-      Time: {time}s
+      00: {time}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import crackerGif from "@assets/images/gifs/FTlogo.gif";
+import FTlogoGif from "@assets/images/gifs/FTlogo2.gif";
 
 const POS = {
   top: "40%",
@@ -9,14 +9,15 @@ const POS = {
 const GifDisplay = () => {
   return (
     <img
-      src={crackerGif}
+      src={FTlogoGif}
       alt="celebration"
-      className="absolute pointer-events-none border-2 border-dashed border-purple-400/70"
+      className="absolute pointer-events-none"
       style={{
         left: POS.left,
         top: POS.top,
         width: POS.width,
         height: POS.height,
+        zIndex: 10,
       }}
     />
   );

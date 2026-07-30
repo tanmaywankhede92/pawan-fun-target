@@ -1,28 +1,31 @@
 const POS = {
-  right: "1%",
+  right: "1.7%",
   width: "20%",
-  height: "73%",
-  fontSize: "clamp(14px, 1.5vw, 20px)",
+  height: "20%",
+  top: "26.5%",
+  fontSize: "clamp(18px, 1.5vw, 48px  )",
+  fontWeight: 600,
 };
 
-const DUMMY_WINS = [3, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5];
+const DUMMY_WINS = [1, 3, 5, 6, 7, 8, 9, 1, 2, 3];
 
 const LastWinningData = ({ data = DUMMY_WINS }) => {
   return (
     <div
-      className="absolute flex items-center gap-2 overflow-x-auto pointer-events-none border-2 border-dashed border-yellow-400/70"
+      className="absolute flex items-center gap-2 overflow-x-auto pointer-events-none "
       style={{
         right: POS.right,
-
+        top: POS.top,
         width: POS.width,
         height: POS.height,
         fontSize: POS.fontSize,
+        fontWeight: POS.fontWeight,
       }}
     >
       {data.map((num, i) => (
         <div
           key={i}
-          className="flex-shrink-0 bg-black/40 text-white text-center px-3 py-1 rounded"
+          className="flex-shrink-0  text-gray-700 text-center px-3 py-1 rounded"
           style={{ fontSize: POS.fontSize }}
         >
           {num}

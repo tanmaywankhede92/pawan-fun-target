@@ -1,15 +1,15 @@
 const POS = {
-  left: "5%",
-  top: "5%",
-  width: "20%",
+  left: "10%",
+  top: "10%",
+  width: "8%",
   height: "8%",
-  fontSize: "clamp(18px, 2vw, 28px)",
+  fontSize: "clamp(18px, 2vw, 52px)",
 };
 
 const ScoreDisplay = ({ score = 0 }) => {
   return (
     <div
-      className="absolute pointer-events-none text-white font-bold flex items-center border-2 border-dashed border-red-400/70"
+      className="absolute pointer-events-none text-gray-900 font-bold flex items-center "
       style={{
         left: POS.left,
         top: POS.top,
@@ -18,7 +18,7 @@ const ScoreDisplay = ({ score = 0 }) => {
         fontSize: POS.fontSize,
       }}
     >
-      Score: {score}
+      {score}
     </div>
   );
 };

@@ -1,24 +1,24 @@
 const POS = {
-  left: "30%",
-  top: "5%",
+  right: "1%",
+  top: "10%",
   width: "25%",
   height: "8%",
-  fontSize: "clamp(18px, 2vw, 28px)",
+  fontSize: "clamp(18px, 2vw, 52px)",
 };
 
-const WinnerDisplay = ({ winner = "Player1" }) => {
+const WinnerDisplay = () => {
   return (
     <div
-      className="absolute pointer-events-none text-yellow-400 font-bold flex items-center border-2 border-dashed border-blue-400/70"
+      className="absolute pointer-events-none text-gray-900 font-bold flex items-center text-center justify-center"
       style={{
-        left: POS.left,
+        right: POS.right,
         top: POS.top,
         width: POS.width,
         height: POS.height,
         fontSize: POS.fontSize,
       }}
     >
-      Winner: {winner}
+      90
     </div>
   );
 };
