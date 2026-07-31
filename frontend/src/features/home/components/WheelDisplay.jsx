@@ -48,7 +48,7 @@ const WheelDisplay = ({ spinTrigger, onComplete }) => {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState(null);
-  const [resultJoker, setResultJoker] = useState(null);
+  const [resultJoker, setResultJoker] = useState(() => randomJoker());
   const prevTrigger = useRef(spinTrigger);
 
   const handleTransitionEnd = useCallback(() => {
