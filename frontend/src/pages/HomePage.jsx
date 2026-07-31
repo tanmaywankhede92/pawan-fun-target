@@ -3,12 +3,21 @@ import { useAuth } from "@hooks/useAuth";
 import HomeOverlay from "@features/home/components/HomeOverlay";
 import HomeBackground from "@features/home/components/HomeBackground";
 import ScoreDisplay, { scorePos } from "@features/home/components/ScoreDisplay";
-import WinnerDisplay, { winnerPos } from "@features/home/components/WinnerDisplay";
+import WinnerDisplay, {
+  winnerPos,
+} from "@features/home/components/WinnerDisplay";
 import TimerDisplay, { timerPos } from "@features/home/components/TimerDisplay";
-import LastWinningData, { lastWinsPos } from "@features/home/components/LastWinningData";
-import TimerDisplayGif, { gifPos } from "@features/home/components/TimerDisplayGif";
+import LastWinningData, {
+  lastWinsPos,
+} from "@features/home/components/LastWinningData";
+import TimerDisplayGif, {
+  gifPos,
+} from "@features/home/components/TimerDisplayGif";
 import GifDisplay from "../features/home/components/GifDisplay";
 import WheelDisplay, { wheelPos } from "@features/home/components/WheelDisplay";
+import NumberDisplay from "@features/home/components/NumberDisplay";
+import PanelDisplay from "@features/home/components/PanelDisplay";
+import ButtonDisplay from "@features/home/components/ButtonDisplay";
 
 const DEBUG = false;
 
@@ -49,6 +58,9 @@ const HomePage = () => {
       <GifDisplay />
       <WheelDisplay spinTrigger={spinCount} onComplete={handleSpinComplete} />
       <LastWinningData />
+      <NumberDisplay />
+      <PanelDisplay />
+      <ButtonDisplay />
 
       {DEBUG && (
         <>

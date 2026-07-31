@@ -3,7 +3,7 @@ const POS = {
   width: "20%",
   height: "20%",
   top: "26.5%",
-  fontSize: "clamp(18px, 1.5vw, 48px  )",
+  fontSize: "clamp(12px, 1.4vw, 26px)",
   fontWeight: 600,
 };
 

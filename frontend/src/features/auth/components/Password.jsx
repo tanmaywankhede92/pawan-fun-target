@@ -4,7 +4,7 @@ const POS = {
   top: "89%",
   width: "24%",
   height: "5.8%",
-  fontSize: "clamp(16px, 1.5vw, 22px)",
+  fontSize: "clamp(14px, 1.6vw, 24px)",
 };
 
 const PasswordInput = ({ value, onChange, onKeyDown }) => {
@@ -15,7 +15,7 @@ const PasswordInput = ({ value, onChange, onKeyDown }) => {
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={onKeyDown}
       autoComplete="current-password"
-      className="absolute  border-none outline-none text-transparent caret-white cursor-text p-0 m-0 min-h-[44px]"
+      className="absolute  border-none outline-none text-black caret-black cursor-text p-0 m-0 min-h-[44px]"
       style={{
         left: POS.left,
         top: POS.top,
