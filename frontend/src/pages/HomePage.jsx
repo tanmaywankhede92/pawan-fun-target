@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@hooks/useAuth";
+// import { useAuth } from "@hooks/useAuth";
 import HomeOverlay from "@features/home/components/HomeOverlay";
 import HomeBackground from "@features/home/components/HomeBackground";
 import ScoreDisplay, { scorePos } from "@features/home/components/ScoreDisplay";
@@ -22,7 +22,8 @@ import ButtonDisplay from "@features/home/components/ButtonDisplay";
 const DEBUG = false;
 
 const HomePage = () => {
-  const { user } = useAuth();
+  // const { user } = useAuth();
+  const user = { username: "Player", balance: 0 };
   const [phase, setPhase] = useState("timer");
   const [time, setTime] = useState(60);
   const [spinCount, setSpinCount] = useState(0);

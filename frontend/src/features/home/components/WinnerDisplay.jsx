@@ -3,7 +3,7 @@ const POS = {
   top: "10%",
   width: "25%",
   height: "8%",
-  fontSize: "clamp(14px, 2vw, 36px)",
+  fontSize: "clamp(14px, 2vw, 26px)",
 };
 
 const WinnerDisplay = () => {

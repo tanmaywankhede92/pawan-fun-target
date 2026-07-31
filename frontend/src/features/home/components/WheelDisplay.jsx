@@ -1,10 +1,18 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import wheelImg from "@assets/images/wheel/wheel.png";
+import pointerGif from "@assets/images/gifs/DG.gif";
 
 const POS = {
-  left: "35%",
-  top: "5%",
-  width: "30%",
+  left: "32%",
+  top: "2%",
+  width: "34%",
+  height: "auto",
+};
+
+const POINTER_POS = {
+  left: "50%",
+  bottom: "85%",
+  width: "16%",
   height: "auto",
 };
 
@@ -15,7 +23,7 @@ const MAX_SPINS = 8;
 
 const randomWinner = () => Math.floor(Math.random() * SECTORS);
 
-const calcTargetAngle = (winner) => 360 - (winner * SECTOR_ANGLE);
+const calcTargetAngle = (winner) => 360 - winner * SECTOR_ANGLE;
 
 const WheelDisplay = ({ spinTrigger, onComplete }) => {
   const [rotation, setRotation] = useState(0);
@@ -73,12 +81,18 @@ const WheelDisplay = ({ spinTrigger, onComplete }) => {
           }}
           onTransitionEnd={handleTransitionEnd}
         />
-        <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-red-500 text-3xl leading-none pointer-events-none z-10"
-          style={{ filter: "drop-shadow(0 0 4px black)" }}
-        >
-          ▲
-        </div>
+        <img
+          src={pointerGif}
+          alt="pointer"
+          className="absolute pointer-events-none z-10"
+          style={{
+            left: POINTER_POS.left,
+            bottom: POINTER_POS.bottom,
+            width: POINTER_POS.width,
+            height: POINTER_POS.height,
+            transform: "translate(-50%, -50%)",
+          }}
+        />
       </div>
     </div>
   );
