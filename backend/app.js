@@ -7,7 +7,6 @@ const cookieParser = require('cookie-parser');
 const config = require('./src/config');
 const logger = require('./src/config/logger');
 const errorHandler = require('./src/middlewares/errorHandler');
-const { limiter } = require('./src/middlewares/rateLimiter');
 
 const app = express();
 
@@ -23,8 +22,6 @@ app.use(morgan('combined', {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser(config.cookieSecret));
-
-app.use('/api/', limiter);
 
 app.get('/api/health', (req, res) => {
   res.json({

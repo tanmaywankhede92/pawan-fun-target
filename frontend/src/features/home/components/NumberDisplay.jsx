@@ -66,7 +66,20 @@ const NUMBER_CONFIG = {
   },
 };
 
-const NumberDisplay = () => {
+const BET_BOX_CONFIG = {
+  0: { right: "50%", bottom: "127%", width: "6%", height: "10%" },
+  1: { left: "45%", bottom: "127%", width: "6%", height: "8%" },
+  2: { left: "45%", bottom: "113%", width: "7.5%", height: "8%" },
+  3: { left: "45%", bottom: "121%", width: "10%", height: "8%" },
+  4: { left: "45%", bottom: "127%", width: "10.2%", height: "8%" },
+  5: { left: "45%", bottom: "112%", width: "10%", height: "8%" },
+  6: { left: "45%", bottom: "115%", width: "10.5%", height: "8%" },
+  7: { right: "45%", bottom: "115%", width: "10%", height: "8%" },
+  8: { right: "45%", bottom: "120%", width: "6.5%", height: "8%" },
+  9: { right: "45%", bottom: "120%", width: "6.4%", height: "8%" },
+};
+
+const NumberDisplay = ({ bets, onBet }) => {
   const [hoveredNum, setHoveredNum] = useState(null);
 
   return (
@@ -74,13 +87,15 @@ const NumberDisplay = () => {
       {Object.keys(NUMBER_CONFIG).map((key) => {
         const num = Number(key);
         const { box } = NUMBER_CONFIG[num];
+        const betBox = BET_BOX_CONFIG[num];
         const img = IMAGES[num];
         const isHovered = hoveredNum === num;
+        const bet = bets[num] || 0;
 
         return (
           <div
             key={num}
-            className="absolute overflow-hidden"
+            className="absolute z-20"
             style={{
               left: box.left,
               bottom: box.bottom,
@@ -88,15 +103,36 @@ const NumberDisplay = () => {
               width: box.width,
               height: box.height,
             }}
-            onMouseEnter={() => setHoveredNum(num)}
-            onMouseLeave={() => setHoveredNum(null)}
           >
-            {isHovered && img && (
-              <img
-                src={img}
-                alt={`number-${num}`}
-                className="absolute inset-0 w-full h-full object-fill pointer-events-auto"
-              />
+            <div
+              className="absolute inset-0 overflow-hidden cursor-pointer select-none"
+              onMouseEnter={() => setHoveredNum(num)}
+              onMouseLeave={() => setHoveredNum(null)}
+              onClick={() => onBet(num)}
+            >
+              {(isHovered || bet > 0) && img && (
+                <img
+                  src={img}
+                  alt={`number-${num}`}
+                  className="absolute inset-0 w-full h-full object-fill pointer-events-auto"
+                />
+              )}
+            </div>
+            {bet > 0 && (
+              <div
+                className="absolute pointer-events-none flex items-center justify-center text-black font-semibold leading-none"
+                style={{
+                  left: betBox.left,
+                  right: betBox.right,
+                  width: betBox.width,
+                  top: betBox.top,
+                  bottom: betBox.bottom,
+                  height: betBox.height,
+                  fontSize: "clamp(5px, 1.8vw, 24px)",
+                }}
+              >
+                {bet}
+              </div>
             )}
           </div>
         );

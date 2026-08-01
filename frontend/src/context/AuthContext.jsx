@@ -4,12 +4,19 @@ import { setAuthToken } from '@services/api';
 
 const AuthContext = createContext(null);
 
+// ============================================================
+// BACKEND DISCONNECTED (temporary) — comment out to restore backend
+// ============================================================
+const MOCK_USER = { id: 1, username: 'Player', balance: 100000 };
+const MOCK_TOKEN = 'mock-token';
+
 const initialState = {
-  user: null,
-  accessToken: null,
-  isAuthenticated: false,
-  isLoading: true,
+  user: MOCK_USER,
+  accessToken: MOCK_TOKEN,
+  isAuthenticated: true,
+  isLoading: false,
 };
+// ============================================================
 
 const authReducer = (state, action) => {
   switch (action.type) {
@@ -28,7 +35,9 @@ const authReducer = (state, action) => {
       };
     case 'LOGOUT':
       return {
-        ...initialState,
+        user: null,
+        accessToken: null,
+        isAuthenticated: false,
         isLoading: false,
       };
     case 'LOADING_DONE':
@@ -50,47 +59,56 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = useCallback(async (credentials) => {
-    const { data } = await authService.login(credentials);
-    const { user, accessToken } = data;
-    setAuth(user, accessToken);
-    return data;
+    // BACKEND DISCONNECTED (temporary):
+    // const { data } = await authService.login(credentials);
+    // const { user, accessToken } = data;
+    // setAuth(user, accessToken);
+    // return data;
+    setAuth(MOCK_USER, MOCK_TOKEN);
+    return { redirect: '/', user: MOCK_USER, accessToken: MOCK_TOKEN };
   }, [setAuth]);
 
   const logout = useCallback(async () => {
-    try {
-      await authService.logout();
-    } catch {
-    } finally {
-      setAuthToken(null);
-      dispatch({ type: 'LOGOUT' });
-    }
+    // BACKEND DISCONNECTED (temporary):
+    // try {
+    //   await authService.logout();
+    // } catch {
+    // } finally {
+    //   setAuthToken(null);
+    //   dispatch({ type: 'LOGOUT' });
+    // }
+    setAuthToken(null);
+    dispatch({ type: 'LOGOUT' });
   }, []);
 
   const refreshToken = useCallback(async () => {
-    try {
-      const { data } = await authService.refresh();
-      const { accessToken } = data;
-      setAuthToken(accessToken);
-      dispatch({ type: 'TOKEN_REFRESHED', payload: accessToken });
-      return accessToken;
-    } catch {
-      dispatch({ type: 'LOGOUT' });
-      return null;
-    }
+    // BACKEND DISCONNECTED (temporary):
+    // try {
+    //   const { data } = await authService.refresh();
+    //   const { accessToken } = data;
+    //   setAuthToken(accessToken);
+    //   dispatch({ type: 'TOKEN_REFRESHED', payload: accessToken });
+    //   return accessToken;
+    // } catch {
+    //   dispatch({ type: 'LOGOUT' });
+    //   return null;
+    // }
+    return MOCK_TOKEN;
   }, []);
 
   useEffect(() => {
-    const tryAutoLogin = async () => {
-      try {
-        const { data } = await authService.refresh();
-        const { accessToken } = data;
-        const userResponse = await authService.getMe();
-        setAuth(userResponse.data.data.user, accessToken);
-      } catch {
-        dispatch({ type: 'LOADING_DONE' });
-      }
-    };
-    tryAutoLogin();
+    // BACKEND DISCONNECTED (temporary) — already authenticated via initialState:
+    // const tryAutoLogin = async () => {
+    //   try {
+    //     const { data } = await authService.refresh();
+    //     const { accessToken } = data;
+    //     const userResponse = await authService.getMe();
+    //     setAuth(userResponse.data.data.user, accessToken);
+    //   } catch {
+    //     dispatch({ type: 'LOADING_DONE' });
+    //   }
+    // };
+    // tryAutoLogin();
   }, [setAuth]);
 
   useEffect(() => {

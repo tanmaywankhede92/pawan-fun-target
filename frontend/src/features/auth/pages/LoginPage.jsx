@@ -65,7 +65,7 @@ const LoginPage = () => {
         onChange={setPassword}
         onKeyDown={handleKeyDown}
       />
-      <EnterButton onClick={handleEnter} />
+      <EnterButton onClick={handleEnter} loading={loading} />
       <CloseButton onClick={handleClose} />
 
       {/* Debug overlays — set DEBUG=true above to see element positions */}
@@ -102,3 +102,4 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+  

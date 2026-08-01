@@ -98,7 +98,7 @@ const ButtonDisplay = ({ onAction }) => {
                 }}
               />
             )}
-            <span className="relative z-10 text-white font-bold text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl">
+            <span className="relative z-10 text-white font-bold text-[clamp(8px,1.6vw,20px)] leading-none">
               {btn.name}
             </span>
           </div>

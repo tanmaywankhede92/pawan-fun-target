@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-// import { useAuth } from "@hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@hooks/useAuth";
 import HomeOverlay from "@features/home/components/HomeOverlay";
 import HomeBackground from "@features/home/components/HomeBackground";
 import ScoreDisplay, { scorePos } from "@features/home/components/ScoreDisplay";
+import TotalBetDisplay, {
+  totalBetPos,
+} from "@features/home/components/TotalBetDisplay";
 import WinnerDisplay, {
   winnerPos,
 } from "@features/home/components/WinnerDisplay";
@@ -18,16 +22,62 @@ import WheelDisplay, { wheelPos } from "@features/home/components/WheelDisplay";
 import NumberDisplay from "@features/home/components/NumberDisplay";
 import PanelDisplay from "@features/home/components/PanelDisplay";
 import ButtonDisplay from "@features/home/components/ButtonDisplay";
+import ExitConfirmModal from "@features/home/components/ExitConfirmModal";
+import GameLoadingOverlay from "@features/auth/components/GameLoadingOverlay";
 
 const DEBUG = false;
 
 const HomePage = () => {
-  // const { user } = useAuth();
-  const user = { username: "Player", balance: 0 };
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [phase, setPhase] = useState("timer");
   const [time, setTime] = useState(60);
   const [spinCount, setSpinCount] = useState(0);
   const [lastWinner, setLastWinner] = useState(null);
+  const [selectedValue, setSelectedValue] = useState(10);
+  const [bets, setBets] = useState({});
+  const [showLoading, setShowLoading] = useState(true);
+
+  const totalBet = Object.values(bets).reduce((sum, v) => sum + v, 0);
+
+  const handleGameLoaded = useCallback(() => {
+    setShowLoading(false);
+  }, []);
+
+  const handlePanelSelect = useCallback((value) => {
+    setSelectedValue(value);
+  }, []);
+
+  const handleBet = useCallback(
+    (num) => {
+      if (selectedValue === null) return;
+      setBets((prev) => ({ ...prev, [num]: (prev[num] || 0) + selectedValue }));
+    },
+    [selectedValue],
+  );
+
+  const clearBets = useCallback(() => {
+    setBets({});
+  }, []);
+
+  const handleButtonAction = useCallback(
+    (id) => {
+      if (id === "cancelBet") clearBets();
+      if (id === "exit") setShowExitConfirm(true);
+    },
+    [clearBets],
+  );
+
+  const handleExitConfirm = useCallback(async () => {
+    setShowExitConfirm(false);
+    await logout();
+    navigate("/login", { replace: true });
+  }, [logout, navigate]);
+
+  const handleExitCancel = useCallback(() => {
+    setShowExitConfirm(false);
+  }, []);
 
   useEffect(() => {
     if (phase !== "timer") return;
@@ -52,16 +102,27 @@ const HomePage = () => {
     <HomeOverlay>
       <HomeBackground />
 
-      <ScoreDisplay score={user?.balance || 0} />
+      <ScoreDisplay score={Math.max(0, (user?.balance || 0) - totalBet)} />
+      <TotalBetDisplay total={totalBet} />
       <WinnerDisplay winner={user?.username || "Player"} />
       <TimerDisplay time={time} />
       <TimerDisplayGif time={time} />
       <GifDisplay />
       <WheelDisplay spinTrigger={spinCount} onComplete={handleSpinComplete} />
       <LastWinningData />
-      <NumberDisplay />
-      <PanelDisplay />
-      <ButtonDisplay />
+      <NumberDisplay bets={bets} onBet={handleBet} />
+      <PanelDisplay selectedValue={selectedValue} onSelect={handlePanelSelect} />
+      <ButtonDisplay onAction={handleButtonAction} />
+
+      <ExitConfirmModal
+        open={showExitConfirm}
+        onConfirm={handleExitConfirm}
+        onCancel={handleExitCancel}
+      />
+
+      {showLoading && (
+        <GameLoadingOverlay canFinish onDone={handleGameLoaded} />
+      )}
 
       {DEBUG && (
         <>
@@ -70,6 +131,12 @@ const HomePage = () => {
             style={scorePos}
           >
             <span className="text-red-300 text-xs ml-1">Score</span>
+          </div>
+          <div
+            className="absolute border-2 border-orange-500 bg-orange-500/20 flex items-center pointer-events-none"
+            style={totalBetPos}
+          >
+            <span className="text-orange-300 text-xs ml-1">Total Bet</span>
           </div>
           <div
             className="absolute border-2 border-blue-500 bg-blue-500/20 flex items-center pointer-events-none"

@@ -13,6 +13,7 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: #0c1520;
   }
 }
 
@@ -38,5 +39,26 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+/* Mobile landscape only — short landscape touch screens */
+@media (orientation: landscape) and (max-width: 1024px) and (max-height: 520px) and (hover: none) and (pointer: coarse) {
+  .ft-login-field {
+    min-height: 36px !important;
+  }
+
+  /* Show all last-10 numbers (wrap into rows) */
+  .ft-last-wins {
+    flex-wrap: wrap !important;
+    align-content: center !important;
+    justify-content: space-between !important;
+    gap: 1px 3px !important;
+    overflow-x: visible !important;
+  }
+  .ft-last-wins-item {
+    font-size: clamp(9px, 1.4vw, 12px) !important;
+    padding: 0 !important;
+    line-height: 1.5 !important;
   }
 }

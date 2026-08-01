@@ -1,4 +1,3 @@
-import { useState } from "react";
 import p10 from "@assets/images/panels/10.png";
 import p20 from "@assets/images/panels/20.png";
 import p50 from "@assets/images/panels/50.png";
@@ -30,25 +29,19 @@ const PANEL_CONFIG = {
   5000: { box: { left: "92.5%", top: "45.6%", width: "9%", height: "9%" } },
 };
 
-const PanelDisplay = () => {
-  const [openPanels, setOpenPanels] = useState({});
-
-  const togglePanel = (value) => {
-    setOpenPanels((prev) => ({ ...prev, [value]: !prev[value] }));
-  };
-
+const PanelDisplay = ({ selectedValue, onSelect }) => {
   return (
     <>
       {Object.keys(PANEL_CONFIG).map((key) => {
         const value = Number(key);
         const { box } = PANEL_CONFIG[value];
         const img = IMAGES[value];
-        const isOpen = !!openPanels[value];
+        const isSelected = selectedValue === value;
 
         return (
           <div
             key={value}
-            className="absolute overflow-hidden cursor-pointer z-20 selection:none"
+            className="absolute overflow-hidden cursor-pointer z-20 select-none"
             style={{
               left: box.left,
               right: box.right,
@@ -56,9 +49,9 @@ const PanelDisplay = () => {
               width: box.width,
               height: box.height,
             }}
-            onClick={() => togglePanel(value)}
+            onClick={() => onSelect(value)}
           >
-            {isOpen && img && (
+            {isSelected && img && (
               <img
                 src={img}
                 alt={`panel-${value}`}

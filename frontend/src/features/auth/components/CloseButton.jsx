@@ -16,7 +16,6 @@ const CloseButton = ({ onClick }) => {
       aria-label="Close"
       className="
         absolute flex items-center justify-center cursor-pointer
-        border-2 border-dashed border-pink-400/90
         bg-black/30 text-white/80 hover:text-white hover:bg-black/50
         transition-colors duration-150
       "
