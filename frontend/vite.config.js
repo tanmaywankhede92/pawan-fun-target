@@ -8,6 +8,7 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   plugins: [react()],
+  assetsInclude: ['**/*.WAV', '**/*.MP3', '**/*.OGG', '**/*.M4A'],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

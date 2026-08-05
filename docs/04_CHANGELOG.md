@@ -4,6 +4,47 @@ All notable changes to this project are documented here.
 
 ---
 
+## v0.1.0 — New Database Schema + Clean Game Flow
+
+**Date:** 03 August 2026
+**Developer:** OpenCode
+
+### Backend — New DB schema
+- Added `migrations/20260803_full_schema.sql` — the new database (roles, users, balance_add_removes, maintenance, payouts, results, record)
+- **Removed** old auth tables: `refresh_tokens`, `login_history` (models, repositories, migration `20260730_auth_schema.sql`, seeders — all deleted)
+- Added Sequelize models: `role`, `balanceAddRemove`, `maintenance`, `payout`, `result`, `record`
+- Updated `user.model.js` to new schema: role INT FK → roles, `sponsor_agent_id` self-FK, `balance DECIMAL(15,2)`, `margin DECIMAL(5,2)`, `device CHAR(1) default M`, `paranoid` (deleted_at)
+- Updated `models/index.js` associations (Role, BalanceAddRemove, Record, self sponsorAgent)
+- Constants: added `ROLE_IDS`, `WIN_STATUS`, `CLAIM_STATUS`
+- `show-schema.js` now prints all 7 tables
+
+### Backend — Auth simplified (access-token only)
+- Removed refresh-token rotation + login-history logic from `auth.service.js`
+- Login: bcrypt + role join (`roles.role_name`) → access token + redirect; updates `login_time/login/device/deviceUUID`
+- Logout: authenticated, sets `login=0, logout_time`
+- Routes now: POST `/auth/login`, POST `/auth/logout`, GET `/auth/me` (`/refresh`, `/logout-all` removed)
+- Global rate limiter removed from `app.js`
+
+### Frontend — Game UI completed
+- Full pixel-perfect game layout on `HomePage` (wheel, timer, winner, score, total bet, numbers 0-9, bet panels, action buttons, last-10-wins)
+- GameLoadingOverlay — premium AAA loader (~6.5s: wheel drop+bounce, spin, progress steps, %, gold flash) wired on HomePage game entry
+- ExitConfirmModal — AAA casino-style exit popup (gold frame, treasure box, coin icon, particles, animations)
+- RotateDeviceOverlay — portrait rotation lock for mobile/tablet (<1024px)
+- Password eye toggle (show/hide) in `Password.jsx`
+- Removed dashed debug borders from login inputs; `ft-login-field` mobile tweak
+- Removed white-screen spinners from ProtectedRoute/PublicRoute; dark body background
+- index.html viewport locked; `ft-last-wins` mobile wrap (last-10-wins fills slot in landscape)
+- Desktop layout approved and frozen — only mobile landscape tweaks allowed
+
+### Frontend — Mock auth (temporary)
+- `AuthContext.jsx`: backend calls commented out (`// BACKEND DISCONNECTED`), MOCK_USER `Player` balance 100000, login always succeeds, direct homepage, logout → /login
+
+### Verification
+- Frontend `npm run build` passes; backend `node -e "require('./app.js')"` passes
+- Auth role test: user→USER, agent→AGENT, superadmin→SUPER_ADMIN
+
+---
+
 ## v0.0.1 — Phase 1: Project Setup
 
 **Date:** 30 July 2026

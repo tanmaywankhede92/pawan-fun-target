@@ -1,6 +1,7 @@
 # Fun Target API Documentation
 
 > Base URL: `http://localhost:5000/api` (dev) / `{production-url}/api`
+> **Note:** Frontend is currently on mock auth — these endpoints are not called until the backend is reconnected.
 
 ## Standard Response Format
 
@@ -16,13 +17,13 @@
 
 ## Authentication
 
-All auth endpoints except `/login` and `/refresh` require a `Bearer` access token in the `Authorization` header.
+All auth endpoints except `/login` require a `Bearer` access token in the `Authorization` header.
 
-Access tokens expire in 15 minutes. Refresh tokens expire in 7 days, are rotated on every refresh, and are stored in the database as SHA-256 hashes only.
+Access tokens are JWT, expire in 15 minutes. There is **no refresh token** (removed with the old `refresh_tokens` table). After expiry the user must log in again.
 
 ### POST /auth/login
 
-Authenticate user credentials and issue tokens.
+Authenticate user credentials and issue an access token.
 
 **Headers:** `Content-Type: application/json`
 
@@ -31,8 +32,8 @@ Authenticate user credentials and issue tokens.
 {
   "username": "string (required, 3-255 chars)",
   "password": "string (required, 6+ chars)",
-  "device": "string (optional, max 50 chars)",
-  "deviceUuid": "string (optional, max 200 chars)"
+  "device": "string (optional, max 10 chars — M/W/D)",
+  "deviceUuid": "string (optional, max 250 chars)"
 }
 ```
 
@@ -42,21 +43,18 @@ Authenticate user credentials and issue tokens.
   "success": true,
   "message": "Login successful",
   "accessToken": "eyJhbGci...",
-  "refreshToken": "eyJhbGci...",
   "user": {
     "id": 1,
-    "name": "Tanmay",
-    "username": "tanmay",
+    "name": "Akshay",
+    "username": "akshay",
     "role": "USER",
-    "balance": 1000
+    "balance": 100000
   },
   "redirect": "/game"
 }
 ```
 
 **Redirect Mapping:** `SUPER_ADMIN -> /super-admin`, `AGENT -> /agent`, `USER -> /game`
-
-**Cookies Set:** `refreshToken` (HTTP-only, Secure in prod, SameSite=Strict)
 
 **Status Codes:**
 | Code | Condition |
@@ -66,80 +64,20 @@ Authenticate user credentials and issue tokens.
 | 401 | Invalid credentials |
 | 403 | Account inactive/suspended |
 
----
-
-### POST /auth/refresh
-
-Refresh access token using the HTTP-only cookie or `refreshToken` in the request body.
-
-**Request Body:**
-```json
-{
-  "refreshToken": "string (optional if cookie exists)"
-}
-```
-
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "Token refreshed",
-  "accessToken": "eyJhbGci...",
-  "refreshToken": "eyJhbGci...",
-  "user": {
-    "id": 1,
-    "name": "Tanmay",
-    "username": "tanmay",
-    "role": "USER",
-    "balance": 1000
-  }
-}
-```
-
-**Status Codes:**
-| Code | Condition |
-|------|-----------|
-| 200 | Success |
-| 401 | Refresh token missing, invalid, or expired |
-
----
-
 ### POST /auth/logout
 
-Revoke current refresh token and clear cookie.
+Mark the authenticated user as logged out (`login=0`, `logout_time`).
 
-**Request Body:**
-```json
-{
-  "refreshToken": "string (optional if cookie exists)"
-}
-```
+**Headers:** `Authorization: Bearer {token}`
 
 **Response (200):**
 ```json
 { "success": true, "message": "Logout successful" }
 ```
 
----
-
-### POST /auth/logout-all
-
-Revoke all refresh tokens for the authenticated user.
-
-**Headers:** `Authorization: Bearer {token}`
-
-**Request Body:** None
-
-**Response (200):**
-```json
-{ "success": true, "message": "Logged out from all devices" }
-```
-
----
-
 ### GET /auth/me
 
-Get current authenticated user profile.
+Get current authenticated user profile (fresh balance from DB).
 
 **Headers:** `Authorization: Bearer {token}`
 
@@ -151,34 +89,14 @@ Get current authenticated user profile.
   "data": {
     "user": {
       "id": 1,
-      "name": "Tanmay",
-      "username": "tanmay",
+      "name": "Akshay",
+      "username": "akshay",
       "role": "USER",
-      "balance": 1000
+      "balance": 100000
     }
   }
 }
 ```
-
----
-
-## Authentication Database Notes
-
-The backend remains compatible with the legacy `users` table. The following legacy columns are intentionally preserved: `mob`, `deviceUUID`, `sponser_agent`, `login`, `device`, `login_time`, `logout_time`, and `remember_token`.
-
-Auth migration:
-`backend/src/database/migrations/20260730_auth_schema.sql`
-
-Seed users:
-`backend/src/database/seeders/20260730_auth_seed_users.sql`
-
-Seed credentials:
-
-| Role | Username | Password |
-|------|----------|----------|
-| SUPER_ADMIN | superadmin | Admin@123 |
-| AGENT | agent | Agent@123 |
-| USER | tanmay | User@123 |
 
 ---
 
@@ -192,31 +110,76 @@ Health check endpoint.
   "success": true,
   "message": "Fun Target API is running",
   "environment": "development",
-  "timestamp": "2026-07-30T12:00:00.000Z"
+  "timestamp": "2026-08-03T12:00:00.000Z"
 }
 ```
 
 ---
 
+## Database Notes (New Schema)
+
+Single source of truth: `backend/src/database/migrations/20260803_full_schema.sql`
+
+Database: `funtarget`. Tables: `roles`, `users`, `balance_add_removes`, `maintenance`, `payouts`, `results`, `record`.
+
+Removed (do not re-add): `refresh_tokens`, `login_history`.
+
+Seed data:
+- `roles`: (1, superadmin), (2, agent), (3, user)
+- `users`: akshay / password `12345` (note: plain text — backend expects bcrypt hash, so login with `12345` will fail until the hash is set)
+
+---
+
 ## Game Endpoints (Phase 5+)
 
-> These endpoints are planned but not yet implemented.
-> API contracts will be defined here before implementation.
+> Planned, not yet implemented. Contracts defined here before implementation.
 
 ### GET /game/status
+Current game state: maintenance on/off, round number, current draw time, betting open/closed.
+
 ### GET /game/current-round
+Current round info (draw time, timer remaining, bonus flag).
+
 ### GET /game/timer
-### GET /game/current-result
+Countdown seconds to next draw.
+
 ### GET /game/history
+Last 10 winning numbers (from `results`), newest first.
+
 ### POST /game/bet
+Place a bet ticket.
+
+**Request Body:**
+```json
+{
+  "ticket": { "7": 10, "90": 50 },
+  "qty": 60,
+  "amt": 60,
+  "nxt_draw": "12:00",
+  "draw_time": "12:00",
+  "lottery_name": "funtarget"
+}
+```
+
+**Behaviour:** validate balance → create `record` (barcode, tck_result JSON) → deduct balance → write `balance_add_removes` ledger.
+
 ### POST /game/cancel-bet
+Cancel current (unsubmitted) bets on the client side.
+
 ### POST /game/take-bet
+Confirm/commit a placed bet ticket server-side.
+
 ### GET /game/winner
+Current/last winner number.
+
+---
 
 ## Wallet Endpoints (Phase 5+)
 
 ### GET /wallet/balance
 ### GET /wallet/history
+
+---
 
 ## Admin Endpoints (Phase 8+)
 

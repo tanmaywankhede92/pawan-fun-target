@@ -11,6 +11,7 @@ import EnterButton from "../components/EnterButton";
 import { enterPos } from "../components/EnterButton";
 import CloseButton from "../components/CloseButton";
 import { closePos } from "../components/CloseButton";
+import { useSound } from "@hooks/useSound";
 
 const DEBUG = false; // Set to true to show colored rectangles over interactive areas
 
@@ -20,10 +21,12 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { play } = useSound();
 
   const handleEnter = useCallback(async () => {
     if (!username.trim() || !password) return;
     if (loading) return;
+    play("CLICK");
     setLoading(true);
     try {
       const result = await login({ username: username.trim(), password });
@@ -33,7 +36,7 @@ const LoginPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [username, password, loading, login, navigate]);
+  }, [username, password, loading, login, navigate, play]);
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -43,13 +46,14 @@ const LoginPage = () => {
   );
 
   const handleClose = useCallback(() => {
+    play("CLICK");
     if (window.close) {
       window.close();
     } else {
       const confirmed = window.confirm("Exit Fun Target?");
       if (confirmed) window.location.href = "about:blank";
     }
-  }, []);
+  }, [play]);
 
   return (
     <LoginOverlay>

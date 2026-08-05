@@ -13,11 +13,11 @@ const User = sequelize.define('users', {
     allowNull: false,
   },
   mob: {
-    type: DataTypes.STRING(255),
+    type: DataTypes.STRING(20),
     allowNull: true,
   },
   username: {
-    type: DataTypes.STRING(255),
+    type: DataTypes.STRING(100),
     allowNull: false,
     unique: true,
   },
@@ -26,43 +26,53 @@ const User = sequelize.define('users', {
     allowNull: false,
   },
   deviceUUID: {
-    type: DataTypes.STRING(200),
+    type: DataTypes.STRING(250),
     allowNull: true,
     defaultValue: '',
     field: 'deviceUUID',
   },
   balance: {
-    type: DataTypes.DECIMAL(10, 2),
+    type: DataTypes.DECIMAL(15, 2),
     allowNull: false,
     defaultValue: 0,
   },
   role: {
-    type: DataTypes.STRING(255),
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false,
+    defaultValue: 3,
+    references: {
+      model: 'roles',
+      key: 'id',
+    },
   },
-  sponser_agent: {
-    type: DataTypes.STRING(255),
+  sponsor_agent_id: {
+    type: DataTypes.BIGINT.UNSIGNED,
     allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id',
+    },
+    onDelete: 'SET NULL',
   },
   status: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.TINYINT,
     allowNull: false,
     defaultValue: USER_STATUS.ACTIVE,
   },
   margin: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.DECIMAL(5, 2),
     allowNull: false,
-    defaultValue: 10,
+    defaultValue: 0,
   },
   login: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.TINYINT,
     allowNull: false,
     defaultValue: 0,
   },
   device: {
-    type: DataTypes.STRING(10),
+    type: DataTypes.CHAR(1),
     allowNull: false,
-    defaultValue: 'D',
+    defaultValue: 'M',
   },
   login_time: {
     type: DataTypes.DATE,
@@ -72,13 +82,10 @@ const User = sequelize.define('users', {
     type: DataTypes.DATE,
     allowNull: true,
   },
-  remember_token: {
-    type: DataTypes.STRING(100),
-    allowNull: true,
-  },
 }, {
   timestamps: true,
   underscored: true,
+  paranoid: true,
 });
 
 module.exports = User;

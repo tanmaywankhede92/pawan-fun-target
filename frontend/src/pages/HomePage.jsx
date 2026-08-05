@@ -24,12 +24,15 @@ import PanelDisplay from "@features/home/components/PanelDisplay";
 import ButtonDisplay from "@features/home/components/ButtonDisplay";
 import ExitConfirmModal from "@features/home/components/ExitConfirmModal";
 import GameLoadingOverlay from "@features/auth/components/GameLoadingOverlay";
+// import SoundToggle from "@components/common/SoundToggle";
+import { useSound } from "@hooks/useSound";
 
 const DEBUG = false;
 
 const HomePage = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { play, playBgm } = useSound();
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [phase, setPhase] = useState("timer");
   const [time, setTime] = useState(60);
@@ -98,6 +101,25 @@ const HomePage = () => {
     }, 2000);
   }, []);
 
+  useEffect(() => {
+    if (phase !== "timer" || time > 10 || time <= 0) return;
+    play("TICK");
+  }, [phase, time, play]);
+
+  useEffect(() => {
+    const start = () => {
+      playBgm();
+      window.removeEventListener("pointerdown", start);
+      window.removeEventListener("keydown", start);
+    };
+    window.addEventListener("pointerdown", start);
+    window.addEventListener("keydown", start);
+    return () => {
+      window.removeEventListener("pointerdown", start);
+      window.removeEventListener("keydown", start);
+    };
+  }, [playBgm]);
+
   return (
     <HomeOverlay>
       <HomeBackground />
@@ -123,6 +145,8 @@ const HomePage = () => {
       {showLoading && (
         <GameLoadingOverlay canFinish onDone={handleGameLoaded} />
       )}
+
+      {/* <SoundToggle /> */}
 
       {DEBUG && (
         <>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import wheelImg from "@assets/images/wheel/wheel.png";
+import { useSound } from "@hooks/useSound";
 
 const STEPS = [
   "Connecting...",
@@ -42,6 +43,12 @@ const GameLoadingOverlay = ({ canFinish, onDone }) => {
   const [phase, setPhase] = useState("spin");
   const [flash, setFlash] = useState(false);
   const [fade, setFade] = useState(false);
+
+  const { play } = useSound();
+
+  useEffect(() => {
+    play("LOADING");
+  }, [play]);
 
   const wheelRef = useRef(null);
   const rotationRef = useRef(0);
@@ -133,12 +140,21 @@ const GameLoadingOverlay = ({ canFinish, onDone }) => {
     const tFlashOn = setTimeout(() => setFlash(true), 1500);
     const tFlashOff = setTimeout(() => setFlash(false), 2000);
     const tFade = setTimeout(() => setFade(true), 2100);
+    const tEnter = setTimeout(() => play("ENTER"), 2300);
     const tDone = setTimeout(() => onDone?.(), 2600);
 
     return () => {
-      [tSlow, tZoom, tFlashOn, tFlashOff, tFade, tDone].forEach(clearTimeout);
+      [
+        tSlow,
+        tZoom,
+        tFlashOn,
+        tFlashOff,
+        tFade,
+        tEnter,
+        tDone,
+      ].forEach(clearTimeout);
     };
-  }, [progress, canFinish, onDone]);
+  }, [progress, canFinish, onDone, play]);
 
   return (
     <div

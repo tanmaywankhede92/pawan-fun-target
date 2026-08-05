@@ -1,4 +1,5 @@
 import p10 from "@assets/images/panels/10.png";
+import { useSound } from "@hooks/useSound";
 import p20 from "@assets/images/panels/20.png";
 import p50 from "@assets/images/panels/50.png";
 import p100 from "@assets/images/panels/100.png";
@@ -30,6 +31,13 @@ const PANEL_CONFIG = {
 };
 
 const PanelDisplay = ({ selectedValue, onSelect }) => {
+  const { play } = useSound();
+
+  const handleSelect = (value) => {
+    play("CLICK");
+    onSelect(value);
+  };
+
   return (
     <>
       {Object.keys(PANEL_CONFIG).map((key) => {
@@ -49,7 +57,7 @@ const PanelDisplay = ({ selectedValue, onSelect }) => {
               width: box.width,
               height: box.height,
             }}
-            onClick={() => onSelect(value)}
+            onClick={() => handleSelect(value)}
           >
             {isSelected && img && (
               <img

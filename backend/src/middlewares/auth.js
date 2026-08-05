@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 const ApiError = require('../utils/ApiError');
 const catchAsync = require('../utils/catchAsync');
-const { HTTP_STATUS, TOKEN_TYPES } = require('../constants');
+const { HTTP_STATUS, TOKEN_TYPES, USER_STATUS } = require('../constants');
 const userRepository = require('../repositories/user.repository');
 
 const authenticate = catchAsync(async (req, res, next) => {
@@ -32,6 +32,10 @@ const authenticate = catchAsync(async (req, res, next) => {
   const user = await userRepository.findById(decoded.id);
   if (!user) {
     throw new ApiError(HTTP_STATUS.UNAUTHORIZED, 'User not found');
+  }
+
+  if (Number(user.status) !== USER_STATUS.ACTIVE) {
+    throw new ApiError(HTTP_STATUS.FORBIDDEN, 'Account is inactive or suspended');
   }
 
   req.user = user;

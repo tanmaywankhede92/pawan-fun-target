@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSound } from "@hooks/useSound";
 import cancelBetGlow from "@assets/images/buttons/cancelBetglow.png";
 import previewGlow from "@assets/images/buttons/cancelBetglow.png";
 import exitGlow from "@assets/images/buttons/exitglow.png";
@@ -9,6 +10,7 @@ const BUTTONS = [
   {
     id: "cancelBet",
     name: "Cancel Bet",
+    sound: "CANCEL",
     base: cancelBtn, 
     glow: cancelBetGlow,
     zoom: 1.2,
@@ -17,6 +19,7 @@ const BUTTONS = [
   {
     id: "takeBet",
     name: "Take Bet",
+    sound: "TAKE",
     base: null,
     glow: takeBetGlow,
     zoom: 1.2,
@@ -25,6 +28,7 @@ const BUTTONS = [
   {
     id: "preview",
     name: "Preview",
+    sound: "CLICK",
     base: null,
     glow: previewGlow,
     zoom: 1.2,
@@ -33,6 +37,7 @@ const BUTTONS = [
   {
     id: "exit",
     name: "Exit",
+    sound: "CLICK",
     base: null,
     glow: exitGlow,
     zoom: 1.2,
@@ -42,8 +47,10 @@ const BUTTONS = [
 
 const ButtonDisplay = ({ onAction }) => {
   const [hovered, setHovered] = useState(null);
+  const { play } = useSound();
 
   const handleClick = (btn) => {
+    play(btn.sound || "CLICK");
     if (onAction) onAction(btn.id);
   };
 

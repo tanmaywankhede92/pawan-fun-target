@@ -24,10 +24,35 @@ const USER_ROLES = {
   USER: 'USER',
 };
 
+const ROLE_IDS = {
+  SUPER_ADMIN: 1,
+  AGENT: 2,
+  USER: 3,
+};
+
 const USER_STATUS = {
   ACTIVE: 1,
   INACTIVE: 0,
   SUSPENDED: 2,
 };
 
-module.exports = { HTTP_STATUS, TOKEN_TYPES, USER_ROLES, USER_STATUS };
+const WIN_STATUS = {
+  PENDING: 0,
+  WIN: 1,
+  LOSS: 2,
+};
+
+const CLAIM_STATUS = {
+  UNCLAIMED: 0,
+  CLAIMED: 1,
+};
+
+module.exports = {
+  HTTP_STATUS,
+  TOKEN_TYPES,
+  USER_ROLES,
+  ROLE_IDS,
+  USER_STATUS,
+  WIN_STATUS,
+  CLAIM_STATUS,
+};

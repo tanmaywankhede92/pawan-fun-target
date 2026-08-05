@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useSound } from "@hooks/useSound";
 import wheelImg from "@assets/images/wheel/wheel.png";
 import wheelGif from "@assets/images/gifs/joker_gif1.gif";
 import joker1 from "@assets/images/gifs/joker1.png";
@@ -50,18 +51,22 @@ const WheelDisplay = ({ spinTrigger, onComplete }) => {
   const [winner, setWinner] = useState(null);
   const [resultJoker, setResultJoker] = useState(() => randomJoker());
   const prevTrigger = useRef(spinTrigger);
+  const { play } = useSound();
 
   const handleTransitionEnd = useCallback(() => {
     setSpinning(false);
     setResultJoker(randomJoker());
+    play("WIN");
     if (winner !== null && onComplete) {
       onComplete(winner);
     }
-  }, [winner, onComplete]);
+  }, [winner, onComplete, play]);
 
   useEffect(() => {
     if (spinTrigger === prevTrigger.current) return;
     prevTrigger.current = spinTrigger;
+
+    play("SPIN");
 
     const w = randomWinner();
     setWinner(w);
@@ -75,7 +80,7 @@ const WheelDisplay = ({ spinTrigger, onComplete }) => {
 
     setSpinning(true);
     setRotation((prev) => prev + total);
-  }, [spinTrigger]);
+  }, [spinTrigger, play]);
 
   const showGif = spinning;
 

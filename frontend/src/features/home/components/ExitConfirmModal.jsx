@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSound } from "@hooks/useSound";
 
 const KEYFRAMES = `
 @keyframes ft-modal-flash {
@@ -79,6 +80,7 @@ const CoinWheelIcon = () => {
 
 const ExitConfirmModal = ({ open, onConfirm, onCancel }) => {
   const [closing, setClosing] = useState(false);
+  const { play } = useSound();
 
   const particles = useMemo(
     () =>
@@ -91,14 +93,20 @@ const ExitConfirmModal = ({ open, onConfirm, onCancel }) => {
     [],
   );
 
+  useEffect(() => {
+    if (open) play("EXIT");
+  }, [open, play]);
+
   if (!open) return null;
 
   const handleContinue = () => {
+    play("CLICK");
     setClosing(true);
     setTimeout(() => onCancel?.(), 380);
   };
 
   const handleLeave = () => {
+    play("CLICK");
     setClosing(true);
     setTimeout(() => onConfirm?.(), 420);
   };

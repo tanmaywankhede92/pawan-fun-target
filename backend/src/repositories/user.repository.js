@@ -1,12 +1,22 @@
-const { User } = require('../database/models');
+const { User, Role } = require('../database/models');
+
+const WITH_ROLE = {
+  include: [{ model: Role, as: 'roleName' }],
+};
 
 class UserRepository {
   async findById(id) {
-    return User.findByPk(id, { attributes: { exclude: ['password'] } });
+    return User.findByPk(id, {
+      attributes: { exclude: ['password'] },
+      ...WITH_ROLE,
+    });
   }
 
   async findByUsername(username) {
-    return User.findOne({ where: { username } });
+    return User.findOne({
+      where: { username },
+      ...WITH_ROLE,
+    });
   }
 
   async create(userData) {
@@ -17,8 +27,15 @@ class UserRepository {
     return User.update(data, { where: { id } });
   }
 
-  async updateLastLogin(id) {
-    return User.update({ login_time: new Date(), login: 1 }, { where: { id } });
+  async updateLogin(id, context = {}) {
+    const updates = { login_time: new Date(), login: 1 };
+    if (context.device) {
+      updates.device = String(context.device).charAt(0).toUpperCase();
+    }
+    if (context.deviceUuid) {
+      updates.deviceUUID = context.deviceUuid;
+    }
+    return User.update(updates, { where: { id } });
   }
 
   async updateLogout(id) {

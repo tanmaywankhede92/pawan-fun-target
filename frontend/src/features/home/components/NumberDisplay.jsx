@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSound } from "@hooks/useSound";
 import n0 from "@assets/images/numbers/0.png";
 import n1 from "@assets/images/numbers/1.png";
 import n2 from "@assets/images/numbers/2.png";
@@ -81,6 +82,12 @@ const BET_BOX_CONFIG = {
 
 const NumberDisplay = ({ bets, onBet }) => {
   const [hoveredNum, setHoveredNum] = useState(null);
+  const { play } = useSound();
+
+  const handleBet = (num) => {
+    play("BET");
+    onBet(num);
+  };
 
   return (
     <>
@@ -108,7 +115,7 @@ const NumberDisplay = ({ bets, onBet }) => {
               className="absolute inset-0 overflow-hidden cursor-pointer select-none"
               onMouseEnter={() => setHoveredNum(num)}
               onMouseLeave={() => setHoveredNum(null)}
-              onClick={() => onBet(num)}
+              onClick={() => handleBet(num)}
             >
               {(isHovered || bet > 0) && img && (
                 <img
