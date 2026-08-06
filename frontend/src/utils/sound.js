@@ -55,6 +55,14 @@ export const playSound = (name) => {
   audio.play().catch(() => {});
 };
 
+export const stopSound = (name) => {
+  const audio = cache.get(name);
+  if (audio) {
+    audio.pause();
+    audio.currentTime = 0;
+  }
+};
+
 export const playMusic = (name = 'BGM') => {
   if (muted) return;
   const src = getSrc(name);

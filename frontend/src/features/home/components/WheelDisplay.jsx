@@ -9,12 +9,10 @@ import joker4 from "@assets/images/gifs/joker4.png";
 import pointerGif from "@assets/images/gifs/DG.gif";
 
 const POS = {
-  left: "35%",
-  top: "5%",
-  width: "28%",
-  height: "auto",
+  left: "50%",
+  top: "37.5%",
+  width: "clamp(260px, 36vw, 580px)",
 };
-
 
 const OVERLAY_POS = {
   left: "50%",
@@ -23,11 +21,10 @@ const OVERLAY_POS = {
   height: "auto",
 };
 
-
 const POINTER_POS = {
   left: "50%",
-  top: "0%",
-  width: "16%",
+  top: "3%",
+  width: "10%",
   height: "auto",
 };
 
@@ -43,7 +40,7 @@ const MAX_SPINS = 8;
 
 const randomWinner = () => Math.floor(Math.random() * SECTORS);
 
-const calcTargetAngle = (winner) => 360 - (winner * SECTOR_ANGLE);
+const calcTargetAngle = (winner) => 360 - winner * SECTOR_ANGLE;
 
 const WheelDisplay = ({ spinTrigger, onComplete }) => {
   const [rotation, setRotation] = useState(0);
@@ -51,16 +48,17 @@ const WheelDisplay = ({ spinTrigger, onComplete }) => {
   const [winner, setWinner] = useState(null);
   const [resultJoker, setResultJoker] = useState(() => randomJoker());
   const prevTrigger = useRef(spinTrigger);
-  const { play } = useSound();
+  const { play, stop } = useSound();
 
   const handleTransitionEnd = useCallback(() => {
     setSpinning(false);
     setResultJoker(randomJoker());
+    stop("SPIN");
     play("WIN");
     if (winner !== null && onComplete) {
       onComplete(winner);
     }
-  }, [winner, onComplete, play]);
+  }, [winner, onComplete, play, stop]);
 
   useEffect(() => {
     if (spinTrigger === prevTrigger.current) return;
@@ -86,12 +84,13 @@ const WheelDisplay = ({ spinTrigger, onComplete }) => {
 
   return (
     <div
-      className="absolute pointer-events-none"
+      className="absolute pointer-events-none  z-2"
       style={{
         left: POS.left,
         top: POS.top,
         width: POS.width,
-        height: POS.height,
+        transform: "translate(-50%, -50%)",
+        aspectRatio: "1 / 1",
       }}
     >
       <div className="relative w-full h-full">
@@ -118,7 +117,6 @@ const WheelDisplay = ({ spinTrigger, onComplete }) => {
               left: OVERLAY_POS.left,
               top: OVERLAY_POS.top,
               width: OVERLAY_POS.width,
-              height: OVERLAY_POS.height,
               transform: "translate(-50%, -50%)",
             }}
           />

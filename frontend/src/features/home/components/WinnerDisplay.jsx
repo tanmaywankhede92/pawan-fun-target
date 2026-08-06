@@ -9,13 +9,15 @@ const POS = {
 const WinnerDisplay = () => {
   return (
     <div
-      className="absolute pointer-events-none text-gray-900 font-bold   flex items-center text-center justify-center"
+      className="absolute pointer-events-none text-gray-900 flex items-center text-center justify-center"
       style={{
         right: POS.right,
         top: POS.top,
         width: POS.width,
         height: POS.height,
         fontSize: POS.fontSize,
+        fontFamily: '"Times New Roman", serif',
+        fontWeight: 700,
       }}
     >
       90

@@ -127,7 +127,7 @@ const NumberDisplay = ({ bets, onBet }) => {
             </div>
             {bet > 0 && (
               <div
-                className="absolute pointer-events-none flex items-center justify-center text-black font-semibold leading-none"
+                className="absolute pointer-events-none flex items-center justify-center text-black leading-none"
                 style={{
                   left: betBox.left,
                   right: betBox.right,
@@ -136,6 +136,8 @@ const NumberDisplay = ({ bets, onBet }) => {
                   bottom: betBox.bottom,
                   height: betBox.height,
                   fontSize: "clamp(5px, 1.8vw, 24px)",
+                  fontFamily: '"Times New Roman", serif',
+                  fontWeight: 700,
                 }}
               >
                 {bet}

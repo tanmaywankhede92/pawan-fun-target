@@ -22,8 +22,8 @@ import WheelDisplay, { wheelPos } from "@features/home/components/WheelDisplay";
 import NumberDisplay from "@features/home/components/NumberDisplay";
 import PanelDisplay from "@features/home/components/PanelDisplay";
 import ButtonDisplay from "@features/home/components/ButtonDisplay";
-import ExitConfirmModal from "@features/home/components/ExitConfirmModal";
-import GameLoadingOverlay from "@features/auth/components/GameLoadingOverlay";
+// import ExitConfirmModal from "@features/home/components/ExitConfirmModal"; // exit overlay disabled
+// import GameLoadingOverlay from "@features/auth/components/GameLoadingOverlay"; // loading disabled
 // import SoundToggle from "@components/common/SoundToggle";
 import { useSound } from "@hooks/useSound";
 
@@ -33,20 +33,15 @@ const HomePage = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { play, playBgm } = useSound();
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  // const [showExitConfirm, setShowExitConfirm] = useState(false); // exit overlay disabled
   const [phase, setPhase] = useState("timer");
   const [time, setTime] = useState(60);
   const [spinCount, setSpinCount] = useState(0);
   const [lastWinner, setLastWinner] = useState(null);
   const [selectedValue, setSelectedValue] = useState(10);
   const [bets, setBets] = useState({});
-  const [showLoading, setShowLoading] = useState(true);
 
   const totalBet = Object.values(bets).reduce((sum, v) => sum + v, 0);
-
-  const handleGameLoaded = useCallback(() => {
-    setShowLoading(false);
-  }, []);
 
   const handlePanelSelect = useCallback((value) => {
     setSelectedValue(value);
@@ -65,22 +60,27 @@ const HomePage = () => {
   }, []);
 
   const handleButtonAction = useCallback(
-    (id) => {
+    async (id) => {
       if (id === "cancelBet") clearBets();
-      if (id === "exit") setShowExitConfirm(true);
+      // exit overlay disabled - exit directly logs out to login page
+      if (id === "exit") {
+        await logout();
+        navigate("/login", { replace: true });
+      }
     },
-    [clearBets],
+    [clearBets, logout, navigate],
   );
 
-  const handleExitConfirm = useCallback(async () => {
-    setShowExitConfirm(false);
-    await logout();
-    navigate("/login", { replace: true });
-  }, [logout, navigate]);
+  // exit overlay disabled
+  // const handleExitConfirm = useCallback(async () => {
+  //   setShowExitConfirm(false);
+  //   await logout();
+  //   navigate("/login", { replace: true });
+  // }, [logout, navigate]);
 
-  const handleExitCancel = useCallback(() => {
-    setShowExitConfirm(false);
-  }, []);
+  // const handleExitCancel = useCallback(() => {
+  //   setShowExitConfirm(false);
+  // }, []);
 
   useEffect(() => {
     if (phase !== "timer") return;
@@ -136,15 +136,11 @@ const HomePage = () => {
       <PanelDisplay selectedValue={selectedValue} onSelect={handlePanelSelect} />
       <ButtonDisplay onAction={handleButtonAction} />
 
-      <ExitConfirmModal
+      {/* <ExitConfirmModal
         open={showExitConfirm}
         onConfirm={handleExitConfirm}
         onCancel={handleExitCancel}
-      />
-
-      {showLoading && (
-        <GameLoadingOverlay canFinish onDone={handleGameLoaded} />
-      )}
+      /> */}
 
       {/* <SoundToggle /> */}
 

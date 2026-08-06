@@ -5,6 +5,7 @@ const POS = {
   top: "26.5%",
   fontSize: "clamp(4px, 1.4vw, 18px)",
   fontWeight: 700,
+  fontFamily: '"Times New Roman", serif',
 };
 
 const DUMMY_WINS = [1, 3, 5, 6, 7, 8, 9, 1, 2, 3];

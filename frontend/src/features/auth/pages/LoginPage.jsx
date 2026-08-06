@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { useAuth } from "@hooks/useAuth";
 import GameBackground from "../components/GameBackground";
 import LoginOverlay from "../components/LoginOverlay";
@@ -32,6 +33,7 @@ const LoginPage = () => {
       const result = await login({ username: username.trim(), password });
       navigate(result.redirect || "/", { replace: true });
     } catch {
+      toast.error("Invalid username or password");
       setPassword("");
     } finally {
       setLoading(false);

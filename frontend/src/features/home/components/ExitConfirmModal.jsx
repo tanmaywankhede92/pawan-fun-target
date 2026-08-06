@@ -80,7 +80,7 @@ const CoinWheelIcon = () => {
 
 const ExitConfirmModal = ({ open, onConfirm, onCancel }) => {
   const [closing, setClosing] = useState(false);
-  const { play } = useSound();
+  const { play, stop } = useSound();
 
   const particles = useMemo(
     () =>
@@ -100,12 +100,14 @@ const ExitConfirmModal = ({ open, onConfirm, onCancel }) => {
   if (!open) return null;
 
   const handleContinue = () => {
+    stop("EXIT");
     play("CLICK");
     setClosing(true);
     setTimeout(() => onCancel?.(), 380);
   };
 
   const handleLeave = () => {
+    stop("EXIT");
     play("CLICK");
     setClosing(true);
     setTimeout(() => onConfirm?.(), 420);
