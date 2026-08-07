@@ -14,7 +14,7 @@ const BUTTONS = [
     base: cancelBtn,
     glow: cancelBetGlow,
     zoom: 1.2,
-    box: { left: "20%", bottom: "17%", width: "13%", height: "16%" },
+    box: { left: "20%", bottom: "14%", width: "15%", height: "17%" },
   },
   {
     id: "takeBet",
@@ -105,7 +105,13 @@ const ButtonDisplay = ({ onAction }) => {
                 }}
               />
             )}
-            <span className="relative z-10 text-white font-bold text-[clamp(8px,1.6vw,20px)] leading-none">
+            <span
+              className="relative z-10 w-full text-center text-white font-bold text-[clamp(8px,1.6vw,20px)] leading-none"
+              style={{
+                fontFamily: '"Times New Roman", serif',
+                transform: "translateY(-10%)",
+              }}
+            >
               {btn.name}
             </span>
           </div>

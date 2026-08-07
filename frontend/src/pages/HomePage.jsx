@@ -34,7 +34,6 @@ const HomePage = () => {
   const navigate = useNavigate();
   const { play, playBgm } = useSound();
   // const [showExitConfirm, setShowExitConfirm] = useState(false); // exit overlay disabled
-  const [phase, setPhase] = useState("timer");
   const [time, setTime] = useState(60);
   const [spinCount, setSpinCount] = useState(0);
   const [lastWinner, setLastWinner] = useState(null);
@@ -83,28 +82,23 @@ const HomePage = () => {
   // }, []);
 
   useEffect(() => {
-    if (phase !== "timer") return;
     if (time === 0) {
-      setPhase("spinning");
       setSpinCount((c) => c + 1);
+      setTime(60);
       return;
     }
     const id = setTimeout(() => setTime((t) => t - 1), 1000);
     return () => clearTimeout(id);
-  }, [phase, time]);
+  }, [time]);
 
   const handleSpinComplete = useCallback((winner) => {
     setLastWinner(winner);
-    setTimeout(() => {
-      setPhase("timer");
-      setTime(60);
-    }, 2000);
   }, []);
 
   useEffect(() => {
-    if (phase !== "timer" || time > 10 || time <= 0) return;
+    if (time > 10 || time <= 0) return;
     play("TICK");
-  }, [phase, time, play]);
+  }, [time, play]);
 
   useEffect(() => {
     const start = () => {

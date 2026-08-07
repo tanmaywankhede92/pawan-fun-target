@@ -20,7 +20,7 @@ const TimerDisplay = ({ time }) => {
         fontWeight: "bold",
       }}
     >
-      00: {time}
+        {`00:${String(time).padStart(2, "0")}`}
     </div>
   );
 };

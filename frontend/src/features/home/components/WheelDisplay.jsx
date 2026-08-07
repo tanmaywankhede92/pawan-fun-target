@@ -11,7 +11,7 @@ import pointerGif from "@assets/images/gifs/DG.gif";
 const POS = {
   left: "50%",
   top: "37.5%",
-  width: "clamp(260px, 36vw, 580px)",
+  width: "min(clamp(256px, 56%, 580px),79vh)",
 };
 
 const OVERLAY_POS = {
@@ -84,13 +84,15 @@ const WheelDisplay = ({ spinTrigger, onComplete }) => {
 
   return (
     <div
-      className="absolute pointer-events-none  z-2"
+      className="absolute pointer-events-none z-2"
       style={{
         left: POS.left,
         top: POS.top,
         width: POS.width,
+        maxWidth: "100%",
         transform: "translate(-50%, -50%)",
         aspectRatio: "1 / 1",
+        overflow: "visible",
       }}
     >
       <div className="relative w-full h-full">
