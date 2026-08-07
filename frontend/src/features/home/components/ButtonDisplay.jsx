@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useSound } from "@hooks/useSound";
 import cancelBetGlow from "@assets/images/buttons/cancelBetglow.png";
-import previewGlow from "@assets/images/buttons/cancelBetglow.png";
-import exitGlow from "@assets/images/buttons/exitglow.png";
-import takeBetGlow from "@assets/images/buttons/cancelBetglow.png";
+import previewGlow from "@assets/images/buttons/BetOk_Glow.jpg";
+import exitGlow from "@assets/images/buttons/takeglow.png";
+import takeBetGlow from "@assets/images/buttons/Take_Glow.jpg";
 import cancelBtn from "@assets/images/buttons/cancelBtn.png";
+import previewBtn from "@assets/images/buttons/bet1.jpg";
+import takeBtn from "@assets/images/buttons/take.jpg";
+import exitBtn from "@assets/images/buttons/bet1.jpg";
 
 const BUTTONS = [
   {
@@ -14,34 +17,34 @@ const BUTTONS = [
     base: cancelBtn,
     glow: cancelBetGlow,
     zoom: 1.2,
-    box: { left: "20%", bottom: "14%", width: "15%", height: "17%" },
+    box: { left: "20%", bottom: "12%", width: "15%", height: "23%" },
   },
   {
     id: "takeBet",
     name: "Take",
     sound: "TAKE",
-    base: null,
+    base: takeBtn,
     glow: takeBetGlow,
     zoom: 1.2,
-    box: { right: "85.6%", bottom: "15%", width: "15%", height: "17.6%" },
+    box: { right: "85.6%", bottom: "20%", width: "15%", height: "7%" },
   },
   {
     id: "preview",
     name: "Preview",
     sound: "CLICK",
-    base: null,
+    base: previewBtn,
     glow: previewGlow,
     zoom: 1.2,
-    box: { left: "85%", bottom: "15.8%", width: "16%", height: "16%" },
+    box: { left: "85%", bottom: "21%", width: "16%", height: "5%" },
   },
   {
     id: "exit",
     name: "Exit",
     sound: "CLICK",
-    base: null,
+    base: exitBtn,
     glow: exitGlow,
     zoom: 1.2,
-    box: { left: "90.8%", top: "92%", width: "10.2%", height: "10%" },
+    box: { left: "90.8%", top: "95%", width: "9.5%", height: "5%" },
   },
 ];
 
