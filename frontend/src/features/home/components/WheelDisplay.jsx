@@ -38,25 +38,84 @@ const SECTOR_ANGLE = 360 / SECTORS;
 const MIN_SPINS = 5;
 const MAX_SPINS = 8;
 
-// 0 is at the top at rest and numbers run COUNTERCLOCKWISE (1 is left
-// of 0). To bring result W under the pointer, rotate clockwise by
-// (360 - W * SECTOR_ANGLE).
-// Debug tuning: ?align=36 / ?align=-36 in the URL shifts the landing
-// spot in degrees, so it can be tested without a rebuild.
+// ============================================================
+// WHEEL ALIGNMENT
+// Backend result is the ONLY source of truth. The wheel never
+// generates a winner by itself.
+//
+// Layout (verified against the wheel asset): with rotation = 0 the
+// number under the fixed top pointer is 0, and the numbers run
+// CLOCKWISE as 0,1,2,3,4,5,6,7,8,9. Each sector is 36°.
+//
+// Rest angles (rotation mod 360) that put each result under the
+// pointer:
+//   0 -> 0°,   1 -> 324°,  2 -> 288°,  3 -> 252°,  4 -> 216°,
+//   5 -> 180°, 6 -> 144°,  7 -> 108°,  8 -> 72°,   9 -> 36°
+const angleFor = (w) => ((SECTORS - w) % SECTORS) * SECTOR_ANGLE;
+
+// Single calibration constant for the whole wheel (never per-number).
+// ?align=36 / ?align=-36 in the URL tunes it without a rebuild.
 const ALIGN_OFFSET = Number(
   new URLSearchParams(window.location.search).get("align") || 0,
 );
-
-const calcTargetAngle = (winner) =>
-  ((360 - winner * SECTOR_ANGLE + ALIGN_OFFSET) % 360 + 360) % 360;
+// ============================================================
 
 const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [ready, setReady] = useState(false);
   const [resultJoker, setResultJoker] = useState(() => randomJoker());
+
+  const rotationRef = useRef(0);
   const prevTrigger = useRef(spinTrigger);
+  const initializedRef = useRef(false);
   const { play, stop } = useSound();
+
+  const setRotationTracked = useCallback((r) => {
+    rotationRef.current = r;
+    setRotation(r);
+  }, []);
+
+  // Initial / reload positioning: the moment the first backend result
+  // arrives, snap the wheel to its rest angle WITHOUT any animation so
+  // the user never sees a temporary "0". The wheel stays hidden until
+  // then.
+  useEffect(() => {
+    if (initializedRef.current) return;
+    if (targetWinner == null) return;
+    initializedRef.current = true;
+    setWinner(targetWinner);
+    setResultJoker(randomJoker());
+    setRotationTracked(angleFor(targetWinner) + ALIGN_OFFSET);
+    setReady(true);
+  }, [targetWinner, setRotationTracked]);
+
+  // New draw: spin from the CURRENT rotation (never from 0), always in
+  // the same clockwise direction, 5-8 full rotations + the exact delta
+  // needed to stop with the backend result centered under the pointer.
+  useEffect(() => {
+    if (!initializedRef.current) return;
+    if (spinTrigger === prevTrigger.current) return;
+    prevTrigger.current = spinTrigger;
+
+    if (targetWinner == null) return; // no valid result -> never spin
+
+    const w = targetWinner;
+    setWinner(w);
+    setResultJoker(null);
+
+    const targetRest = angleFor(w) + ALIGN_OFFSET;
+    const currentMod = ((rotationRef.current % 360) + 360) % 360;
+    const delta = ((targetRest - currentMod) % 360 + 360) % 360;
+    const fullSpins =
+      (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
+      360;
+
+    play("SPIN");
+    setSpinning(true);
+    setRotationTracked(rotationRef.current + fullSpins + delta);
+  }, [spinTrigger, targetWinner, play, setRotationTracked]);
 
   const handleTransitionEnd = useCallback(() => {
     setSpinning(false);
@@ -64,31 +123,11 @@ const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
     stop("SPIN");
     play("WIN");
     if (winner !== null && onComplete) {
-      onComplete(winner);
+      onComplete(winner); // the SAME backend result that targeted the spin
     }
   }, [winner, onComplete, play, stop]);
 
-  useEffect(() => {
-    if (spinTrigger === prevTrigger.current) return;
-    prevTrigger.current = spinTrigger;
-
-    if (targetWinner == null) return;
-
-    play("SPIN");
-
-    const w = targetWinner;
-    setWinner(w);
-    setResultJoker(null);
-
-    const targetAngle = calcTargetAngle(w);
-    const fullSpins =
-      (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
-      360;
-    const total = fullSpins + targetAngle;
-
-    setSpinning(true);
-    setRotation((prev) => prev + total);
-  }, [spinTrigger, play, targetWinner]);
+  if (!ready) return null;
 
   const showGif = spinning;
 

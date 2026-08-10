@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@hooks/useAuth";
 import { resultService } from "@services/result.service";
+import { istSeconds, secondsToNextMinute } from "@utils/istTime";
 import HomeOverlay from "@features/home/components/HomeOverlay";
 import HomeBackground from "@features/home/components/HomeBackground";
 import ScoreDisplay, { scorePos } from "@features/home/components/ScoreDisplay";
@@ -29,18 +30,6 @@ import ButtonDisplay from "@features/home/components/ButtonDisplay";
 import { useSound } from "@hooks/useSound";
 
 const DEBUG = false;
-
-// Real-world Indian time (IST = UTC+5:30). Results are published
-// every minute at HH:MM:00 by the backend, so the game timer is
-// synced to the IST minute boundary.
-const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
-
-const istSeconds = () => {
-  const d = new Date(Date.now() + IST_OFFSET_MS);
-  return d.getUTCSeconds();
-};
-
-const secondsToNextMinute = (s) => (s === 0 ? 0 : 60 - s);
 
 const HomePage = () => {
   const { user, logout } = useAuth();

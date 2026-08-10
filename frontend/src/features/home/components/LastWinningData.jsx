@@ -10,12 +10,15 @@ const POS = {
 
 import { useState, useEffect } from "react";
 import { resultService } from "@services/result.service";
+import { istSeconds } from "@utils/istTime";
 
 const LastWinningData = () => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
     let mounted = true;
+    let prevSec = istSeconds();
+
     const load = async () => {
       try {
         const { data: res } = await resultService.getPreviousResults();
@@ -23,12 +26,24 @@ const LastWinningData = () => {
           setData(res.results.map((r) => Number(r.result)));
         }
       } catch {
-        // keep empty on error
+        // keep previous data on error
       }
     };
+
     load();
+
+    // Refresh on every IST minute boundary (:00), matching the draw cycle.
+    const id = setInterval(() => {
+      const s = istSeconds();
+      if (s === 0 && prevSec === 59) {
+        load();
+      }
+      prevSec = s;
+    }, 500);
+
     return () => {
       mounted = false;
+      clearInterval(id);
     };
   }, []);
 
