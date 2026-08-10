@@ -20,7 +20,8 @@ const WinnerDisplay = ({ winner }) => {
         fontWeight: 700,
       }}
     >
-      {winner ?? ""}
+      {/* {winner ?? ""} */}
+      00
     </div>
   );
 };

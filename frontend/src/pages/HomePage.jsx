@@ -23,11 +23,11 @@ import WheelDisplay, { wheelPos } from "@features/home/components/WheelDisplay";
 import NumberDisplay from "@features/home/components/NumberDisplay";
 import PanelDisplay from "@features/home/components/PanelDisplay";
 import ButtonDisplay from "@features/home/components/ButtonDisplay";
+import MessageDisplay from "@features/home/components/MessageDisplay";
 // import ExitConfirmModal from "@features/home/components/ExitConfirmModal"; // exit overlay disabled
 // import GameLoadingOverlay from "@features/auth/components/GameLoadingOverlay"; // loading disabled
 // import SoundToggle from "@components/common/SoundToggle";
 import { useSound } from "@hooks/useSound";
-import { toast } from "react-toastify";
 import { recordService } from "@services/record.service";
 import {
   istSeconds,
@@ -57,12 +57,16 @@ const HomePage = () => {
   const [resultRevealed, setResultRevealed] = useState(false);
   const [taken, setTaken] = useState(false);
   const [won, setWon] = useState(false);
+  const [gameMessage, setGameMessage] = useState(
+    "Please Bet to Start Game. Minimum Bet = 20",
+  );
+  const manualMsg = useRef(false);
   const autoSubmitted = useRef(false);
 
   const totalBet = Object.values(bets).reduce((sum, v) => sum + v, 0);
 
-  // Betting lock: last 10 seconds of the minute + while the wheel is spinning.
-  const clickLocked = wheelSpinning || (time <= 10 && time > 0);
+  // Betting lock: last 12 seconds of the minute + while the wheel is spinning.
+  const clickLocked = wheelSpinning || (time <= 12 && time > 0);
 
   // Take enabled only when the user bet on the winning number.
   const takePending = resultRevealed && !taken && won;
@@ -76,7 +80,8 @@ const HomePage = () => {
       if (selectedValue === null) return;
       // If a winning bet is pending, must take before placing new bets.
       if (takePending) {
-        toast.warn("Take your winning first");
+        manualMsg.current = true;
+        setGameMessage("Take your winning first");
         return;
       }
       // A new bet for the next result stops the winner blink and starts
@@ -104,7 +109,23 @@ const HomePage = () => {
       .join(",");
 
     if (!ticket) {
-      toast.warn("Select a number first");
+      manualMsg.current = true;
+      setGameMessage("Select a number first");
+      return;
+    }
+
+    // Minimum bet validation.
+    if (totalBet < 20) {
+      manualMsg.current = true;
+      setGameMessage("Minimum bet amount is 20.");
+      return;
+    }
+
+    // Balance validation: bet amount cannot exceed balance.
+    const balance = user?.balance ?? 0;
+    if (totalBet > balance) {
+      manualMsg.current = true;
+      setGameMessage(`Insufficient balance. Total ${totalBet} > Balance ${balance}`);
       return;
     }
 
@@ -122,38 +143,93 @@ const HomePage = () => {
     try {
       const { data } = await recordService.insertRecord(payload);
       if (data?.success) {
-        const barcode = data?.ticket?.barcode;
-        toast.success(barcode ? `Ticket ${barcode} placed!` : "Bet placed!");
+        manualMsg.current = true;
+        setGameMessage("Your Bet has been Accepted");
         // Keep showing the placed bets; they clear only on Take.
         setSubmitted(true);
         refreshBalance();
       } else {
-        toast.error(data?.message || "Bet failed");
+        manualMsg.current = true;
+        setGameMessage(data?.message || "Bet failed");
       }
     } catch {
-      toast.error("Bet failed. Try again.");
+      manualMsg.current = true;
+      setGameMessage("Bet failed. Try again.");
     }
-  }, [bets, totalBet, user, clearBets, refreshBalance]);
+  }, [bets, totalBet, user, refreshBalance]);
 
-  // Auto-OK: when the countdown hits the last 10 seconds, submit any
+  // Auto-OK: when the countdown hits the last 12 seconds, submit any
   // pending bets automatically. Runs once per round.
   useEffect(() => {
-    if (time > 10) {
+    if (time > 12) {
       autoSubmitted.current = false;
       return;
     }
     if (time > 0 && !autoSubmitted.current) {
       autoSubmitted.current = true;
-      if (!submitted && totalBet > 0) handlePlaceBet();
+      if (!submitted && totalBet > 0) {
+        manualMsg.current = true;
+        setGameMessage("Your Bet has been Accepted");
+        handlePlaceBet();
+      }
     }
   }, [time, totalBet, handlePlaceBet, submitted]);
+
+  // Phase message:
+  //   last 10 sec      -> "Bet Time over"
+  //   wheel spinning   -> "FOR AMUSEMENT ONLY NO CASH VALUE"
+  //   betting window   -> "Please Bet to Start Game. Minimum Bet = 20"
+  // Manual messages (validation / accepted) override the betting-window prompt.
+  useEffect(() => {
+    if (time <= 10 && time > 0) {
+      manualMsg.current = false;
+      setGameMessage("Bet Time over");
+    } else if (wheelSpinning) {
+      manualMsg.current = false;
+      setGameMessage("FOR AMUSEMENT ONLY NO CASH VALUE");
+    } else if (!manualMsg.current && time > 12) {
+      setGameMessage("Please Bet to Start Game. Minimum Bet = 20");
+    }
+  }, [time, wheelSpinning]);
 
   const handleButtonAction = useCallback(
     async (id) => {
       if (clickLocked && id !== "exit" && id !== "takeBet") return;
       if (id === "cancelBet") clearBets();
-      // preview toggles to "OK Bet" once a bet exists -> places the bet
-      if (id === "preview" && !submitted && totalBet > 0) await handlePlaceBet();
+      // The button is "Prev" with no bets (loads last bet) and "OK Bet"
+      // once a bet exists (places the bet).
+      if (id === "preview" && !submitted && totalBet > 0) {
+        await handlePlaceBet();
+        manualMsg.current = true;
+        setGameMessage("Your Bet has been Accepted");
+      } else if (id === "preview") {
+        try {
+          const { data } = await recordService.getLastBet({
+            username: user?.username || "",
+          });
+          const rec = data?.records?.[0];
+          if (rec?.tck_result) {
+            const parsed = {};
+            rec.tck_result.split(",").forEach((pair) => {
+              const [n, amt] = pair.split("-");
+              if (n !== undefined && amt !== undefined) {
+                parsed[Number(n)] = (parsed[Number(n)] || 0) + Number(amt);
+              }
+            });
+            setBets(parsed);
+            setSubmitted(false);
+            setResultRevealed(false);
+            manualMsg.current = true;
+            setGameMessage(`Last Bet Loaded. Ticket: ${rec.tck_result} | Total: ${rec.amt}`);
+          } else {
+            manualMsg.current = true;
+            setGameMessage("No previous bet found");
+          }
+        } catch {
+          manualMsg.current = true;
+          setGameMessage("Failed to load last bet");
+        }
+      }
       // take: claim winnings -> clear placed bets, stop the blinking
       if (id === "takeBet") {
         if (!takePending) return;
@@ -272,7 +348,7 @@ const HomePage = () => {
     <HomeOverlay>
       <HomeBackground />
 
-      <ScoreDisplay score={Math.max(0, (user?.balance || 0) - totalBet)} />
+      <ScoreDisplay score={Math.max(0, user?.balance || 0)} />
       <TotalBetDisplay total={totalBet} />
       <WinnerDisplay winner={lastWinner} />
       <TimerDisplay time={time} />
@@ -318,6 +394,7 @@ const HomePage = () => {
         takeGlow={takePending}
         submitted={submitted}
       />
+      <MessageDisplay message={gameMessage} />
 
       {/* <ExitConfirmModal
         open={showExitConfirm}
