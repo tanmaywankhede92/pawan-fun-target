@@ -8,9 +8,30 @@ const POS = {
   fontFamily: '"Times New Roman", serif',
 };
 
-const DUMMY_WINS = [1, 3, 5, 6, 7, 8, 9, 1, 2, 3];
+import { useState, useEffect } from "react";
+import { resultService } from "@services/result.service";
 
-const LastWinningData = ({ data = DUMMY_WINS }) => {
+const LastWinningData = () => {
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const { data: res } = await resultService.getPreviousResults();
+        if (mounted && res?.results?.length) {
+          setData(res.results.map((r) => Number(r.result)));
+        }
+      } catch {
+        // keep empty on error
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <div
       className="absolute flex items-center pointer-events-none ft-last-wins"

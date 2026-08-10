@@ -1,36 +1,27 @@
 import { createContext, useReducer, useEffect, useCallback } from 'react';
-import { setAuthToken } from '@services/api';
+import { authService } from '@services/auth.service';
 import { STORAGE_KEYS } from '@constants';
 
 const AuthContext = createContext(null);
 
 // ============================================================
-// FRONTEND-ONLY DUMMY AUTH (backend integration paused)
-// Login: akshay / 12345
+// REAL API AUTH (backend: https://api.funtarget.us/api)
+// Login returns { user } — NO token/cookie, so we persist the
+// user object in localStorage as the session.
 // ============================================================
-const MOCK_CREDENTIALS = { username: 'akshay', password: '12345' };
-const MOCK_USER = {
-  id: 265,
-  name: 'akshay',
-  username: 'akshay',
-  role: 'USER',
-  balance: 100000,
-};
-const MOCK_TOKEN = 'mock-token';
-const MOCK_REDIRECT = '/game';
 
-const getStoredToken = () => {
+const getStoredUser = () => {
   try {
-    return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    const raw = localStorage.getItem(STORAGE_KEYS.USER);
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 };
 
 const initialState = {
-  user: getStoredToken() === MOCK_TOKEN ? MOCK_USER : null,
-  accessToken: getStoredToken() === MOCK_TOKEN ? MOCK_TOKEN : null,
-  isAuthenticated: getStoredToken() === MOCK_TOKEN,
+  user: getStoredUser(),
+  isAuthenticated: !!getStoredUser(),
   isLoading: false,
 };
 // ============================================================
@@ -41,14 +32,12 @@ const authReducer = (state, action) => {
       return {
         ...state,
         user: action.payload.user,
-        accessToken: action.payload.accessToken,
         isAuthenticated: true,
         isLoading: false,
       };
     case 'LOGOUT':
       return {
         user: null,
-        accessToken: null,
         isAuthenticated: false,
         isLoading: false,
       };
@@ -65,41 +54,36 @@ const authReducer = (state, action) => {
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  const setAuth = useCallback((user, accessToken) => {
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
-    setAuthToken(accessToken);
-    dispatch({ type: 'AUTH_SUCCESS', payload: { user, accessToken } });
+  const login = useCallback(async (credentials) => {
+    try {
+      const { data } = await authService.login(credentials);
+      const user = data?.user;
+      if (!user) {
+        throw new Error('Login failed');
+      }
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+      dispatch({ type: 'AUTH_SUCCESS', payload: { user } });
+      return { redirect: '/', user };
+    } catch (err) {
+      const message =
+        err?.response?.data?.message || 'Invalid username or password';
+      throw new Error(message);
+    }
   }, []);
 
-  const login = useCallback(
-    async (credentials) => {
-      const isValid =
-        credentials &&
-        credentials.username === MOCK_CREDENTIALS.username &&
-        credentials.password === MOCK_CREDENTIALS.password;
-      if (!isValid) {
-        throw new Error('Invalid credentials');
-      }
-      setAuth(MOCK_USER, MOCK_TOKEN);
-      return { redirect: MOCK_REDIRECT, user: MOCK_USER, accessToken: MOCK_TOKEN };
-    },
-    [setAuth],
-  );
-
   const logout = useCallback(async () => {
-    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-    setAuthToken(null);
+    localStorage.removeItem(STORAGE_KEYS.USER);
     dispatch({ type: 'LOGOUT' });
   }, []);
 
-  const refreshToken = useCallback(async () => {
-    return getStoredToken() || null;
+  const setAuth = useCallback((user) => {
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    dispatch({ type: 'AUTH_SUCCESS', payload: { user } });
   }, []);
 
   useEffect(() => {
     const handleForceLogout = () => {
-      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-      setAuthToken(null);
+      localStorage.removeItem(STORAGE_KEYS.USER);
       dispatch({ type: 'LOGOUT' });
     };
     window.addEventListener('auth:logout', handleForceLogout);
@@ -107,7 +91,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, refreshToken, setAuth }}>
+    <AuthContext.Provider value={{ ...state, login, logout, setAuth }}>
       {children}
     </AuthContext.Provider>
   );
