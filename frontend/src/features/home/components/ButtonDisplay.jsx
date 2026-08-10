@@ -30,7 +30,7 @@ const BUTTONS = [
   },
   {
     id: "preview",
-    name: "Preview",
+    name: "Prev",
     sound: "CLICK",
     base: previewBtn,
     glow: previewGlow,
@@ -48,11 +48,20 @@ const BUTTONS = [
   },
 ];
 
-const ButtonDisplay = ({ onAction }) => {
+// Preview toggles to "OK Bet" once a bet exists; then it places the bet.
+// Cancel + OK Bet blink with their glow image while a bet is placed.
+// Take button glows once the result is revealed (takeGlow).
+const ButtonDisplay = ({ onAction, hasBets = false, disabled = false, takeGlow = false, submitted = false }) => {
   const [hovered, setHovered] = useState(null);
   const { play } = useSound();
 
+  const isPreview = (btn) => btn.id === "preview";
+  const isCancel = (btn) => btn.id === "cancelBet";
+  const isTake = (btn) => btn.id === "takeBet";
+  const isGlowButton = (btn) => isPreview(btn) || isCancel(btn);
+
   const handleClick = (btn) => {
+    if (disabled) return;
     play(btn.sound || "CLICK");
     if (onAction) onAction(btn.id);
   };
@@ -61,6 +70,11 @@ const ButtonDisplay = ({ onAction }) => {
     <>
       {BUTTONS.map((btn) => {
         const isHovered = hovered === btn.id;
+        const name = isPreview(btn) ? (hasBets ? "OK Bet" : "Prev") : btn.name;
+        // Blink only while bets are pending (not yet accepted).
+        const blink = isGlowButton(btn) && hasBets && !submitted;
+        const takeBlink = isTake(btn) && takeGlow;
+        const showGlow = blink || takeBlink || isHovered;
 
         return (
           <div
@@ -93,11 +107,13 @@ const ButtonDisplay = ({ onAction }) => {
                 }}
               />
             )}
-            {isHovered && btn.glow && (
+            {showGlow && btn.glow && (
               <img
                 src={btn.glow}
                 alt={`${btn.name} glow`}
-                className="absolute pointer-events-none"
+                className={`absolute pointer-events-none ${
+                  blink || takeBlink ? "ft-blink" : ""
+                }`}
                 style={{
                   width: `${btn.zoom * 100}%`,
                   height: `${btn.zoom * 100}%`,
@@ -115,7 +131,7 @@ const ButtonDisplay = ({ onAction }) => {
                 transform: "translateY(-10%)",
               }}
             >
-              {btn.name}
+              {name}
             </span>
           </div>
         );

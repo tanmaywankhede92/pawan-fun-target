@@ -30,10 +30,11 @@ const PANEL_CONFIG = {
   5000: { box: { left: "92.5%", top: "45.6%", width: "9%", height: "9%" } },
 };
 
-const PanelDisplay = ({ selectedValue, onSelect }) => {
+const PanelDisplay = ({ selectedValue, onSelect, disabled = false }) => {
   const { play } = useSound();
 
   const handleSelect = (value) => {
+    if (disabled) return;
     play("CLICK");
     onSelect(value);
   };

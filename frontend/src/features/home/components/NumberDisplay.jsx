@@ -80,11 +80,12 @@ const BET_BOX_CONFIG = {
   9: { right: "45%", bottom: "120%", width: "6.4%", height: "8%" },
 };
 
-const NumberDisplay = ({ bets, onBet }) => {
+const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) => {
   const [hoveredNum, setHoveredNum] = useState(null);
   const { play } = useSound();
 
   const handleBet = (num) => {
+    if (disabled) return;
     play("BET");
     onBet(num);
   };
@@ -98,6 +99,7 @@ const NumberDisplay = ({ bets, onBet }) => {
         const img = IMAGES[num];
         const isHovered = hoveredNum === num;
         const bet = bets[num] || 0;
+        const isWinner = winnerBlink === num;
 
         return (
           <div
@@ -117,11 +119,13 @@ const NumberDisplay = ({ bets, onBet }) => {
               onMouseLeave={() => setHoveredNum(null)}
               onClick={() => handleBet(num)}
             >
-              {(isHovered || bet > 0) && img && (
+              {(isHovered || bet > 0 || isWinner) && img && (
                 <img
                   src={img}
                   alt={`number-${num}`}
-                  className="absolute inset-0 w-full h-full object-fill pointer-events-auto"
+                  className={`absolute inset-0 w-full h-full object-fill pointer-events-auto ${
+                    isWinner ? "ft-blink" : ""
+                  }`}
                 />
               )}
             </div>

@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@hooks/useAuth";
 import { resultService } from "@services/result.service";
-import { istSeconds, secondsToNextMinute } from "@utils/istTime";
 import HomeOverlay from "@features/home/components/HomeOverlay";
 import HomeBackground from "@features/home/components/HomeBackground";
 import ScoreDisplay, { scorePos } from "@features/home/components/ScoreDisplay";
@@ -28,6 +27,16 @@ import ButtonDisplay from "@features/home/components/ButtonDisplay";
 // import GameLoadingOverlay from "@features/auth/components/GameLoadingOverlay"; // loading disabled
 // import SoundToggle from "@components/common/SoundToggle";
 import { useSound } from "@hooks/useSound";
+import { toast } from "react-toastify";
+import { recordService } from "@services/record.service";
+import {
+  istSeconds,
+  secondsToNextMinute,
+  istDateStr,
+  istTimeStr,
+  ist12hStr,
+  ist24hStr,
+} from "@utils/istTime";
 
 const DEBUG = false;
 
@@ -44,8 +53,19 @@ const HomePage = () => {
   const [resultError, setResultError] = useState(false);
   const [selectedValue, setSelectedValue] = useState(10);
   const [bets, setBets] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [resultRevealed, setResultRevealed] = useState(false);
+  const [taken, setTaken] = useState(false);
+  const [won, setWon] = useState(false);
+  const autoSubmitted = useRef(false);
 
   const totalBet = Object.values(bets).reduce((sum, v) => sum + v, 0);
+
+  // Betting lock: last 10 seconds of the minute + while the wheel is spinning.
+  const clickLocked = wheelSpinning || (time <= 10 && time > 0);
+
+  // Take enabled only when the user bet on the winning number.
+  const takePending = resultRevealed && !taken && won;
 
   const handlePanelSelect = useCallback((value) => {
     setSelectedValue(value);
@@ -54,25 +74,103 @@ const HomePage = () => {
   const handleBet = useCallback(
     (num) => {
       if (selectedValue === null) return;
+      // If a winning bet is pending, must take before placing new bets.
+      if (takePending) {
+        toast.warn("Take your winning first");
+        return;
+      }
+      // A new bet for the next result stops the winner blink and starts
+      // a fresh round (old placed bets from the previous draw are cleared).
+      if (resultRevealed) {
+        setBets({});
+        setResultRevealed(false);
+        setSubmitted(false);
+      }
       setBets((prev) => ({ ...prev, [num]: (prev[num] || 0) + selectedValue }));
     },
-    [selectedValue],
+    [selectedValue, takePending, resultRevealed],
   );
 
   const clearBets = useCallback(() => {
     setBets({});
   }, []);
 
+  // Place the bet via the backend. Ticket = "num-amount" pairs.
+  const handlePlaceBet = useCallback(async () => {
+    const ticket = Object.entries(bets)
+      .filter(([, amt]) => amt > 0)
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .map(([n, amt]) => `${n}-${amt}`)
+      .join(",");
+
+    if (!ticket) {
+      toast.warn("Select a number first");
+      return;
+    }
+
+    const payload = {
+      currentDate: istDateStr(),
+      currentTime: istTimeStr(),
+      drawTime: ist12hStr(0), // current minute, 12h (frontend style)
+      nextdrawTime: ist24hStr(1), // next minute, 24h (backend style)
+      ticket,
+      qty: totalBet,
+      totalAmount: totalBet,
+      username: user?.username || "",
+    };
+
+    try {
+      const { data } = await recordService.insertRecord(payload);
+      if (data?.success) {
+        const barcode = data?.ticket?.barcode;
+        toast.success(barcode ? `Ticket ${barcode} placed!` : "Bet placed!");
+        // Keep showing the placed bets; they clear only on Take.
+        setSubmitted(true);
+        refreshBalance();
+      } else {
+        toast.error(data?.message || "Bet failed");
+      }
+    } catch {
+      toast.error("Bet failed. Try again.");
+    }
+  }, [bets, totalBet, user, clearBets, refreshBalance]);
+
+  // Auto-OK: when the countdown hits the last 10 seconds, submit any
+  // pending bets automatically. Runs once per round.
+  useEffect(() => {
+    if (time > 10) {
+      autoSubmitted.current = false;
+      return;
+    }
+    if (time > 0 && !autoSubmitted.current) {
+      autoSubmitted.current = true;
+      if (!submitted && totalBet > 0) handlePlaceBet();
+    }
+  }, [time, totalBet, handlePlaceBet, submitted]);
+
   const handleButtonAction = useCallback(
     async (id) => {
+      if (clickLocked && id !== "exit" && id !== "takeBet") return;
       if (id === "cancelBet") clearBets();
+      // preview toggles to "OK Bet" once a bet exists -> places the bet
+      if (id === "preview" && !submitted && totalBet > 0) await handlePlaceBet();
+      // take: claim winnings -> clear placed bets, stop the blinking
+      if (id === "takeBet") {
+        if (!takePending) return;
+        setTaken(true);
+        setResultRevealed(false);
+        setWon(false);
+        setSubmitted(false);
+        clearBets();
+        refreshBalance();
+      }
       // exit overlay disabled - exit directly logs out to login page
       if (id === "exit") {
         await logout();
         navigate("/login", { replace: true });
       }
     },
-    [clearBets, logout, navigate],
+    [clearBets, handlePlaceBet, totalBet, logout, navigate, clickLocked, refreshBalance, takePending, submitted],
   );
 
   // exit overlay disabled
@@ -119,6 +217,8 @@ const HomePage = () => {
       setLastWinner(Number(r.result) % 10);
       setResultError(false);
       setWheelSpinning(true);
+      setResultRevealed(false);
+      setTaken(false);
       setSpinCount((c) => c + 1);
     } catch {
       setResultError(true);
@@ -137,10 +237,17 @@ const HomePage = () => {
     return () => clearInterval(id);
   }, [handleNewMinute]);
 
-  const handleSpinComplete = useCallback((winner) => {
-    setLastWinner(winner);
-    setWheelSpinning(false);
-  }, []);
+  const handleSpinComplete = useCallback(
+    (winner) => {
+      setLastWinner(winner);
+      setWheelSpinning(false);
+      setResultRevealed(true);
+      // Won only if a bet was placed on the winning number.
+      setWon(Number(bets[winner] || 0) > 0);
+      setTaken(false);
+    },
+    [bets],
+  );
 
   useEffect(() => {
     if (time > 10 || time <= 0) return;
@@ -193,9 +300,24 @@ const HomePage = () => {
         </div>
       )}
       <LastWinningData hidden={wheelSpinning} />
-      <NumberDisplay bets={bets} onBet={handleBet} />
-      <PanelDisplay selectedValue={selectedValue} onSelect={handlePanelSelect} />
-      <ButtonDisplay onAction={handleButtonAction} />
+      <NumberDisplay
+        bets={bets}
+        onBet={handleBet}
+        disabled={clickLocked}
+        winnerBlink={resultRevealed && !taken ? lastWinner : null}
+      />
+      <PanelDisplay
+        selectedValue={selectedValue}
+        onSelect={handlePanelSelect}
+        disabled={clickLocked}
+      />
+      <ButtonDisplay
+        onAction={handleButtonAction}
+        hasBets={totalBet > 0}
+        disabled={clickLocked}
+        takeGlow={takePending}
+        submitted={submitted}
+      />
 
       {/* <ExitConfirmModal
         open={showExitConfirm}
