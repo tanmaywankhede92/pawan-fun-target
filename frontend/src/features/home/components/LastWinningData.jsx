@@ -12,7 +12,7 @@ import { useState, useEffect } from "react";
 import { resultService } from "@services/result.service";
 import { istSeconds } from "@utils/istTime";
 
-const LastWinningData = () => {
+const LastWinningData = ({ hidden = false }) => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
@@ -46,6 +46,8 @@ const LastWinningData = () => {
       clearInterval(id);
     };
   }, []);
+
+  if (hidden) return null;
 
   return (
     <div

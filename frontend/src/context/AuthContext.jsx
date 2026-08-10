@@ -1,4 +1,4 @@
-import { createContext, useReducer, useEffect, useCallback } from 'react';
+import { createContext, useReducer, useEffect, useCallback, useRef } from 'react';
 import { authService } from '@services/auth.service';
 import { STORAGE_KEYS } from '@constants';
 
@@ -53,6 +53,8 @@ const authReducer = (state, action) => {
 
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const userRef = useRef(state.user);
+  userRef.current = state.user;
 
   const login = useCallback(async (credentials) => {
     try {
@@ -81,6 +83,27 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'AUTH_SUCCESS', payload: { user } });
   }, []);
 
+  // Fetch the latest balance from the backend and sync it into the
+  // stored user object. Stable identity (no state.user dep) so callers
+  // never re-run effects; only dispatches when balance actually changed.
+  const refreshBalance = useCallback(async () => {
+    const username = userRef.current?.username;
+    if (!username) return null;
+    try {
+      const { data } = await authService.getBalance(username);
+      const newBalance = data?.data?.balance;
+      const current = userRef.current;
+      if (newBalance != null && current && newBalance !== current.balance) {
+        const updated = { ...current, balance: newBalance };
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updated));
+        dispatch({ type: 'AUTH_SUCCESS', payload: { user: updated } });
+      }
+      return newBalance;
+    } catch {
+      return null;
+    }
+  }, []);
+
   useEffect(() => {
     const handleForceLogout = () => {
       localStorage.removeItem(STORAGE_KEYS.USER);
@@ -91,7 +114,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, setAuth }}>
+    <AuthContext.Provider value={{ ...state, login, logout, setAuth, refreshBalance }}>
       {children}
     </AuthContext.Provider>
   );

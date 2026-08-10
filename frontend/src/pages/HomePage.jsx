@@ -32,13 +32,14 @@ import { useSound } from "@hooks/useSound";
 const DEBUG = false;
 
 const HomePage = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshBalance } = useAuth();
   const navigate = useNavigate();
   const { play, playBgm } = useSound();
   // const [showExitConfirm, setShowExitConfirm] = useState(false); // exit overlay disabled
   const [time, setTime] = useState(() => secondsToNextMinute(istSeconds()));
   const prevSec = useRef(istSeconds());
   const [spinCount, setSpinCount] = useState(0);
+  const [wheelSpinning, setWheelSpinning] = useState(false);
   const [lastWinner, setLastWinner] = useState(null);
   const [resultError, setResultError] = useState(false);
   const [selectedValue, setSelectedValue] = useState(10);
@@ -87,6 +88,7 @@ const HomePage = () => {
 
   useEffect(() => {
     let mounted = true;
+    refreshBalance();
     const load = async () => {
       try {
         const { data } = await resultService.getCurrentResult();
@@ -104,22 +106,24 @@ const HomePage = () => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [refreshBalance]);
 
   // Sync countdown to IST minute boundary; at :00 fetch the fresh
-  // result. No local/random fallback — on failure show an error.
+  // result + balance. No local/random fallback — on failure show an error.
   const handleNewMinute = useCallback(async () => {
+    refreshBalance();
     try {
       const { data } = await resultService.getCurrentResult();
       const r = data?.result?.[0];
       if (!r) throw new Error("no result");
       setLastWinner(Number(r.result) % 10);
       setResultError(false);
+      setWheelSpinning(true);
       setSpinCount((c) => c + 1);
     } catch {
       setResultError(true);
     }
-  }, []);
+  }, [refreshBalance]);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -135,6 +139,7 @@ const HomePage = () => {
 
   const handleSpinComplete = useCallback((winner) => {
     setLastWinner(winner);
+    setWheelSpinning(false);
   }, []);
 
   useEffect(() => {
@@ -187,7 +192,7 @@ const HomePage = () => {
           Result load failed. Try again next minute.
         </div>
       )}
-      <LastWinningData />
+      <LastWinningData hidden={wheelSpinning} />
       <NumberDisplay bets={bets} onBet={handleBet} />
       <PanelDisplay selectedValue={selectedValue} onSelect={handlePanelSelect} />
       <ButtonDisplay onAction={handleButtonAction} />
