@@ -6,7 +6,7 @@ const POS = {
   fontSize: "clamp(8px, 2vw, 26px)",
 };
 
-const WinnerDisplay = () => {
+const WinnerDisplay = ({ winner }) => {
   return (
     <div
       className="absolute pointer-events-none text-gray-900 flex items-center text-center justify-center"
@@ -20,7 +20,7 @@ const WinnerDisplay = () => {
         fontWeight: 700,
       }}
     >
-      90
+      {winner ?? ""}
     </div>
   );
 };

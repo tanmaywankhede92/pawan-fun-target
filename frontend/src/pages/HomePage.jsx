@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@hooks/useAuth";
+import { resultService } from "@services/result.service";
 import HomeOverlay from "@features/home/components/HomeOverlay";
 import HomeBackground from "@features/home/components/HomeBackground";
 import ScoreDisplay, { scorePos } from "@features/home/components/ScoreDisplay";
@@ -29,14 +30,28 @@ import { useSound } from "@hooks/useSound";
 
 const DEBUG = false;
 
+// Real-world Indian time (IST = UTC+5:30). Results are published
+// every minute at HH:MM:00 by the backend, so the game timer is
+// synced to the IST minute boundary.
+const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
+
+const istSeconds = () => {
+  const d = new Date(Date.now() + IST_OFFSET_MS);
+  return d.getUTCSeconds();
+};
+
+const secondsToNextMinute = (s) => (s === 0 ? 0 : 60 - s);
+
 const HomePage = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { play, playBgm } = useSound();
   // const [showExitConfirm, setShowExitConfirm] = useState(false); // exit overlay disabled
-  const [time, setTime] = useState(60);
+  const [time, setTime] = useState(() => secondsToNextMinute(istSeconds()));
+  const prevSec = useRef(istSeconds());
   const [spinCount, setSpinCount] = useState(0);
   const [lastWinner, setLastWinner] = useState(null);
+  const [resultError, setResultError] = useState(false);
   const [selectedValue, setSelectedValue] = useState(10);
   const [bets, setBets] = useState({});
 
@@ -82,14 +97,52 @@ const HomePage = () => {
   // }, []);
 
   useEffect(() => {
-    if (time === 0) {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const { data } = await resultService.getCurrentResult();
+        const r = data?.result?.[0];
+        if (!r) throw new Error("no result");
+        if (mounted) {
+          setLastWinner(Number(r.result) % 10);
+          setResultError(false);
+        }
+      } catch {
+        if (mounted) setResultError(true);
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Sync countdown to IST minute boundary; at :00 fetch the fresh
+  // result. No local/random fallback — on failure show an error.
+  const handleNewMinute = useCallback(async () => {
+    try {
+      const { data } = await resultService.getCurrentResult();
+      const r = data?.result?.[0];
+      if (!r) throw new Error("no result");
+      setLastWinner(Number(r.result) % 10);
+      setResultError(false);
       setSpinCount((c) => c + 1);
-      setTime(60);
-      return;
+    } catch {
+      setResultError(true);
     }
-    const id = setTimeout(() => setTime((t) => t - 1), 1000);
-    return () => clearTimeout(id);
-  }, [time]);
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const s = istSeconds();
+      setTime(secondsToNextMinute(s));
+      if (s === 0 && prevSec.current === 59) {
+        handleNewMinute();
+      }
+      prevSec.current = s;
+    }, 250);
+    return () => clearInterval(id);
+  }, [handleNewMinute]);
 
   const handleSpinComplete = useCallback((winner) => {
     setLastWinner(winner);
@@ -120,11 +173,31 @@ const HomePage = () => {
 
       <ScoreDisplay score={Math.max(0, (user?.balance || 0) - totalBet)} />
       <TotalBetDisplay total={totalBet} />
-      <WinnerDisplay winner={user?.username || "Player"} />
+      <WinnerDisplay winner={lastWinner} />
       <TimerDisplay time={time} />
       <TimerDisplayGif time={time} />
       <GifDisplay />
-      <WheelDisplay spinTrigger={spinCount} onComplete={handleSpinComplete} />
+      <WheelDisplay
+        spinTrigger={spinCount}
+        targetWinner={lastWinner}
+        onComplete={handleSpinComplete}
+      />
+      {resultError && (
+        <div
+          className="absolute pointer-events-none text-red-600 text-center z-40"
+          style={{
+            left: "50%",
+            top: "62%",
+            transform: "translateX(-50%)",
+            fontSize: "clamp(10px, 2vw, 24px)",
+            fontFamily: '"Times New Roman", serif',
+            fontWeight: 700,
+            textShadow: "0 0 4px #fff, 0 0 8px #fff",
+          }}
+        >
+          Result load failed. Try again next minute.
+        </div>
+      )}
       <LastWinningData />
       <NumberDisplay bets={bets} onBet={handleBet} />
       <PanelDisplay selectedValue={selectedValue} onSelect={handlePanelSelect} />

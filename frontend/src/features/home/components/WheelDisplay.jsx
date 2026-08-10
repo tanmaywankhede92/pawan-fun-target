@@ -38,11 +38,19 @@ const SECTOR_ANGLE = 360 / SECTORS;
 const MIN_SPINS = 5;
 const MAX_SPINS = 8;
 
-const randomWinner = () => Math.floor(Math.random() * SECTORS);
+// 0 is at the top at rest and numbers run COUNTERCLOCKWISE (1 is left
+// of 0). To bring result W under the pointer, rotate clockwise by
+// (360 - W * SECTOR_ANGLE).
+// Debug tuning: ?align=36 / ?align=-36 in the URL shifts the landing
+// spot in degrees, so it can be tested without a rebuild.
+const ALIGN_OFFSET = Number(
+  new URLSearchParams(window.location.search).get("align") || 0,
+);
 
-const calcTargetAngle = (winner) => 360 - winner * SECTOR_ANGLE;
+const calcTargetAngle = (winner) =>
+  ((360 - winner * SECTOR_ANGLE + ALIGN_OFFSET) % 360 + 360) % 360;
 
-const WheelDisplay = ({ spinTrigger, onComplete }) => {
+const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState(null);
@@ -64,9 +72,11 @@ const WheelDisplay = ({ spinTrigger, onComplete }) => {
     if (spinTrigger === prevTrigger.current) return;
     prevTrigger.current = spinTrigger;
 
+    if (targetWinner == null) return;
+
     play("SPIN");
 
-    const w = randomWinner();
+    const w = targetWinner;
     setWinner(w);
     setResultJoker(null);
 
@@ -78,7 +88,7 @@ const WheelDisplay = ({ spinTrigger, onComplete }) => {
 
     setSpinning(true);
     setRotation((prev) => prev + total);
-  }, [spinTrigger, play]);
+  }, [spinTrigger, play, targetWinner]);
 
   const showGif = spinning;
 
