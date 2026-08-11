@@ -228,6 +228,8 @@ const HomePage = () => {
       if (clickLocked && id !== "exit" && id !== "takeBet") return;
       // While a winning Take is pending, only Take works.
       if (takePending && id !== "takeBet") return;
+      // Once a bet is accepted, nothing works until the result arrives.
+      if (submitted && !resultRevealed) return;
       // Cancel All clears every placed bet.
       // Once the bet is accepted, bets can no longer be cancelled.
       if (submitted && (id === "cancelAll" || id === "cancelSpecific")) {
@@ -493,12 +495,12 @@ const HomePage = () => {
       <PanelDisplay
         selectedValue={selectedValue}
         onSelect={handlePanelSelect}
-        disabled={clickLocked || takePending}
+        disabled={clickLocked || takePending || (submitted && !resultRevealed)}
       />
       <ButtonDisplay
         onAction={handleButtonAction}
         hasBets={totalBet > 0}
-        disabled={clickLocked}
+        disabled={clickLocked || (submitted && !resultRevealed)}
         takeGlow={takePending}
         takeLock={takePending}
         submitted={submitted}
