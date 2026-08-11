@@ -1,12 +1,12 @@
-import p10 from "@assets/images/panels/10.png";
+import p10 from "@assets/images/panels/10.webp";
 import { useSound } from "@hooks/useSound";
-import p20 from "@assets/images/panels/20.png";
-import p50 from "@assets/images/panels/50.png";
-import p100 from "@assets/images/panels/100.png";
-import p200 from "@assets/images/panels/200.png";
-import p500 from "@assets/images/panels/500.png";
-import p1000 from "@assets/images/panels/1000.png";
-import p5000 from "@assets/images/panels/5000.png";
+import p20 from "@assets/images/panels/20.webp";
+import p50 from "@assets/images/panels/50.webp";
+import p100 from "@assets/images/panels/100.webp";
+import p200 from "@assets/images/panels/200.webp";
+import p500 from "@assets/images/panels/500.webp";
+import p1000 from "@assets/images/panels/1000.webp";
+import p5000 from "@assets/images/panels/5000.webp";
 
 const IMAGES = {
   10: p10,

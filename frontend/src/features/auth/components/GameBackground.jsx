@@ -1,4 +1,4 @@
-import loginBg from "@assets/images/login/login-bg.png";
+import loginBg from "@assets/images/login/login-bg.webp";
 
 const GameBackground = () => {
   return (

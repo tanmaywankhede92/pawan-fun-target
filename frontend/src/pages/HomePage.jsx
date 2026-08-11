@@ -80,6 +80,12 @@ const HomePage = () => {
   const handleBet = useCallback(
     (num) => {
       if (selectedValue === null) return;
+      // Once a bet is accepted, no further bets until the result arrives.
+      if (submitted && !resultRevealed) {
+        manualMsg.current = true;
+        setGameMessage("Bet already accepted. Wait for the result.");
+        return;
+      }
       // Cancel-specific mode: clicking a number cancels only that bet.
       if (cancelMode) {
         setBets((prev) => {
@@ -108,7 +114,7 @@ const HomePage = () => {
       manualMsg.current = false;
       setGameMessage("Please Bet to Start Game. Minimum Bet = 20");
     },
-    [selectedValue, takePending, resultRevealed, cancelMode],
+    [selectedValue, takePending, resultRevealed, cancelMode, submitted],
   );
 
   const clearBets = useCallback(() => {
@@ -426,7 +432,7 @@ const HomePage = () => {
       <NumberDisplay
         bets={bets}
         onBet={handleBet}
-        disabled={clickLocked}
+        disabled={clickLocked || (submitted && !resultRevealed)}
         winnerBlink={resultRevealed && !taken ? lastWinner : null}
       />
       <PanelDisplay

@@ -1,4 +1,4 @@
-import FTlogoGif from "@assets/images/gifs/timerDisplay.gif";
+import FTlogoGif from "@assets/images/gifs/timerDisplay.webp";
 
 const POS = {
   left: "1.5%",

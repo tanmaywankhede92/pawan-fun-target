@@ -1,13 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSound } from "@hooks/useSound";
 import { istSeconds, secondsToNextMinute } from "@utils/istTime";
-import wheelImg from "@assets/images/wheel/wheel.png";
-import wheelGif from "@assets/images/gifs/joker_gif1.gif";
-import joker1 from "@assets/images/gifs/joker1.png";
-import joker2 from "@assets/images/gifs/joker2.png";
-import joker3 from "@assets/images/gifs/joker3.png";
-import joker4 from "@assets/images/gifs/joker4.png";
-import pointerGif from "@assets/images/gifs/DG.gif";
+import wheelImg from "@assets/images/wheel/wheel.webp";
+import wheelGif from "@assets/images/gifs/joker_gif1.webp";
+import joker1 from "@assets/images/gifs/joker1.webp";
+import joker2 from "@assets/images/gifs/joker2.webp";
+import joker3 from "@assets/images/gifs/joker3.webp";
+import joker4 from "@assets/images/gifs/joker4.webp";
+import pointerGif from "@assets/images/gifs/DG.webp";
 
 const POS = {
   left: "49%",

@@ -1,4 +1,4 @@
-import FTlogoGif from "@assets/images/gifs/FTlogo2.gif";
+import FTlogoGif from "@assets/images/gifs/FTlogo2.webp";
 
 const POS = {
   top: "40%",

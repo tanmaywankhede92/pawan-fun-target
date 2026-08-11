@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useSound } from "@hooks/useSound";
-import n0 from "@assets/images/numbers/0.png";
-import n1 from "@assets/images/numbers/1.png";
-import n2 from "@assets/images/numbers/2.png";
-import n3 from "@assets/images/numbers/3.png";
-import n4 from "@assets/images/numbers/4.png";
-import n5 from "@assets/images/numbers/5.png";
-import n6 from "@assets/images/numbers/6.png";
-import n7 from "@assets/images/numbers/7.png";
-import n8 from "@assets/images/numbers/8.png";
-import n9 from "@assets/images/numbers/9.png";
+import n0 from "@assets/images/numbers/0.webp";
+import n1 from "@assets/images/numbers/1.webp";
+import n2 from "@assets/images/numbers/2.webp";
+import n3 from "@assets/images/numbers/3.webp";
+import n4 from "@assets/images/numbers/4.webp";
+import n5 from "@assets/images/numbers/5.webp";
+import n6 from "@assets/images/numbers/6.webp";
+import n7 from "@assets/images/numbers/7.webp";
+import n8 from "@assets/images/numbers/8.webp";
+import n9 from "@assets/images/numbers/9.webp";
 
 const IMAGES = {
   0: n0,

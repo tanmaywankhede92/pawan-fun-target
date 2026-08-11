@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import wheelImg from "@assets/images/wheel/wheel.png";
+import wheelImg from "@assets/images/wheel/wheel.webp";
 import { useSound } from "@hooks/useSound";
 
 const STEPS = [

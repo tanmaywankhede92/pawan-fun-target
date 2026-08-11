@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import prevImg from "@assets/images/background/prevImg.jpeg";
+import prevImg from "@assets/images/background/prevImg.webp";
 
 const SPLASH_MS = 2000;
 
