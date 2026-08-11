@@ -421,11 +421,18 @@ const HomePage = () => {
           username: user?.username || "",
         });
         const amount = Number(data?.data?.win_amount || 0);
-        setWinInfo(data?.data || null);
         manualMsg.current = true;
-        setGameMessage(
-          amount > 0 ? `You Won Rs. ${amount}` : "No winning amount this draw",
-        );
+        if (amount > 0) {
+          setWinInfo(data?.data || null);
+          setGameMessage(`You Won Rs. ${amount}`);
+        } else {
+          // No win this draw -> clear the placed bets automatically.
+          setWinInfo(null);
+          setWon(false);
+          setBets({});
+          setSubmitted(false);
+          setGameMessage("No winning amount this draw");
+        }
       } catch {
         setWinInfo(null);
         manualMsg.current = true;
