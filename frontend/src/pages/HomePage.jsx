@@ -69,7 +69,8 @@ const HomePage = () => {
   // Betting lock: last 12 seconds of the minute + while the wheel is spinning.
   const clickLocked = wheelSpinning || (time <= 12 && time > 0);
 
-  // Take enabled only when the user bet on the winning number.
+  // Take appears only when there is a WINNING result on the board. No timer
+  // condition — the user can Take any time (even in the last seconds).
   const takePending = resultRevealed && !taken && won;
 
   const handlePanelSelect = useCallback((value) => {
@@ -81,13 +82,12 @@ const HomePage = () => {
       if (selectedValue === null) return;
       // Cancel-specific mode: clicking a number cancels only that bet.
       if (cancelMode) {
-        if (bets[num]) {
-          const next = { ...bets };
+        setBets((prev) => {
+          if (!prev[num]) return prev;
+          const next = { ...prev };
           delete next[num];
-          setBets(next);
-          // Auto-exit cancel mode once the last bet is cancelled.
-          if (!Object.keys(next).length) setCancelMode(false);
-        }
+          return next;
+        });
         return;
       }
       // If a winning bet is pending, must take before placing new bets.
@@ -104,6 +104,9 @@ const HomePage = () => {
         setSubmitted(false);
       }
       setBets((prev) => ({ ...prev, [num]: (prev[num] || 0) + selectedValue }));
+      // New bet resets the prompt so a stale message never lingers.
+      manualMsg.current = false;
+      setGameMessage("Please Bet to Start Game. Minimum Bet = 20");
     },
     [selectedValue, takePending, resultRevealed, cancelMode],
   );
@@ -111,6 +114,11 @@ const HomePage = () => {
   const clearBets = useCallback(() => {
     setBets({});
   }, []);
+
+  // Auto-exit cancel mode once the last bet is cancelled.
+  useEffect(() => {
+    if (cancelMode && totalBet === 0) setCancelMode(false);
+  }, [cancelMode, totalBet]);
 
   // Place the bet via the backend. Ticket = "num-amount" pairs.
   const handlePlaceBet = useCallback(async () => {
@@ -180,13 +188,15 @@ const HomePage = () => {
     }
     if (time > 0 && !autoSubmitted.current) {
       autoSubmitted.current = true;
-      if (!submitted && totalBet > 0) {
+      // Never auto-place while a winning Take is pending — the old bets
+      // must not be resubmitted for the next draw.
+      if (!submitted && totalBet > 0 && !takePending) {
         manualMsg.current = true;
         setGameMessage("Your Bet has been Accepted");
         handlePlaceBet();
       }
     }
-  }, [time, totalBet, handlePlaceBet, submitted]);
+  }, [time, totalBet, handlePlaceBet, submitted, takePending]);
 
   // Phase message:
   //   last 10 sec      -> "Bet Time over"
@@ -209,10 +219,15 @@ const HomePage = () => {
     async (id) => {
       if (clickLocked && id !== "exit" && id !== "takeBet") return;
       // Cancel All clears every placed bet.
+      // Once the bet is accepted, bets can no longer be cancelled.
+      if (submitted && (id === "cancelAll" || id === "cancelSpecific")) {
+        manualMsg.current = true;
+        setGameMessage("Bet already accepted. Cannot cancel.");
+        return;
+      }
       if (id === "cancelAll") {
         clearBets();
         setCancelMode(false);
-        if (submitted) setSubmitted(false);
       }
       // Cancel Specific toggles cancel mode: clicking a number removes
       // only that number's bet.
@@ -254,7 +269,7 @@ const HomePage = () => {
           setGameMessage("Failed to load last bet");
         }
       }
-      // take: claim winnings -> clear placed bets, stop the blinking
+      // take: claim winnings -> sync balance from backend, then clear bets
       if (id === "takeBet") {
         if (!takePending) return;
         setTaken(true);
@@ -262,8 +277,15 @@ const HomePage = () => {
         setWon(false);
         setSubmitted(false);
         setCancelMode(false);
+        // Balance (winnings included) comes from the backend.
+        const newBalance = await refreshBalance();
         clearBets();
-        refreshBalance();
+        manualMsg.current = true;
+        setGameMessage(
+          newBalance != null
+            ? `Winnings credited. Balance: ${newBalance}`
+            : "Winnings credited.",
+        );
       }
       // exit overlay disabled - exit directly logs out to login page
       if (id === "exit") {

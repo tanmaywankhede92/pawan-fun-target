@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSound } from "@hooks/useSound";
+import { istSeconds, secondsToNextMinute } from "@utils/istTime";
 import wheelImg from "@assets/images/wheel/wheel.png";
 import wheelGif from "@assets/images/gifs/joker_gif1.gif";
 import joker1 from "@assets/images/gifs/joker1.png";
@@ -9,9 +10,9 @@ import joker4 from "@assets/images/gifs/joker4.png";
 import pointerGif from "@assets/images/gifs/DG.gif";
 
 const POS = {
-  left: "50%",
-  top: "37.5%",
-  width: "min(clamp(256px, 56%, 580px),79vh)",
+  left: "49%",
+  top: "39%",
+  width: "min(clamp(256px, 56%, 580px),78vh)",
 };
 
 const OVERLAY_POS = {
@@ -38,23 +39,8 @@ const SECTOR_ANGLE = 360 / SECTORS;
 const MIN_SPINS = 5;
 const MAX_SPINS = 8;
 
-// ============================================================
-// WHEEL ALIGNMENT
-// Backend result is the ONLY source of truth. The wheel never
-// generates a winner by itself.
-//
-// Layout (verified against the wheel asset): with rotation = 0 the
-// number under the fixed top pointer is 0, and the numbers run
-// CLOCKWISE as 0,1,2,3,4,5,6,7,8,9. Each sector is 36°.
-//
-// Rest angles (rotation mod 360) that put each result under the
-// pointer:
-//   0 -> 0°,   1 -> 324°,  2 -> 288°,  3 -> 252°,  4 -> 216°,
-//   5 -> 180°, 6 -> 144°,  7 -> 108°,  8 -> 72°,   9 -> 36°
 const angleFor = (w) => ((SECTORS - w) % SECTORS) * SECTOR_ANGLE;
 
-// Single calibration constant for the whole wheel (never per-number).
-// ?align=36 / ?align=-36 in the URL tunes it without a rebuild.
 const ALIGN_OFFSET = Number(
   new URLSearchParams(window.location.search).get("align") || 0,
 );
@@ -70,6 +56,9 @@ const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
   const rotationRef = useRef(0);
   const prevTrigger = useRef(spinTrigger);
   const initializedRef = useRef(false);
+  const targetRotationRef = useRef(0);
+  const spinningRef = useRef(false);
+  const winnerRef = useRef(null);
   const { play, stop } = useSound();
 
   const setRotationTracked = useCallback((r) => {
@@ -86,6 +75,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
     if (targetWinner == null) return;
     initializedRef.current = true;
     setWinner(targetWinner);
+    winnerRef.current = targetWinner;
     setResultJoker(randomJoker());
     setRotationTracked(angleFor(targetWinner) + ALIGN_OFFSET);
     setReady(true);
@@ -103,21 +93,25 @@ const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
 
     const w = targetWinner;
     setWinner(w);
+    winnerRef.current = w;
     setResultJoker(null);
 
     const targetRest = angleFor(w) + ALIGN_OFFSET;
     const currentMod = ((rotationRef.current % 360) + 360) % 360;
-    const delta = ((targetRest - currentMod) % 360 + 360) % 360;
+    const delta = (((targetRest - currentMod) % 360) + 360) % 360;
     const fullSpins =
       (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
       360;
 
     play("SPIN");
     setSpinning(true);
-    setRotationTracked(rotationRef.current + fullSpins + delta);
+    spinningRef.current = true;
+    targetRotationRef.current = rotationRef.current + fullSpins + delta;
+    setRotationTracked(targetRotationRef.current);
   }, [spinTrigger, targetWinner, play, setRotationTracked]);
 
   const handleTransitionEnd = useCallback(() => {
+    spinningRef.current = false;
     setSpinning(false);
     setResultJoker(randomJoker());
     stop("SPIN");
@@ -126,6 +120,30 @@ const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
       onComplete(winner); // the SAME backend result that targeted the spin
     }
   }, [winner, onComplete, play, stop]);
+
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!spinningRef.current) return;
+      // Only snap when the draw is already over (the user was away through
+      // the whole spin). If they return within the spin window, let the
+      // animation resume normally — the active-tab experience is unchanged.
+      if (secondsToNextMinute(istSeconds()) > 55) return;
+      spinningRef.current = false;
+      setRotationTracked(targetRotationRef.current);
+      setSpinning(false);
+      setResultJoker(randomJoker());
+      stop("SPIN");
+      play("WIN");
+      if (winnerRef.current !== null && onComplete) {
+        onComplete(winnerRef.current);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [onComplete, play, stop, setRotationTracked]);
 
   if (!ready) return null;
 
