@@ -61,6 +61,7 @@ const HomePage = () => {
     "Please Bet to Start Game. Minimum Bet = 20",
   );
   const [cancelMode, setCancelMode] = useState(false);
+    const [winInfo, setWinInfo] = useState(null);
   const manualMsg = useRef(false);
   const autoSubmitted = useRef(false);
 
@@ -108,6 +109,7 @@ const HomePage = () => {
         setBets({});
         setResultRevealed(false);
         setSubmitted(false);
+        setWinInfo(null);
       }
       setBets((prev) => ({ ...prev, [num]: (prev[num] || 0) + selectedValue }));
       // New bet resets the prompt so a stale message never lingers.
@@ -224,6 +226,8 @@ const HomePage = () => {
   const handleButtonAction = useCallback(
     async (id) => {
       if (clickLocked && id !== "exit" && id !== "takeBet") return;
+      // While a winning Take is pending, only Take works.
+      if (takePending && id !== "takeBet") return;
       // Cancel All clears every placed bet.
       // Once the bet is accepted, bets can no longer be cancelled.
       if (submitted && (id === "cancelAll" || id === "cancelSpecific")) {
@@ -275,23 +279,57 @@ const HomePage = () => {
           setGameMessage("Failed to load last bet");
         }
       }
-      // take: claim winnings -> sync balance from backend, then clear bets
+      // take: claim winnings via the backend -> sync balance -> clear bets
       if (id === "takeBet") {
         if (!takePending) return;
-        setTaken(true);
-        setResultRevealed(false);
-        setWon(false);
-        setSubmitted(false);
-        setCancelMode(false);
-        // Balance (winnings included) comes from the backend.
-        const newBalance = await refreshBalance();
-        clearBets();
-        manualMsg.current = true;
-        setGameMessage(
-          newBalance != null
-            ? `Winnings credited. Balance: ${newBalance}`
-            : "Winnings credited.",
-        );
+        // Ensure we have the winning record before claiming.
+        let info = winInfo;
+        if (!info?.barcode) {
+          try {
+            const res = await recordService.winAmount({
+              username: user?.username || "",
+            });
+            info = res?.data?.data || null;
+          } catch {
+            info = null;
+          }
+        }
+        if (!info?.barcode) {
+          manualMsg.current = true;
+          setGameMessage("Could not claim winnings. Try again.");
+          return;
+        }
+        try {
+          const { data } = await recordService.take({
+            username: user?.username || "",
+            win_amount: info.win_amount,
+            barcode: info.barcode,
+            id: info.id,
+          });
+          if (data?.success === false) {
+            manualMsg.current = true;
+            setGameMessage(data?.message || "Take failed. Try again.");
+            return;
+          }
+          setTaken(true);
+          setResultRevealed(false);
+          setWon(false);
+          setSubmitted(false);
+          setCancelMode(false);
+          setWinInfo(null);
+          // Balance (winnings included) comes from the backend.
+          const newBalance = await refreshBalance();
+          clearBets();
+          manualMsg.current = true;
+          setGameMessage(
+            newBalance != null
+              ? `Winnings credited. Balance: ${newBalance}`
+              : "Winnings credited.",
+          );
+        } catch {
+          manualMsg.current = true;
+          setGameMessage("Take failed. Try again.");
+        }
       }
       // exit overlay disabled - exit directly logs out to login page
       if (id === "exit") {
@@ -299,7 +337,7 @@ const HomePage = () => {
         navigate("/login", { replace: true });
       }
     },
-    [clearBets, handlePlaceBet, totalBet, logout, navigate, clickLocked, refreshBalance, takePending, submitted],
+    [clearBets, handlePlaceBet, totalBet, logout, navigate, clickLocked, refreshBalance, takePending, submitted, winInfo],
   );
 
   // exit overlay disabled
@@ -367,15 +405,32 @@ const HomePage = () => {
   }, [handleNewMinute]);
 
   const handleSpinComplete = useCallback(
-    (winner) => {
+    async (winner) => {
       setLastWinner(winner);
       setWheelSpinning(false);
       setResultRevealed(true);
       // Won only if a bet was placed on the winning number.
       setWon(Number(bets[winner] || 0) > 0);
       setTaken(false);
+      // Winning amount only shows when a bet was placed this round.
+      if (totalBet <= 0) return;
+      try {
+        const { data } = await recordService.winAmount({
+          username: user?.username || "",
+        });
+        const amount = Number(data?.data?.win_amount || 0);
+        setWinInfo(data?.data || null);
+        manualMsg.current = true;
+        setGameMessage(
+          amount > 0 ? `You Won Rs. ${amount}` : "No winning amount this draw",
+        );
+      } catch {
+        setWinInfo(null);
+        manualMsg.current = true;
+        setGameMessage("Failed to load winning amount");
+      }
     },
-    [bets],
+    [bets, totalBet, user],
   );
 
   useEffect(() => {
@@ -403,7 +458,7 @@ const HomePage = () => {
 
       <ScoreDisplay score={Math.max(0, user?.balance || 0)} />
       <TotalBetDisplay total={totalBet} />
-      <WinnerDisplay winner={lastWinner} />
+      <WinnerDisplay winner={lastWinner} winAmount={winInfo?.win_amount} />
       <TimerDisplay time={time} />
       <TimerDisplayGif time={time} />
       <GifDisplay />
@@ -432,19 +487,20 @@ const HomePage = () => {
       <NumberDisplay
         bets={bets}
         onBet={handleBet}
-        disabled={clickLocked || (submitted && !resultRevealed)}
+        disabled={clickLocked || takePending || (submitted && !resultRevealed)}
         winnerBlink={resultRevealed && !taken ? lastWinner : null}
       />
       <PanelDisplay
         selectedValue={selectedValue}
         onSelect={handlePanelSelect}
-        disabled={clickLocked}
+        disabled={clickLocked || takePending}
       />
       <ButtonDisplay
         onAction={handleButtonAction}
         hasBets={totalBet > 0}
         disabled={clickLocked}
         takeGlow={takePending}
+        takeLock={takePending}
         submitted={submitted}
         cancelMode={cancelMode}
       />

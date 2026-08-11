@@ -97,7 +97,7 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
         const { box } = NUMBER_CONFIG[num];
         const betBox = BET_BOX_CONFIG[num];
         const img = IMAGES[num];
-        const isHovered = hoveredNum === num;
+        const isHovered = !disabled && hoveredNum === num;
         const bet = bets[num] || 0;
         const isWinner = winnerBlink === num;
 

@@ -64,6 +64,7 @@ const ButtonDisplay = ({
   takeGlow = false,
   submitted = false,
   cancelMode = false,
+  takeLock = false,
 }) => {
   const [hovered, setHovered] = useState(null);
   const { play } = useSound();
@@ -76,7 +77,7 @@ const ButtonDisplay = ({
     isPreview(btn) || isCancelAll(btn) || isCancelSpecific(btn);
 
   const handleClick = (btn) => {
-    if (disabled) return;
+    if (disabled || (takeLock && !isTake(btn))) return;
     play(btn.sound || "CLICK");
     if (onAction) onAction(btn.id);
   };
@@ -84,7 +85,10 @@ const ButtonDisplay = ({
   return (
     <>
       {BUTTONS.map((btn) => {
-        const isHovered = hovered === btn.id;
+        // While a winning Take is pending, every button locks except Take:
+        // no hover, no glow, no click.
+        const btnLocked = disabled || (takeLock && !isTake(btn));
+        const isHovered = !btnLocked && hovered === btn.id;
         const name = isPreview(btn) ? (hasBets ? "OK Bet" : "Prev") : btn.name;
         // Cancel All + Cancel Specific blink while bets are pending (not yet
         // accepted), but only when cancel-specific mode is off.
@@ -106,7 +110,9 @@ const ButtonDisplay = ({
               width: btn.box.width,
               height: btn.box.height,
             }}
-            onMouseEnter={() => setHovered(btn.id)}
+            onMouseEnter={() => {
+              if (!btnLocked) setHovered(btn.id);
+            }}
             onMouseLeave={() => setHovered(null)}
             onClick={() => handleClick(btn)}
           >

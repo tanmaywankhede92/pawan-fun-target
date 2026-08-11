@@ -6,7 +6,7 @@ const POS = {
   fontSize: "clamp(8px, 2vw, 26px)",
 };
 
-const WinnerDisplay = ({ winner }) => {
+const WinnerDisplay = ({ winner, winAmount }) => {
   return (
     <div
       className="absolute pointer-events-none text-gray-900 flex items-center text-center justify-center"
@@ -20,8 +20,7 @@ const WinnerDisplay = ({ winner }) => {
         fontWeight: 700,
       }}
     >
-      {/* {winner ?? ""} */}
-      00
+      {winAmount != null ? `Rs. ${winAmount}` : "0"}
     </div>
   );
 };
