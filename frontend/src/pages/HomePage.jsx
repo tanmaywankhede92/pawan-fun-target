@@ -60,6 +60,7 @@ const HomePage = () => {
   const [gameMessage, setGameMessage] = useState(
     "Please Bet to Start Game. Minimum Bet = 20",
   );
+  const [cancelMode, setCancelMode] = useState(false);
   const manualMsg = useRef(false);
   const autoSubmitted = useRef(false);
 
@@ -78,6 +79,17 @@ const HomePage = () => {
   const handleBet = useCallback(
     (num) => {
       if (selectedValue === null) return;
+      // Cancel-specific mode: clicking a number cancels only that bet.
+      if (cancelMode) {
+        if (bets[num]) {
+          const next = { ...bets };
+          delete next[num];
+          setBets(next);
+          // Auto-exit cancel mode once the last bet is cancelled.
+          if (!Object.keys(next).length) setCancelMode(false);
+        }
+        return;
+      }
       // If a winning bet is pending, must take before placing new bets.
       if (takePending) {
         manualMsg.current = true;
@@ -93,7 +105,7 @@ const HomePage = () => {
       }
       setBets((prev) => ({ ...prev, [num]: (prev[num] || 0) + selectedValue }));
     },
-    [selectedValue, takePending, resultRevealed],
+    [selectedValue, takePending, resultRevealed, cancelMode],
   );
 
   const clearBets = useCallback(() => {
@@ -147,6 +159,7 @@ const HomePage = () => {
         setGameMessage("Your Bet has been Accepted");
         // Keep showing the placed bets; they clear only on Take.
         setSubmitted(true);
+        setCancelMode(false);
         refreshBalance();
       } else {
         manualMsg.current = true;
@@ -195,7 +208,17 @@ const HomePage = () => {
   const handleButtonAction = useCallback(
     async (id) => {
       if (clickLocked && id !== "exit" && id !== "takeBet") return;
-      if (id === "cancelBet") clearBets();
+      // Cancel All clears every placed bet.
+      if (id === "cancelAll") {
+        clearBets();
+        setCancelMode(false);
+        if (submitted) setSubmitted(false);
+      }
+      // Cancel Specific toggles cancel mode: clicking a number removes
+      // only that number's bet.
+      if (id === "cancelSpecific") {
+        setCancelMode((m) => !m);
+      }
       // The button is "Prev" with no bets (loads last bet) and "OK Bet"
       // once a bet exists (places the bet).
       if (id === "preview" && !submitted && totalBet > 0) {
@@ -219,6 +242,7 @@ const HomePage = () => {
             setBets(parsed);
             setSubmitted(false);
             setResultRevealed(false);
+            setCancelMode(false);
             manualMsg.current = true;
             setGameMessage(`Last Bet Loaded. Ticket: ${rec.tck_result} | Total: ${rec.amt}`);
           } else {
@@ -237,6 +261,7 @@ const HomePage = () => {
         setResultRevealed(false);
         setWon(false);
         setSubmitted(false);
+        setCancelMode(false);
         clearBets();
         refreshBalance();
       }
@@ -393,6 +418,7 @@ const HomePage = () => {
         disabled={clickLocked}
         takeGlow={takePending}
         submitted={submitted}
+        cancelMode={cancelMode}
       />
       <MessageDisplay message={gameMessage} />
 

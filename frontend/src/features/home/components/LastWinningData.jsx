@@ -60,6 +60,7 @@ const LastWinningData = ({ hidden = false }) => {
         fontSize: POS.fontSize,
         fontWeight: POS.fontWeight,
         fontFamily: POS.fontFamily,
+        flexDirection: "row-reverse",
       }}
     >
       {data.map((num, i) => (

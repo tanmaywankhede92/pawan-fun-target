@@ -11,13 +11,13 @@ import exitBtn from "@assets/images/buttons/bet1.jpg";
 
 const BUTTONS = [
   {
-    id: "cancelBet",
-    name: "Cancel Bet",
+    id: "cancelAll",
+    name: "Cancel All",
     sound: "CANCEL",
     base: cancelBtn,
     glow: cancelBetGlow,
     zoom: 1.2,
-    box: { left: "20%", bottom: "12%", width: "15%", height: "23%" },
+    box: { left: "20%", bottom: "20%", width: "15%", height: "7%" },
   },
   {
     id: "takeBet",
@@ -35,7 +35,7 @@ const BUTTONS = [
     base: previewBtn,
     glow: previewGlow,
     zoom: 1.2,
-    box: { left: "85%", bottom: "21%", width: "16%", height: "5%" },
+    box: { left: "85%", bottom: "21%", width: "16%", height: "6%" },
   },
   {
     id: "exit",
@@ -46,19 +46,35 @@ const BUTTONS = [
     zoom: 1.2,
     box: { left: "90.8%", top: "95%", width: "9.5%", height: "5%" },
   },
+  {
+    id: "cancelSpecific",
+    name: "Cancel specific bet",
+    sound: "CANCEL",
+    base: cancelBtn,
+    glow: cancelBetGlow,
+    zoom: 1.2,
+    box: { left: "66%", bottom: "20%", width: "15%", height: "7%" },
+  },
 ];
 
-// Preview toggles to "OK Bet" once a bet exists; then it places the bet.
-// Cancel + OK Bet blink with their glow image while a bet is placed.
-// Take button glows once the result is revealed (takeGlow).
-const ButtonDisplay = ({ onAction, hasBets = false, disabled = false, takeGlow = false, submitted = false }) => {
+// Cancel All blinks while bets are pending. Cancel Specific glows only
+// while cancel mode is active (both never glow at the same time).
+const ButtonDisplay = ({
+  onAction,
+  hasBets = false,
+  disabled = false,
+  takeGlow = false,
+  submitted = false,
+  cancelMode = false,
+}) => {
   const [hovered, setHovered] = useState(null);
   const { play } = useSound();
 
   const isPreview = (btn) => btn.id === "preview";
-  const isCancel = (btn) => btn.id === "cancelBet";
+  const isCancelAll = (btn) => btn.id === "cancelAll";
+  const isCancelSpecific = (btn) => btn.id === "cancelSpecific";
   const isTake = (btn) => btn.id === "takeBet";
-  const isGlowButton = (btn) => isPreview(btn) || isCancel(btn);
+  const isGlowButton = (btn) => isPreview(btn) || isCancelAll(btn);
 
   const handleClick = (btn) => {
     if (disabled) return;
@@ -71,10 +87,13 @@ const ButtonDisplay = ({ onAction, hasBets = false, disabled = false, takeGlow =
       {BUTTONS.map((btn) => {
         const isHovered = hovered === btn.id;
         const name = isPreview(btn) ? (hasBets ? "OK Bet" : "Prev") : btn.name;
-        // Blink only while bets are pending (not yet accepted).
-        const blink = isGlowButton(btn) && hasBets && !submitted;
+        // Cancel All blinks while bets are pending (not yet accepted),
+        // but only when cancel-specific mode is off.
+        const blink = isGlowButton(btn) && hasBets && !submitted && !cancelMode;
+        // Cancel Specific glows while cancel mode is on.
+        const cancelModeGlow = isCancelSpecific(btn) && cancelMode;
         const takeBlink = isTake(btn) && takeGlow;
-        const showGlow = blink || takeBlink || isHovered;
+        const showGlow = blink || cancelModeGlow || takeBlink || isHovered;
 
         return (
           <div
@@ -112,7 +131,7 @@ const ButtonDisplay = ({ onAction, hasBets = false, disabled = false, takeGlow =
                 src={btn.glow}
                 alt={`${btn.name} glow`}
                 className={`absolute pointer-events-none ${
-                  blink || takeBlink ? "ft-blink" : ""
+                  blink || cancelModeGlow || takeBlink ? "ft-blink" : ""
                 }`}
                 style={{
                   width: `${btn.zoom * 100}%`,
