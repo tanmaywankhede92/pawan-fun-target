@@ -62,6 +62,7 @@ const PanelDisplay = ({ selectedValue, onSelect, disabled = false }) => {
           >
             {isSelected && img && (
               <img
+                decoding="async"
                 src={img}
                 alt={`panel-${value}`}
                 className="absolute inset-0 w-full h-full object-fill pointer-events-none"

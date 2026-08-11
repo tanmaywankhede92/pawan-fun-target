@@ -5,11 +5,13 @@ import 'react-toastify/dist/ReactToastify.css';
 import AppRoutes from '@routes/AppRoutes';
 import RotateDeviceOverlay from '@components/common/RotateDeviceOverlay';
 import SplashScreen from '@components/common/SplashScreen';
+import FullscreenHandler from '@components/common/FullscreenHandler';
 
 const App = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <FullscreenHandler />
         <AppRoutes />
         <SplashScreen />
         <RotateDeviceOverlay />

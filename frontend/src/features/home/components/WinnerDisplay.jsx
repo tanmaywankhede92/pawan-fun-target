@@ -20,7 +20,7 @@ const WinnerDisplay = ({ winner, winAmount }) => {
         fontWeight: 700,
       }}
     >
-      {winAmount != null ? `Rs. ${winAmount}` : "0"}
+      {winAmount != null ? ` ${winAmount}` : "0"}
     </div>
   );
 };

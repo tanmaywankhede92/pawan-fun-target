@@ -244,6 +244,7 @@ const GameLoadingOverlay = ({ canFinish, onDone }) => {
             >
               <img
                 ref={wheelRef}
+                decoding="async"
                 src={wheelImg}
                 alt="wheel"
                 className="w-full h-auto"

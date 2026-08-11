@@ -164,6 +164,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
     >
       <div className="relative w-full h-full">
         <img
+          decoding="async"
           src={wheelImg}
           alt="wheel"
           className="w-full h-auto"
@@ -179,6 +180,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
 
         {showGif && (
           <img
+            decoding="async"
             src={wheelGif}
             alt="wheel gif"
             className="absolute pointer-events-none z-10"
@@ -193,6 +195,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
 
         {!showGif && resultJoker && (
           <img
+            decoding="async"
             src={resultJoker}
             alt="joker result"
             className="absolute pointer-events-none z-20"
@@ -207,6 +210,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
         )}
 
         <img
+          decoding="async"
           src={pointerGif}
           alt="pointer"
           className="absolute pointer-events-none z-30"

@@ -61,7 +61,7 @@ const HomePage = () => {
     "Please Bet to Start Game. Minimum Bet = 20",
   );
   const [cancelMode, setCancelMode] = useState(false);
-    const [winInfo, setWinInfo] = useState(null);
+  const [winInfo, setWinInfo] = useState(null);
   const manualMsg = useRef(false);
   const autoSubmitted = useRef(false);
 
@@ -153,7 +153,9 @@ const HomePage = () => {
     const balance = user?.balance ?? 0;
     if (totalBet > balance) {
       manualMsg.current = true;
-      setGameMessage(`Insufficient balance. Total ${totalBet} > Balance ${balance}`);
+      setGameMessage(
+        `Insufficient balance. Total ${totalBet} > Balance ${balance}`,
+      );
       return;
     }
 
@@ -226,10 +228,11 @@ const HomePage = () => {
   const handleButtonAction = useCallback(
     async (id) => {
       if (clickLocked && id !== "exit" && id !== "takeBet") return;
-      // While a winning Take is pending, only Take works.
-      if (takePending && id !== "takeBet") return;
-      // Once a bet is accepted, nothing works until the result arrives.
-      if (submitted && !resultRevealed) return;
+      // While a winning Take is pending, only Take works (Exit always works).
+      if (takePending && id !== "takeBet" && id !== "exit") return;
+      // Once a bet is accepted, nothing works until the result arrives
+      // (Exit always works).
+      if (submitted && !resultRevealed && id !== "exit") return;
       // Cancel All clears every placed bet.
       // Once the bet is accepted, bets can no longer be cancelled.
       if (submitted && (id === "cancelAll" || id === "cancelSpecific")) {
@@ -270,8 +273,7 @@ const HomePage = () => {
             setSubmitted(false);
             setResultRevealed(false);
             setCancelMode(false);
-            manualMsg.current = true;
-            setGameMessage(`Last Bet Loaded. Ticket: ${rec.tck_result} | Total: ${rec.amt}`);
+            // No "loaded" message — the previous ticket just appears.
           } else {
             manualMsg.current = true;
             setGameMessage("No previous bet found");
@@ -320,14 +322,8 @@ const HomePage = () => {
           setCancelMode(false);
           setWinInfo(null);
           // Balance (winnings included) comes from the backend.
-          const newBalance = await refreshBalance();
+          await refreshBalance();
           clearBets();
-          manualMsg.current = true;
-          setGameMessage(
-            newBalance != null
-              ? `Winnings credited. Balance: ${newBalance}`
-              : "Winnings credited.",
-          );
         } catch {
           manualMsg.current = true;
           setGameMessage("Take failed. Try again.");
@@ -339,7 +335,18 @@ const HomePage = () => {
         navigate("/login", { replace: true });
       }
     },
-    [clearBets, handlePlaceBet, totalBet, logout, navigate, clickLocked, refreshBalance, takePending, submitted, winInfo],
+    [
+      clearBets,
+      handlePlaceBet,
+      totalBet,
+      logout,
+      navigate,
+      clickLocked,
+      refreshBalance,
+      takePending,
+      submitted,
+      winInfo,
+    ],
   );
 
   // exit overlay disabled

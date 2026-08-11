@@ -121,6 +121,7 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
             >
               {(isHovered || bet > 0 || isWinner) && img && (
                 <img
+                  decoding="async"
                   src={img}
                   alt={`number-${num}`}
                   className={`absolute inset-0 w-full h-full object-fill pointer-events-auto ${

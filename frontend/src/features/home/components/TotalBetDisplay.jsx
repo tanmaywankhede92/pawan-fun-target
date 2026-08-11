@@ -3,7 +3,7 @@ const POS = {
   top: "93.5%",
   width: "10%",
   height: "7%",
-  fontSize: "clamp(6px, 2.2vw, 26px)",
+  fontSize: "clamp(6px, 1.5vw, 26px)",
 };
 
 const TotalBetDisplay = ({ total = 0 }) => {

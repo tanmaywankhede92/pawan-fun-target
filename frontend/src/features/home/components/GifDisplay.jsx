@@ -9,6 +9,7 @@ const POS = {
 const GifDisplay = () => {
   return (
     <img
+      decoding="async"
       src={FTlogoGif}
       alt="celebration"
       className="absolute pointer-events-none"

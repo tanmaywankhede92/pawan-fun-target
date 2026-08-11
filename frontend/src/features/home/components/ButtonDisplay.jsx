@@ -53,7 +53,7 @@ const BUTTONS = [
     base: cancelBtn,
     glow: cancelBetGlow,
     zoom: 1.2,
-    box: { left: "66%", bottom: "21%", width: "13%", height: "6%" },
+    box: { left: "66%", bottom: "21%", width: "15.5%", height: "6%" },
   },
 ];
 
@@ -73,10 +73,17 @@ const ButtonDisplay = ({
   const isCancelAll = (btn) => btn.id === "cancelAll";
   const isCancelSpecific = (btn) => btn.id === "cancelSpecific";
   const isTake = (btn) => btn.id === "takeBet";
+  const isExit = (btn) => btn.id === "exit";
   const isGlowButton = (btn) =>
     isPreview(btn) || isCancelAll(btn) || isCancelSpecific(btn);
 
   const handleClick = (btn) => {
+    // Exit always works, regardless of any lock.
+    if (isExit(btn)) {
+      play(btn.sound || "CLICK");
+      if (onAction) onAction(btn.id);
+      return;
+    }
     if (disabled || (takeLock && !isTake(btn))) return;
     play(btn.sound || "CLICK");
     if (onAction) onAction(btn.id);
@@ -86,8 +93,8 @@ const ButtonDisplay = ({
     <>
       {BUTTONS.map((btn) => {
         // While a winning Take is pending, every button locks except Take:
-        // no hover, no glow, no click.
-        const btnLocked = disabled || (takeLock && !isTake(btn));
+        // no hover, no glow, no click. Exit always stays usable.
+        const btnLocked = !isExit(btn) && (disabled || (takeLock && !isTake(btn)));
         const isHovered = !btnLocked && hovered === btn.id;
         const name = isPreview(btn) ? (hasBets ? "OK Bet" : "Prev") : btn.name;
         // Cancel All + Cancel Specific blink while bets are pending (not yet
@@ -118,6 +125,7 @@ const ButtonDisplay = ({
           >
             {btn.base && (
               <img
+                decoding="async"
                 src={btn.base}
                 alt={`${btn.name} base`}
                 className="absolute pointer-events-none"
@@ -133,6 +141,7 @@ const ButtonDisplay = ({
             )}
             {showGlow && btn.glow && (
               <img
+                decoding="async"
                 src={btn.glow}
                 alt={`${btn.name} glow`}
                 className={`absolute pointer-events-none ${

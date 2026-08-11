@@ -27,6 +27,7 @@ const SplashScreen = () => {
       }}
     >
       <img
+        decoding="async"
         src={prevImg}
         alt="Fun Target"
         className="h-full w-full object-fill"
