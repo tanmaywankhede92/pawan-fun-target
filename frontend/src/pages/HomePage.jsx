@@ -65,6 +65,7 @@ const HomePage = () => {
   const [winInfo, setWinInfo] = useState(null);
   const manualMsg = useRef(false);
   const autoSubmitted = useRef(false);
+  const noBetRounds = useRef(0);
 
   const totalBet = Object.values(bets).reduce((sum, v) => sum + v, 0);
 
@@ -387,6 +388,17 @@ const HomePage = () => {
   // Sync countdown to IST minute boundary; at :00 fetch the fresh
   // result + balance. No local/random fallback — on failure show an error.
   const handleNewMinute = useCallback(async () => {
+    // Auto-logout: after 3 consecutive games with no bet, kick the user out.
+    if (totalBet > 0) {
+      noBetRounds.current = 0;
+    } else {
+      noBetRounds.current += 1;
+      if (noBetRounds.current >= 3) {
+        await logout();
+        navigate("/login", { replace: true });
+        return;
+      }
+    }
     refreshBalance();
     try {
       const { data } = await resultService.getCurrentResult();
@@ -402,7 +414,7 @@ const HomePage = () => {
     } catch {
       setResultError(true);
     }
-  }, [refreshBalance]);
+  }, [refreshBalance, totalBet, logout, navigate]);
 
   useEffect(() => {
     const id = setInterval(() => {

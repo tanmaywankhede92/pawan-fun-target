@@ -156,6 +156,29 @@ const unlock = () => {
   window.addEventListener(evt, unlock, { capture: true, passive: true }),
 );
 
+const isHidden = () =>
+  typeof document !== 'undefined' && document.visibilityState === 'hidden';
+
+// Pause looping sounds + BGM when the tab goes to the background, and
+// resume them when the user comes back. One-shots already playing are
+// short and simply fade out.
+const onVisibilityChange = () => {
+  if (document.visibilityState === 'hidden') {
+    for (const el of sfxElements.values()) {
+      if (el.loop && !el.paused) el.pause();
+    }
+    if (bgmElement && !bgmElement.paused) bgmElement.pause();
+    return;
+  }
+  for (const el of sfxElements.values()) {
+    if (el.loop && el.paused && !muted) el.play().catch(() => {});
+  }
+  if (bgmElement && bgmElement.paused && !muted) {
+    bgmElement.play().catch(() => {});
+  }
+};
+document.addEventListener('visibilitychange', onVisibilityChange);
+
 export const isSoundMuted = () => muted;
 
 export const setSoundMuted = (value) => {
@@ -174,7 +197,7 @@ export const toggleSoundMuted = () => {
 };
 
 export const playSound = (name, { loop = false } = {}) => {
-  if (muted) return;
+  if (muted || isHidden()) return;
   const src = getSrc(name);
   if (!src) return;
   if (loop) {
@@ -216,7 +239,7 @@ export const stopSound = (name) => {
 };
 
 export const playMusic = (name = 'BGM') => {
-  if (muted) return;
+  if (muted || isHidden()) return;
   const src = getSrc(name);
   if (!src) return;
   const url = new Audio(src).src;
