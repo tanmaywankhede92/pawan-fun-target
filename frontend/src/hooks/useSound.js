@@ -11,7 +11,7 @@ import {
 export const useSound = () => {
   const [muted, setMuted] = useState(isSoundMuted());
 
-  const play = useCallback((name) => playSound(name), []);
+  const play = useCallback((name, opts) => playSound(name, opts), []);
   const stop = useCallback((name) => stopSound(name), []);
   const playBgm = useCallback((name) => playMusic(name), []);
   const stopBgm = useCallback(() => stopMusic(), []);

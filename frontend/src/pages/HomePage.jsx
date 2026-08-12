@@ -43,7 +43,7 @@ const DEBUG = false;
 const HomePage = () => {
   const { user, logout, refreshBalance } = useAuth();
   const navigate = useNavigate();
-  const { play, playBgm } = useSound();
+  const { play, playBgm, stop } = useSound();
   // const [showExitConfirm, setShowExitConfirm] = useState(false); // exit overlay disabled
   const [time, setTime] = useState(() => secondsToNextMinute(istSeconds()));
   const prevSec = useRef(istSeconds());
@@ -453,9 +453,15 @@ const HomePage = () => {
   );
 
   useEffect(() => {
-    if (time > 10 || time <= 0) return;
-    play("TICK");
-  }, [time, play]);
+    if (wheelSpinning) {
+      stop("TICK");
+      return;
+    }
+    // Timer sound keeps looping continuously; it only stops while the
+    // wheel is spinning.
+    play("TICK", { loop: true });
+    return () => stop("TICK");
+  }, [wheelSpinning, play, stop]);
 
   useEffect(() => {
     const start = () => {

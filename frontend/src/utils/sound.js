@@ -35,6 +35,7 @@ let unlocked = false;
 const buffers = new Map(); // name -> AudioBuffer
 const sfxElements = new Map(); // name -> HTMLAudioElement (fallback)
 const pendingSounds = new Set(); // names queued until audio unlocks
+const loopNames = new Set(); // names requested to loop
 const activeSources = new Map(); // name -> AudioBufferSourceNode (SFX)
 let bgmElement = null;
 let bgmSrc = null;
@@ -124,13 +125,25 @@ const elementPlay = (name) => {
   });
 };
 
+const elementLoopPlay = (name) => {
+  if (muted) return;
+  const src = getSrc(name);
+  if (!src) return;
+  const el = getSfxElement(name, src);
+  if (el.loop && !el.paused) return; // already looping
+  el.loop = true;
+  el.currentTime = 0;
+  el.play().catch(() => pendingSounds.add(name));
+};
+
 const unlock = () => {
   const ac = getCtx();
   if (ac && ac.state === 'suspended') ac.resume().catch(() => {});
   unlocked = true;
   for (const name of [...pendingSounds]) {
     pendingSounds.delete(name);
-    if (buffers.has(name)) playBuffer(name);
+    if (loopNames.has(name)) elementLoopPlay(name);
+    else if (buffers.has(name)) playBuffer(name);
     else elementPlay(name);
   }
   // A BGM that was blocked on the first gesture can now resume.
@@ -160,10 +173,18 @@ export const toggleSoundMuted = () => {
   return muted;
 };
 
-export const playSound = (name) => {
+export const playSound = (name, { loop = false } = {}) => {
   if (muted) return;
   const src = getSrc(name);
   if (!src) return;
+  if (loop) {
+    // Looping sounds (timer ticks) always use the element path so the
+    // track keeps repeating seamlessly. Already looping -> keep playing.
+    loopNames.add(name);
+    elementLoopPlay(name);
+    return;
+  }
+  loopNames.delete(name);
   if (unlocked && buffers.has(name)) {
     playBuffer(name);
     return;
@@ -176,6 +197,7 @@ export const playSound = (name) => {
 };
 
 export const stopSound = (name) => {
+  loopNames.delete(name);
   const src = activeSources.get(name);
   if (src) {
     try {
@@ -187,6 +209,7 @@ export const stopSound = (name) => {
   }
   const el = sfxElements.get(name);
   if (el) {
+    el.loop = false;
     el.pause();
     el.currentTime = 0;
   }

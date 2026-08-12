@@ -4,7 +4,16 @@
 
 @font-face {
   font-family: 'Digital-7';
-  src: url('../assets/digital-7/digital-7.ttf') format('truetype');
+  src: url('../assets/font/digital-7/digital-7.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Digit-Tech-7';
+  src: url('../assets/font/digit-tech/DigitTech7-Regular.ttf')
+    format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;

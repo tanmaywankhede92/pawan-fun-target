@@ -5,7 +5,7 @@ export const SOUNDS = {
   BET: 'Bet',
   TAKE: 'take',
   CANCEL: 'cancel',
-  TICK: 'tick',
+  TICK: 'timmer',
   SPIN: 'wheelStart',
   WIN: 'win',
   LOSE: 'lose',

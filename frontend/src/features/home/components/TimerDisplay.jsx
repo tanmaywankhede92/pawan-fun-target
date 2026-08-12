@@ -16,11 +16,13 @@ const TimerDisplay = ({ time }) => {
         width: POS.width,
         height: POS.height,
         fontSize: POS.fontSize,
-        fontFamily: "'Digital-7', Arial, sans-serif",
+        fontFamily: "'Digit-Tech-7', 'Digital-7', Arial, sans-serif",
         fontWeight: "bold",
       }}
     >
-        {`00:${String(time).padStart(2, "0")}`}
+      {`0`}
+      <span style={{ fontFamily: "'Digital-7', Arial, sans-serif" }}>:</span>
+      {String(time).padStart(2)}
     </div>
   );
 };
