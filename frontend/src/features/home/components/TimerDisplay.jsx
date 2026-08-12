@@ -3,7 +3,7 @@ const POS = {
   top: "32.5%",
   width: "15%",
   height: "8%",
-  fontSize: "clamp(6px, 2.2vw, 28px)",
+  fontSize: "clamp(6px, 1.6vw, 36px)",
 };
 
 const TimerDisplay = ({ time }) => {

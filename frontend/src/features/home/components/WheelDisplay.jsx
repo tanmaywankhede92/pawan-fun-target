@@ -34,6 +34,13 @@ const JOKER_IMAGES = [joker1, joker2, joker3, joker4];
 const randomJoker = () =>
   JOKER_IMAGES[Math.floor(Math.random() * JOKER_IMAGES.length)];
 
+// API sends a joker value (1-4); fall back to a random joker when the
+// value is missing or out of range.
+const jokerImageFor = (value) =>
+  value >= 1 && value <= JOKER_IMAGES.length
+    ? JOKER_IMAGES[value - 1]
+    : randomJoker();
+
 const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
 const MIN_SPINS = 5;
@@ -46,7 +53,7 @@ const ALIGN_OFFSET = Number(
 );
 // ============================================================
 
-const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
+const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState(null);
@@ -76,10 +83,10 @@ const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
     initializedRef.current = true;
     setWinner(targetWinner);
     winnerRef.current = targetWinner;
-    setResultJoker(randomJoker());
+    setResultJoker(jokerImageFor(joker));
     setRotationTracked(angleFor(targetWinner) + ALIGN_OFFSET);
     setReady(true);
-  }, [targetWinner, setRotationTracked]);
+  }, [targetWinner, joker, setRotationTracked]);
 
   // New draw: spin from the CURRENT rotation (never from 0), always in
   // the same clockwise direction, 5-8 full rotations + the exact delta
@@ -113,13 +120,13 @@ const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
   const handleTransitionEnd = useCallback(() => {
     spinningRef.current = false;
     setSpinning(false);
-    setResultJoker(randomJoker());
+    setResultJoker(jokerImageFor(joker));
     stop("SPIN");
     play("WIN");
     if (winner !== null && onComplete) {
       onComplete(winner); // the SAME backend result that targeted the spin
     }
-  }, [winner, onComplete, play, stop]);
+  }, [winner, joker, onComplete, play, stop]);
 
 
   useEffect(() => {
@@ -133,7 +140,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
       spinningRef.current = false;
       setRotationTracked(targetRotationRef.current);
       setSpinning(false);
-      setResultJoker(randomJoker());
+      setResultJoker(jokerImageFor(joker));
       stop("SPIN");
       play("WIN");
       if (winnerRef.current !== null && onComplete) {
@@ -143,7 +150,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, onComplete }) => {
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () =>
       document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, [onComplete, play, stop, setRotationTracked]);
+  }, [onComplete, play, stop, setRotationTracked, joker]);
 
   if (!ready) return null;
 

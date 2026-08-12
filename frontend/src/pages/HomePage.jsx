@@ -50,6 +50,7 @@ const HomePage = () => {
   const [spinCount, setSpinCount] = useState(0);
   const [wheelSpinning, setWheelSpinning] = useState(false);
   const [lastWinner, setLastWinner] = useState(null);
+  const [lastJoker, setLastJoker] = useState(null);
   const [resultError, setResultError] = useState(false);
   const [selectedValue, setSelectedValue] = useState(10);
   const [bets, setBets] = useState({});
@@ -67,8 +68,8 @@ const HomePage = () => {
 
   const totalBet = Object.values(bets).reduce((sum, v) => sum + v, 0);
 
-  // Betting lock: last 12 seconds of the minute + while the wheel is spinning.
-  const clickLocked = wheelSpinning || (time <= 12 && time > 0);
+  // Betting lock: last 10 seconds of the minute + while the wheel is spinning.
+  const clickLocked = wheelSpinning || (time <= 10 && time > 0);
 
   // Take appears only when there is a WINNING result on the board. No timer
   // condition — the user can Take any time (even in the last seconds).
@@ -370,6 +371,7 @@ const HomePage = () => {
         if (!r) throw new Error("no result");
         if (mounted) {
           setLastWinner(Number(r.result) % 10);
+          setLastJoker(Number(r.joker) || null);
           setResultError(false);
         }
       } catch {
@@ -391,6 +393,7 @@ const HomePage = () => {
       const r = data?.result?.[0];
       if (!r) throw new Error("no result");
       setLastWinner(Number(r.result) % 10);
+      setLastJoker(Number(r.joker) || null);
       setResultError(false);
       setWheelSpinning(true);
       setResultRevealed(false);
@@ -481,6 +484,7 @@ const HomePage = () => {
       <WheelDisplay
         spinTrigger={spinCount}
         targetWinner={lastWinner}
+        joker={lastJoker}
         onComplete={handleSpinComplete}
       />
       {resultError && (

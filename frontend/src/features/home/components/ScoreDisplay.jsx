@@ -3,7 +3,7 @@ const POS = {
   top: "10%",
   width: "8%",
   height: "8%",
-  fontSize: "clamp(6px, 2.2vw, 26px)",
+  fontSize: "clamp(6px, 1.7vw, 36px)",
 };
 
 const ScoreDisplay = ({ score = 0 }) => {
