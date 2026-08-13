@@ -59,7 +59,7 @@ const HomePage = () => {
   const [taken, setTaken] = useState(false);
   const [won, setWon] = useState(false);
   const [gameMessage, setGameMessage] = useState(
-    "Please Bet to Start Game. Minimum Bet = 20",
+    "Please Bet to Start Game. Minimum Bet=1",
   );
   const [cancelMode, setCancelMode] = useState(false);
   const [winInfo, setWinInfo] = useState(null);
@@ -114,9 +114,9 @@ const HomePage = () => {
         setWinInfo(null);
       }
       setBets((prev) => ({ ...prev, [num]: (prev[num] || 0) + selectedValue }));
-      // New bet resets the prompt so a stale message never lingers.
-      manualMsg.current = false;
-      setGameMessage("Please Bet to Start Game. Minimum Bet = 20");
+      // Number click keeps this hint on screen until the round advances.
+      manualMsg.current = true;
+      setGameMessage("You can either make Bet or Press BETOK Button.");
     },
     [selectedValue, takePending, resultRevealed, cancelMode, submitted],
   );
@@ -145,9 +145,9 @@ const HomePage = () => {
     }
 
     // Minimum bet validation.
-    if (totalBet < 20) {
+    if (totalBet < 1) {
       manualMsg.current = true;
-      setGameMessage("Minimum bet amount is 20.");
+      setGameMessage("Minimum bet amount is 1.");
       return;
     }
 
@@ -155,9 +155,7 @@ const HomePage = () => {
     const balance = user?.balance ?? 0;
     if (totalBet > balance) {
       manualMsg.current = true;
-      setGameMessage(
-        `Insufficient balance. Total ${totalBet} > Balance ${balance}`,
-      );
+      setGameMessage("Score Insufficient.");
       return;
     }
 
@@ -213,7 +211,7 @@ const HomePage = () => {
   // Phase message:
   //   last 10 sec      -> "Bet Time over"
   //   wheel spinning   -> "FOR AMUSEMENT ONLY NO CASH VALUE"
-  //   betting window   -> "Please Bet to Start Game. Minimum Bet = 20"
+  //   betting window   -> "Please Bet to Start Game. Minimum Bet=1"
   // Manual messages (validation / accepted) override the betting-window prompt.
   useEffect(() => {
     if (time <= 10 && time > 0) {
@@ -223,7 +221,7 @@ const HomePage = () => {
       manualMsg.current = false;
       setGameMessage("FOR AMUSEMENT ONLY NO CASH VALUE");
     } else if (!manualMsg.current && time > 12) {
-      setGameMessage("Please Bet to Start Game. Minimum Bet = 20");
+      setGameMessage("Please Bet to Start Game. Minimum Bet=1");
     }
   }, [time, wheelSpinning]);
 
@@ -453,7 +451,7 @@ const HomePage = () => {
           setWon(false);
           setBets({});
           setSubmitted(false);
-          setGameMessage("No winning amount this draw");
+          setGameMessage("Game over. Press PreBetOK Button or Make Bet.");
         }
       } catch {
         setWinInfo(null);

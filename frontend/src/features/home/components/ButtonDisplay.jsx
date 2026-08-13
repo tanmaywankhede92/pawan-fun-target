@@ -12,7 +12,7 @@ import exitBtn from "@assets/images/buttons/bet1.webp";
 const BUTTONS = [
   {
     id: "cancelAll",
-    name: "Cancel All",
+    name: "Cancel Bet",
     sound: "CANCEL",
     base: cancelBtn,
     glow: cancelBetGlow,
@@ -48,7 +48,7 @@ const BUTTONS = [
   },
   {
     id: "cancelSpecific",
-    name: "Cancel specific bet",
+    name: "Cancel Specific Bet",
     sound: "CANCEL",
     base: cancelBtn,
     glow: cancelBetGlow,
@@ -96,7 +96,7 @@ const ButtonDisplay = ({
         // no hover, no glow, no click. Exit always stays usable.
         const btnLocked = !isExit(btn) && (disabled || (takeLock && !isTake(btn)));
         const isHovered = !btnLocked && hovered === btn.id;
-        const name = isPreview(btn) ? (hasBets ? "OK Bet" : "Prev") : btn.name;
+        const name = isPreview(btn) ? (hasBets ? "Bet Ok" : "Prev Bet") : btn.name;
         // Cancel All + Cancel Specific blink while bets are pending (not yet
         // accepted), but only when cancel-specific mode is off.
         const blink = isGlowButton(btn) && hasBets && !submitted && !cancelMode;
