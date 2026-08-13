@@ -63,8 +63,8 @@ const ButtonDisplay = ({
   disabled = false,
   takeGlow = false,
   submitted = false,
-  cancelMode = false,
   takeLock = false,
+  cancelSpecificLocked = false,
 }) => {
   const [hovered, setHovered] = useState(null);
   const { play } = useSound();
@@ -76,6 +76,9 @@ const ButtonDisplay = ({
   const isExit = (btn) => btn.id === "exit";
   const isGlowButton = (btn) =>
     isPreview(btn) || isCancelAll(btn) || isCancelSpecific(btn);
+  // Cancel Specific disables after its one-time use until a new bet is placed.
+  const isCancelSpecificLocked = (btn) =>
+    isCancelSpecific(btn) && cancelSpecificLocked;
 
   const handleClick = (btn) => {
     // Exit always works, regardless of any lock.
@@ -84,7 +87,8 @@ const ButtonDisplay = ({
       if (onAction) onAction(btn.id);
       return;
     }
-    if (disabled || (takeLock && !isTake(btn))) return;
+    if (disabled || (takeLock && !isTake(btn)) || isCancelSpecificLocked(btn))
+      return;
     play(btn.sound || "CLICK");
     if (onAction) onAction(btn.id);
   };
@@ -94,16 +98,17 @@ const ButtonDisplay = ({
       {BUTTONS.map((btn) => {
         // While a winning Take is pending, every button locks except Take:
         // no hover, no glow, no click. Exit always stays usable.
-        const btnLocked = !isExit(btn) && (disabled || (takeLock && !isTake(btn)));
+        const btnLocked =
+          !isExit(btn) &&
+          (disabled || (takeLock && !isTake(btn)) || isCancelSpecificLocked(btn));
         const isHovered = !btnLocked && hovered === btn.id;
         const name = isPreview(btn) ? (hasBets ? "Bet Ok" : "Prev Bet") : btn.name;
         // Cancel All + Cancel Specific blink while bets are pending (not yet
-        // accepted), but only when cancel-specific mode is off.
-        const blink = isGlowButton(btn) && hasBets && !submitted && !cancelMode;
-        // Cancel Specific glows while cancel mode is on.
-        const cancelModeGlow = isCancelSpecific(btn) && cancelMode;
+        // accepted). Cancel Specific stops blinking once its one use is done.
+        const blink =
+          isGlowButton(btn) && hasBets && !submitted && !isCancelSpecificLocked(btn);
         const takeBlink = isTake(btn) && takeGlow;
-        const showGlow = blink || cancelModeGlow || takeBlink || isHovered;
+        const showGlow = blink || takeBlink || isHovered;
 
         return (
           <div
@@ -145,7 +150,7 @@ const ButtonDisplay = ({
                 src={btn.glow}
                 alt={`${btn.name} glow`}
                 className={`absolute pointer-events-none ${
-                  blink || cancelModeGlow || takeBlink ? "ft-blink" : ""
+                  blink || takeBlink ? "ft-blink" : ""
                 }`}
                 style={{
                   width: `${btn.zoom * 100}%`,

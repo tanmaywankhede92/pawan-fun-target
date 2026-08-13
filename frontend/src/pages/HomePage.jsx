@@ -61,11 +61,15 @@ const HomePage = () => {
   const [gameMessage, setGameMessage] = useState(
     "Please Bet to Start Game. Minimum Bet=1",
   );
-  const [cancelMode, setCancelMode] = useState(false);
   const [winInfo, setWinInfo] = useState(null);
+  // Cancel Specific works once per betting session, then disables until a
+  // new bet is placed.
+  const [cancelSpecificUsed, setCancelSpecificUsed] = useState(false);
   const manualMsg = useRef(false);
   const autoSubmitted = useRef(false);
   const noBetRounds = useRef(0);
+  // Placement order for cancel-specific (last come first out).
+  const betOrder = useRef([]);
 
   const totalBet = Object.values(bets).reduce((sum, v) => sum + v, 0);
 
@@ -89,16 +93,6 @@ const HomePage = () => {
         setGameMessage("Bet already accepted. Wait for the result.");
         return;
       }
-      // Cancel-specific mode: clicking a number cancels only that bet.
-      if (cancelMode) {
-        setBets((prev) => {
-          if (!prev[num]) return prev;
-          const next = { ...prev };
-          delete next[num];
-          return next;
-        });
-        return;
-      }
       // If a winning bet is pending, must take before placing new bets.
       if (takePending) {
         manualMsg.current = true;
@@ -109,26 +103,27 @@ const HomePage = () => {
       // a fresh round (old placed bets from the previous draw are cleared).
       if (resultRevealed) {
         setBets({});
+        betOrder.current = [];
         setResultRevealed(false);
         setSubmitted(false);
         setWinInfo(null);
       }
+      // A new bet re-arms Cancel Specific for one more use.
+      setCancelSpecificUsed(false);
+      betOrder.current.push({ num, amt: selectedValue });
       setBets((prev) => ({ ...prev, [num]: (prev[num] || 0) + selectedValue }));
       // Number click keeps this hint on screen until the round advances.
       manualMsg.current = true;
       setGameMessage("You can either make Bet or Press BETOK Button.");
     },
-    [selectedValue, takePending, resultRevealed, cancelMode, submitted],
+    [selectedValue, takePending, resultRevealed, submitted],
   );
 
   const clearBets = useCallback(() => {
     setBets({});
+    betOrder.current = [];
+    setCancelSpecificUsed(false);
   }, []);
-
-  // Auto-exit cancel mode once the last bet is cancelled.
-  useEffect(() => {
-    if (cancelMode && totalBet === 0) setCancelMode(false);
-  }, [cancelMode, totalBet]);
 
   // Place the bet via the backend. Ticket = "num-amount" pairs.
   const handlePlaceBet = useCallback(async () => {
@@ -177,7 +172,6 @@ const HomePage = () => {
         setGameMessage("Your Bet has been Accepted");
         // Keep showing the placed bets; they clear only on Take.
         setSubmitted(true);
-        setCancelMode(false);
         refreshBalance();
       } else {
         manualMsg.current = true;
@@ -213,7 +207,10 @@ const HomePage = () => {
   //   wheel spinning   -> "FOR AMUSEMENT ONLY NO CASH VALUE"
   //   betting window   -> "Please Bet to Start Game. Minimum Bet=1"
   // Manual messages (validation / accepted) override the betting-window prompt.
+  // While a winning Take is pending, the win banner stays on screen (the
+  // "Please Take the Winning Points." reminder is set at the :00 boundary).
   useEffect(() => {
+    if (takePending) return;
     if (time <= 10 && time > 0) {
       manualMsg.current = false;
       setGameMessage("Bet Time over");
@@ -223,7 +220,7 @@ const HomePage = () => {
     } else if (!manualMsg.current && time > 12) {
       setGameMessage("Please Bet to Start Game. Minimum Bet=1");
     }
-  }, [time, wheelSpinning]);
+  }, [time, wheelSpinning, takePending]);
 
   const handleButtonAction = useCallback(
     async (id) => {
@@ -242,12 +239,35 @@ const HomePage = () => {
       }
       if (id === "cancelAll") {
         clearBets();
-        setCancelMode(false);
       }
-      // Cancel Specific toggles cancel mode: clicking a number removes
-      // only that number's bet.
+      // Cancel Specific removes the ENTIRE bet of the MOST RECENTLY placed
+      // number (last come first out) — every unit on that number, e.g. 2x10
+      // on a number clears the full 20. It works ONE time per betting
+      // session — after the click the button disables until a new bet is
+      // placed.
       if (id === "cancelSpecific") {
-        setCancelMode((m) => !m);
+        // If the order tracker is empty but bets are on screen (e.g. after
+        // a round reset), rebuild it from the current bets so cancel keeps
+        // working.
+        if (betOrder.current.length === 0) {
+          betOrder.current = Object.entries(bets).map(([num, amt]) => ({
+            num: Number(num),
+            amt,
+          }));
+        }
+        const last = betOrder.current[betOrder.current.length - 1];
+        if (last) {
+          const num = last.num;
+          // Drop every recorded placement of that number and clear its
+          // whole bet.
+          betOrder.current = betOrder.current.filter((e) => e.num !== num);
+          setBets((prev) => {
+            const next = { ...prev };
+            delete next[num];
+            return next;
+          });
+        }
+        setCancelSpecificUsed(true);
       }
       // The button is "Prev" with no bets (loads last bet) and "OK Bet"
       // once a bet exists (places the bet).
@@ -270,9 +290,13 @@ const HomePage = () => {
               }
             });
             setBets(parsed);
+            betOrder.current = Object.entries(parsed).map(([n, amt]) => ({
+              num: Number(n),
+              amt,
+            }));
+            setCancelSpecificUsed(false);
             setSubmitted(false);
             setResultRevealed(false);
-            setCancelMode(false);
             // No "loaded" message — the previous ticket just appears.
           } else {
             manualMsg.current = true;
@@ -319,8 +343,9 @@ const HomePage = () => {
           setResultRevealed(false);
           setWon(false);
           setSubmitted(false);
-          setCancelMode(false);
           setWinInfo(null);
+          // Normal flow resumes: let the phase messages take over again.
+          manualMsg.current = false;
           // Balance (winnings included) comes from the backend.
           await refreshBalance();
           clearBets();
@@ -338,6 +363,7 @@ const HomePage = () => {
     [
       clearBets,
       handlePlaceBet,
+      bets,
       totalBet,
       logout,
       navigate,
@@ -386,6 +412,14 @@ const HomePage = () => {
   // Sync countdown to IST minute boundary; at :00 fetch the fresh
   // result + balance. No local/random fallback — on failure show an error.
   const handleNewMinute = useCallback(async () => {
+    // A winning Take is still pending: do NOT advance to the next draw
+    // until the winnings are claimed. Remind the user instead — the timer
+    // keeps running and the Take button stays live.
+    if (takePending) {
+      manualMsg.current = true;
+      setGameMessage("Please Take the Winning Points.");
+      return;
+    }
     // Auto-logout: after 3 consecutive games with no bet, kick the user out.
     if (totalBet > 0) {
       noBetRounds.current = 0;
@@ -412,7 +446,7 @@ const HomePage = () => {
     } catch {
       setResultError(true);
     }
-  }, [refreshBalance, totalBet, logout, navigate]);
+  }, [refreshBalance, totalBet, logout, navigate, takePending]);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -432,10 +466,17 @@ const HomePage = () => {
       setWheelSpinning(false);
       setResultRevealed(true);
       // Won only if a bet was placed on the winning number.
-      setWon(Number(bets[winner] || 0) > 0);
+      const didWin = Number(bets[winner] || 0) > 0;
+      setWon(didWin);
       setTaken(false);
       // Winning amount only shows when a bet was placed this round.
       if (totalBet <= 0) return;
+      // Show the win banner right away; it stays on screen while the Take is
+      // pending (until claimed or the :00 reminder replaces it).
+      if (didWin) {
+        manualMsg.current = true;
+        setGameMessage("Congratulations!!! You Win.");
+      }
       try {
         const { data } = await recordService.winAmount({
           username: user?.username || "",
@@ -444,12 +485,13 @@ const HomePage = () => {
         manualMsg.current = true;
         if (amount > 0) {
           setWinInfo(data?.data || null);
-          setGameMessage(`You Won Rs. ${amount}`);
         } else {
           // No win this draw -> clear the placed bets automatically.
           setWinInfo(null);
           setWon(false);
           setBets({});
+          betOrder.current = [];
+          setCancelSpecificUsed(false);
           setSubmitted(false);
           setGameMessage("Game over. Press PreBetOK Button or Make Bet.");
         }
@@ -538,7 +580,7 @@ const HomePage = () => {
         takeGlow={takePending}
         takeLock={takePending}
         submitted={submitted}
-        cancelMode={cancelMode}
+        cancelSpecificLocked={cancelSpecificUsed}
       />
       <MessageDisplay message={gameMessage} />
 
