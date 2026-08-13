@@ -80,6 +80,10 @@ const HomePage = () => {
   // condition — the user can Take any time (even in the last seconds).
   const takePending = resultRevealed && !taken && won;
 
+  // Once :00 is reached without claiming the win, the timer freezes at 00
+  // until the Take is done. After the Take it resumes from the live clock.
+  const timerFrozen = takePending && time === 0;
+
   const handlePanelSelect = useCallback((value) => {
     setSelectedValue(value);
   }, []);
@@ -451,14 +455,18 @@ const HomePage = () => {
   useEffect(() => {
     const id = setInterval(() => {
       const s = istSeconds();
-      setTime(secondsToNextMinute(s));
+      // While a winning Take is pending at :00, freeze the timer at 00 until
+      // the win is claimed. On Take it resumes from the live clock.
+      if (!timerFrozen) {
+        setTime(secondsToNextMinute(s));
+      }
       if (s === 0 && prevSec.current === 59) {
         handleNewMinute();
       }
       prevSec.current = s;
     }, 250);
     return () => clearInterval(id);
-  }, [handleNewMinute]);
+  }, [handleNewMinute, timerFrozen]);
 
   const handleSpinComplete = useCallback(
     async (winner) => {
@@ -505,15 +513,15 @@ const HomePage = () => {
   );
 
   useEffect(() => {
-    if (wheelSpinning) {
+    if (wheelSpinning || timerFrozen) {
       stop("TICK");
       return;
     }
     // Timer sound keeps looping continuously; it only stops while the
-    // wheel is spinning.
+    // wheel is spinning or the timer is frozen on the winning Take.
     play("TICK", { loop: true });
     return () => stop("TICK");
-  }, [wheelSpinning, play, stop]);
+  }, [wheelSpinning, timerFrozen, play, stop]);
 
   useEffect(() => {
     const start = () => {
