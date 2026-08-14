@@ -358,10 +358,10 @@ const HomePage = () => {
           setGameMessage("Take failed. Try again.");
         }
       }
-      // exit overlay disabled - exit directly logs out to login page
+      // exit overlay disabled - exit returns to the Pre (PrevBG) lobby
+      // screen without logging out (the session stays active).
       if (id === "exit") {
-        await logout();
-        navigate("/login", { replace: true });
+        navigate("/pre", { replace: true });
       }
     },
     [

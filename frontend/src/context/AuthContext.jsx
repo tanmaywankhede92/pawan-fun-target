@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
       }
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
       dispatch({ type: 'AUTH_SUCCESS', payload: { user } });
-      return { redirect: '/', user };
+      return { redirect: '/pre', user };
     } catch (err) {
       const message =
         err?.response?.data?.message || 'Invalid username or password';

@@ -31,7 +31,7 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const result = await login({ username: username.trim(), password });
-      navigate(result.redirect || "/", { replace: true });
+      navigate(result.redirect || "/pre", { replace: true });
     } catch (err) {
       toast.error(err?.message || "Invalid username or password");
       setPassword("");

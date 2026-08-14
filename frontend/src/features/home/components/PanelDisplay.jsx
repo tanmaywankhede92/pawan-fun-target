@@ -3,7 +3,7 @@ import p1glow from "@assets/images/panels/1glow.webp";
 import p5 from "@assets/images/panels/5.webp";
 import p5glow from "@assets/images/panels/5glow.webp";
 import p10 from "@assets/images/panels/10.webp";
-import p10glow from "@assets/images/panels/10glow.png";
+import p10glow from "@assets/images/panels/10glow.webp";
 import p50 from "@assets/images/panels/50.webp";
 import p50glow from "@assets/images/panels/50glow.webp";
 import p100 from "@assets/images/panels/100.webp";

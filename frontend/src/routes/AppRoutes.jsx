@@ -4,6 +4,7 @@ import { PublicRoute } from "./PublicRoute";
 import MainLayout from "@components/layouts/MainLayout";
 import HomePage from "@pages/HomePage";
 import LoginPage from "@features/auth/pages/LoginPage";
+import PrePage from "@features/auth/pages/PrePage";
 
 const AppRoutes = () => {
   return (
@@ -14,6 +15,14 @@ const AppRoutes = () => {
           <PublicRoute>
             <LoginPage />
           </PublicRoute>
+        }
+      />
+      <Route
+        path="/pre"
+        element={
+          <ProtectedRoute>
+            <PrePage />
+          </ProtectedRoute>
         }
       />
       <Route
