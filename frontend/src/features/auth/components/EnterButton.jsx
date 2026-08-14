@@ -1,9 +1,9 @@
 // === ADJUST THESE VALUES TO MATCH YOUR IMAGE ===
 const POS = {
   left: "55%",
-  top: "89%",
+  top: "90%",
   width: "15%",
-  height: "4%",
+  height: "10%",
 };
 
 const EnterButton = ({ onClick, loading }) => {
@@ -15,7 +15,7 @@ const EnterButton = ({ onClick, loading }) => {
       aria-label="Enter"
       className="
         absolute bg-transparent outline-none p-0 m-0 cursor-pointer ft-login-field
-        min-h-[36px] min-w-[80px] hover:text-white hover:bg-black/50
+        min-h-[20px] min-w-[80px] hover:text-white hover:bg-black/50
         transition-colors duration-150 
       "
       style={{
@@ -23,11 +23,11 @@ const EnterButton = ({ onClick, loading }) => {
         top: POS.top,
         width: POS.width,
         height: POS.height,
-        ...(loading && {
-          boxShadow:
-            "0 0 12px rgba(255,215,0,0.9), 0 0 30px rgba(255,215,0,0.6), inset 0 0 12px rgba(255,215,0,0.5)",
-          borderRadius: "8px",
-        }),
+        // ...(loading && {
+        //   boxShadow:
+        //     "0 0 12px rgba(255,215,0,0.9), 0 0 30px rgba(255,215,0,0.6), inset 0 0 12px rgba(255,215,0,0.5)",
+        //   borderRadius: "8px",
+        // }),
       }}
     />
   );
