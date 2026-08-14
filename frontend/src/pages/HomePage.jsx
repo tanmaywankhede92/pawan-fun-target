@@ -67,6 +67,9 @@ const HomePage = () => {
   // Cancel Specific works once per betting session, then disables until a
   // new bet is placed.
   const [cancelSpecificUsed, setCancelSpecificUsed] = useState(false);
+  // True once the backend balance already includes the placed bet amount.
+  // Keeps the score flat across Bet Ok (no 990 -> 1000 -> 990 jump).
+  const [betApplied, setBetApplied] = useState(true);
   const manualMsg = useRef(false);
   const autoSubmitted = useRef(false);
   const noBetRounds = useRef(0);
@@ -118,6 +121,8 @@ const HomePage = () => {
       setCancelSpecificUsed(false);
       betOrder.current.push({ num, amt: selectedValue });
       setBets((prev) => ({ ...prev, [num]: (prev[num] || 0) + selectedValue }));
+      // The backend balance does not include this pending bet yet.
+      setBetApplied(false);
       // Number click keeps this hint on screen until the round advances.
       manualMsg.current = true;
       setGameMessage("You can either make Bet or Press BETOK Button.");
@@ -129,6 +134,7 @@ const HomePage = () => {
     setBets({});
     betOrder.current = [];
     setCancelSpecificUsed(false);
+    setBetApplied(true);
   }, []);
 
   // Place the bet via the backend. Ticket = "num-amount" pairs.
@@ -178,7 +184,10 @@ const HomePage = () => {
         setGameMessage("Your Bet has been Accepted");
         // Keep showing the placed bets; they clear only on Take.
         setSubmitted(true);
-        refreshBalance();
+        // Wait for the refreshed (already-deducted) balance so the score
+        // never jumps back up after Bet Ok.
+        const newBalance = await refreshBalance();
+        if (newBalance != null) setBetApplied(true);
       } else {
         manualMsg.current = true;
         setGameMessage(data?.message || "Bet failed");
@@ -303,6 +312,8 @@ const HomePage = () => {
             setCancelSpecificUsed(false);
             setSubmitted(false);
             setResultRevealed(false);
+            // The loaded ticket is not yet submitted/deducted.
+            setBetApplied(false);
             // No "loaded" message — the previous ticket just appears.
           } else {
             manualMsg.current = true;
@@ -552,11 +563,11 @@ const HomePage = () => {
     <HomeOverlay>
       <HomeBackground />
 
-      {/* Balance minus the pending (not yet submitted) bets: the score drops
-          the moment a number is clicked, before Bet Ok is pressed. Once the
-          bet is accepted the backend balance (already deducted) is shown. */}
+      {/* Balance minus the pending bets (not yet deducted from the backend
+          balance): the score drops the moment a number is clicked and stays
+          flat across Bet Ok — the deduction is already shown. */}
       <ScoreDisplay
-        score={Math.max(0, (user?.balance || 0) - (submitted ? 0 : totalBet))}
+        score={Math.max(0, (user?.balance || 0) - (betApplied ? 0 : totalBet))}
       />
       <TotalBetDisplay total={totalBet} />
       <WinnerDisplay winner={lastWinner} winAmount={winInfo?.win_amount} />
