@@ -62,6 +62,8 @@ const HomePage = () => {
     "Please Bet to Start Game. Minimum Bet=1",
   );
   const [winInfo, setWinInfo] = useState(null);
+  // Bumped when the wheel stops so LastWinningData reloads right away.
+  const [lastWinsRefresh, setLastWinsRefresh] = useState(0);
   // Cancel Specific works once per betting session, then disables until a
   // new bet is placed.
   const [cancelSpecificUsed, setCancelSpecificUsed] = useState(false);
@@ -348,11 +350,14 @@ const HomePage = () => {
           setWon(false);
           setSubmitted(false);
           setWinInfo(null);
+          // Clear the placed bets first so the score does not dip below the
+          // balance while the new balance is being fetched.
+          clearBets();
           // Normal flow resumes: let the phase messages take over again.
           manualMsg.current = false;
-          // Balance (winnings included) comes from the backend.
+          // Balance (winnings included) comes from the backend. The score
+          // then rolls up to the new balance number by number.
           await refreshBalance();
-          clearBets();
         } catch {
           manualMsg.current = true;
           setGameMessage("Take failed. Try again.");
@@ -473,10 +478,16 @@ const HomePage = () => {
       setLastWinner(winner);
       setWheelSpinning(false);
       setResultRevealed(true);
+      // Reload the last 10 wins as soon as the wheel stops.
+      setLastWinsRefresh((c) => c + 1);
       // Won only if a bet was placed on the winning number.
       const didWin = Number(bets[winner] || 0) > 0;
       setWon(didWin);
       setTaken(false);
+      // Win/lose sound the moment the wheel stops (only when a bet was placed).
+      if (totalBet > 0) {
+        play(didWin ? "WIN" : "LOSE");
+      }
       // Winning amount only shows when a bet was placed this round.
       if (totalBet <= 0) return;
       // Show the win banner right away; it stays on screen while the Take is
@@ -509,7 +520,7 @@ const HomePage = () => {
         setGameMessage("Failed to load winning amount");
       }
     },
-    [bets, totalBet, user],
+    [bets, totalBet, user, play],
   );
 
   useEffect(() => {
@@ -574,7 +585,7 @@ const HomePage = () => {
           Result load failed. Try again next minute.
         </div>
       )}
-      <LastWinningData hidden={wheelSpinning} />
+      <LastWinningData refreshTrigger={lastWinsRefresh} />
       <NumberDisplay
         bets={bets}
         onBet={handleBet}

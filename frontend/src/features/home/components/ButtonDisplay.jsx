@@ -172,7 +172,7 @@ const ButtonDisplay = ({
             <span
               className="relative z-10 w-full text-center text-white font-bold text-[clamp(6px,1.3vw,18px)] leading-none"
               style={{
-                fontFamily: '"Times New Roman", serif',
+                fontFamily: '"Century", serif',
                 transform: "translateY(-10%)",
               }}
             >

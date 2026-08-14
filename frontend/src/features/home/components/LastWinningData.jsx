@@ -5,14 +5,14 @@ const POS = {
   top: "26.5%",
   fontSize: "clamp(6px, 1.5vw, 24px)",
   fontWeight: 700,
-  fontFamily: '"Times New Roman", serif',
+  fontFamily: '"Bodoni Moda", serif',
 };
 
 import { useState, useEffect } from "react";
 import { resultService } from "@services/result.service";
 import { istSeconds } from "@utils/istTime";
 
-const LastWinningData = ({ hidden = false }) => {
+const LastWinningData = ({ refreshTrigger = 0 }) => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
@@ -45,9 +45,7 @@ const LastWinningData = ({ hidden = false }) => {
       mounted = false;
       clearInterval(id);
     };
-  }, []);
-
-  if (hidden) return null;
+  }, [refreshTrigger]);
 
   return (
     <div

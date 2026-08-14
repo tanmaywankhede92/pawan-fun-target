@@ -125,7 +125,6 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
     setSpinning(false);
     setResultJoker(jokerImageFor(joker));
     stop("SPIN");
-    play("WIN");
     if (winner !== null && onComplete) {
       onComplete(winner); // the SAME backend result that targeted the spin
     }
@@ -144,7 +143,6 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
       setSpinning(false);
       setResultJoker(jokerImageFor(joker));
       stop("SPIN");
-      play("WIN");
       if (winnerRef.current !== null && onComplete) {
         onComplete(winnerRef.current);
       }
