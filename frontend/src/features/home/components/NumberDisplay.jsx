@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useSound } from "@hooks/useSound";
 import n0 from "@assets/images/numbers/0.webp";
 import n1 from "@assets/images/numbers/1.webp";
@@ -83,12 +83,30 @@ const BET_BOX_CONFIG = {
 const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) => {
   const [hoveredNum, setHoveredNum] = useState(null);
   const { play } = useSound();
+  const holdTimer = useRef(null);
 
-  const handleBet = (num) => {
+  const doBet = (num) => {
     if (disabled) return;
     play("BET");
     onBet(num);
   };
+
+  // Press & hold keeps adding the same bet repeatedly; releasing or
+  // leaving the number stops the repeat.
+  const startHold = (num) => {
+    doBet(num);
+    if (holdTimer.current) clearInterval(holdTimer.current);
+    holdTimer.current = setInterval(() => doBet(num), 180);
+  };
+
+  const stopHold = () => {
+    if (holdTimer.current) {
+      clearInterval(holdTimer.current);
+      holdTimer.current = null;
+    }
+  };
+
+  useEffect(() => () => stopHold(), []);
 
   return (
     <>
@@ -116,8 +134,17 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
             <div
               className="absolute inset-0 overflow-hidden cursor-pointer select-none"
               onMouseEnter={() => setHoveredNum(num)}
-              onMouseLeave={() => setHoveredNum(null)}
-              onClick={() => handleBet(num)}
+              onMouseLeave={() => {
+                setHoveredNum(null);
+                stopHold();
+              }}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                startHold(num);
+              }}
+              onPointerUp={stopHold}
+              onPointerLeave={stopHold}
+              onPointerCancel={stopHold}
             >
               {(isHovered || bet > 0 || isWinner) && img && (
                 <img

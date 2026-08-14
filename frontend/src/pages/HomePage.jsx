@@ -187,10 +187,10 @@ const HomePage = () => {
     }
   }, [bets, totalBet, user, refreshBalance]);
 
-  // Auto-OK: when the countdown hits the last 12 seconds, submit any
+  // Auto-OK: when the countdown hits the last 10 seconds, submit any
   // pending bets automatically. Runs once per round.
   useEffect(() => {
-    if (time > 12) {
+    if (time > 10) {
       autoSubmitted.current = false;
       return;
     }
@@ -541,7 +541,12 @@ const HomePage = () => {
     <HomeOverlay>
       <HomeBackground />
 
-      <ScoreDisplay score={Math.max(0, user?.balance || 0)} />
+      {/* Balance minus the pending (not yet submitted) bets: the score drops
+          the moment a number is clicked, before Bet Ok is pressed. Once the
+          bet is accepted the backend balance (already deducted) is shown. */}
+      <ScoreDisplay
+        score={Math.max(0, (user?.balance || 0) - (submitted ? 0 : totalBet))}
+      />
       <TotalBetDisplay total={totalBet} />
       <WinnerDisplay winner={lastWinner} winAmount={winInfo?.win_amount} />
       <TimerDisplay time={time} />

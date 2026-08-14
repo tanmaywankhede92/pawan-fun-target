@@ -22,7 +22,7 @@ const BUTTONS = [
   {
     id: "takeBet",
     name: "Take",
-    sound: "TAKE",
+    sound: "CLICK",
     base: takeBtn,
     glow: takeBetGlow,
     zoom: 1.2,
@@ -87,8 +87,13 @@ const ButtonDisplay = ({
       if (onAction) onAction(btn.id);
       return;
     }
-    if (disabled || (takeLock && !isTake(btn)) || isCancelSpecificLocked(btn))
+    // Take is enabled ONLY while a winning result is pending on the board
+    // (takeLock). Without a win it stays disabled: no sound, no click.
+    if (isTake(btn)) {
+      if (!takeLock) return;
+    } else if (disabled || isCancelSpecificLocked(btn)) {
       return;
+    }
     play(btn.sound || "CLICK");
     if (onAction) onAction(btn.id);
   };
@@ -96,11 +101,13 @@ const ButtonDisplay = ({
   return (
     <>
       {BUTTONS.map((btn) => {
-        // While a winning Take is pending, every button locks except Take:
-        // no hover, no glow, no click. Exit always stays usable.
-        const btnLocked =
-          !isExit(btn) &&
-          (disabled || (takeLock && !isTake(btn)) || isCancelSpecificLocked(btn));
+        // Take is locked unless a winning result is pending; all other
+        // buttons lock while the Take window is active. Exit stays usable.
+        const btnLocked = isExit(btn)
+          ? false
+          : isTake(btn)
+            ? !takeLock
+            : disabled || takeLock || isCancelSpecificLocked(btn);
         const isHovered = !btnLocked && hovered === btn.id;
         const name = isPreview(btn) ? (hasBets ? "Bet Ok" : "Prev Bet") : btn.name;
         // Cancel All + Cancel Specific blink while bets are pending (not yet
