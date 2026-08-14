@@ -52,7 +52,7 @@ const HomePage = () => {
   const [lastWinner, setLastWinner] = useState(null);
   const [lastJoker, setLastJoker] = useState(null);
   const [resultError, setResultError] = useState(false);
-  const [selectedValue, setSelectedValue] = useState(10);
+  const [selectedValue, setSelectedValue] = useState(1);
   const [bets, setBets] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [resultRevealed, setResultRevealed] = useState(false);

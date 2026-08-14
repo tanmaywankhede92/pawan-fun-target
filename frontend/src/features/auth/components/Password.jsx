@@ -1,5 +1,6 @@
   // === ADJUST THESE VALUES TO MATCH YOUR IMAGE ===
   import { useState } from "react";
+  import { useSound } from "@hooks/useSound";
 
   const POS = {
     left: "25%",
@@ -41,6 +42,7 @@
 
   const PasswordInput = ({ value, onChange, onKeyDown }) => {
     const [showPassword, setShowPassword] = useState(false);
+    const { play } = useSound();
 
     return (
       <div
@@ -68,7 +70,10 @@
         />
         <button
           type="button"
-          onClick={() => setShowPassword((s) => !s)}
+          onClick={() => {
+            play("CLICK");
+            setShowPassword((s) => !s);
+          }}
           aria-label={showPassword ? "Hide password" : "Show password"}
           className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center border-none cursor-pointer text-gray-600 hover:text-gray-900"
           style={{ width: "12%", height: "100%" }}

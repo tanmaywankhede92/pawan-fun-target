@@ -60,7 +60,10 @@ const decodeOne = (name, src) => {
           buffers.set(name, buf);
           if (unlocked && pendingSounds.has(name)) {
             pendingSounds.delete(name);
-            playBuffer(name);
+            // Respect the requested mode: loops keep looping, one-shots
+            // play once through the decoded buffer.
+            if (loopNames.has(name)) elementLoopPlay(name);
+            else playBuffer(name);
           }
         },
         () => {},
@@ -116,13 +119,16 @@ const elementPlay = (name) => {
   const src = getSrc(name);
   if (!src) return;
   const el = getSfxElement(name, src);
-  el.currentTime = 0;
   el.volume = 1;
-  el.play().catch(() => {
-    // Playback was blocked (autoplay policy) or data wasn't ready yet;
-    // retry on the next gesture.
-    pendingSounds.add(name);
-  });
+  const attempt = () => {
+    el.currentTime = 0;
+    const p = el.play();
+    if (p) p.catch(() => pendingSounds.add(name));
+  };
+  // The file may still be loading (e.g. the very first interaction right
+  // after boot): wait for canplay so that sound is never lost.
+  if (el.readyState >= 2) attempt();
+  else el.addEventListener("canplay", attempt, { once: true });
 };
 
 const elementLoopPlay = (name) => {
@@ -132,8 +138,29 @@ const elementLoopPlay = (name) => {
   const el = getSfxElement(name, src);
   if (el.loop && !el.paused) return; // already looping
   el.loop = true;
-  el.currentTime = 0;
-  el.play().catch(() => pendingSounds.add(name));
+  const attempt = () => {
+    el.currentTime = 0;
+    const p = el.play();
+    if (p) p.catch(() => pendingSounds.add(name));
+  };
+  if (el.readyState >= 2) attempt();
+  else el.addEventListener("canplay", attempt, { once: true });
+};
+
+// Play a one-shot SFX as soon as possible. Prefers the decoded Web Audio
+// buffer; if it is still decoding, queue it so decodeOne() starts it the
+// moment it is ready — the very first interaction's sound is never lost.
+const playOneShot = (name) => {
+  if (buffers.has(name)) {
+    playBuffer(name);
+    return;
+  }
+  if (!getCtx()) {
+    // No Web Audio support at all: rely on the audio element fallback.
+    elementPlay(name);
+    return;
+  }
+  pendingSounds.add(name);
 };
 
 const unlock = () => {
@@ -143,8 +170,7 @@ const unlock = () => {
   for (const name of [...pendingSounds]) {
     pendingSounds.delete(name);
     if (loopNames.has(name)) elementLoopPlay(name);
-    else if (buffers.has(name)) playBuffer(name);
-    else elementPlay(name);
+    else playOneShot(name);
   }
   // A BGM that was blocked on the first gesture can now resume.
   if (bgmElement && bgmElement.paused && !muted) {
@@ -208,12 +234,9 @@ export const playSound = (name, { loop = false } = {}) => {
     return;
   }
   loopNames.delete(name);
-  if (unlocked && buffers.has(name)) {
-    playBuffer(name);
-    return;
-  }
+  pendingSounds.delete(name); // an explicit play supersedes any queued copy
   if (unlocked) {
-    elementPlay(name);
+    playOneShot(name);
     return;
   }
   pendingSounds.add(name);
