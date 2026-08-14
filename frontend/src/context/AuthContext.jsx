@@ -74,6 +74,16 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const logout = useCallback(async () => {
+    // Tell the backend the user is leaving (body: { username }), then clear
+    // the local session regardless of the network result.
+    const username = userRef.current?.username;
+    if (username) {
+      try {
+        await authService.logout(username);
+      } catch {
+        // ignore — always clear the local session
+      }
+    }
     localStorage.removeItem(STORAGE_KEYS.USER);
     dispatch({ type: 'LOGOUT' });
   }, []);

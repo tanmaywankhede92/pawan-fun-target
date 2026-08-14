@@ -12,8 +12,7 @@
 
 @font-face {
   font-family: 'Digit-Tech-7';
-  src: url('../assets/font/digit-tech/DigitTech7-Regular.ttf')
-    format('truetype');
+  src: url('../assets/font/digit-tech/DigitTech7-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -36,20 +35,15 @@
 
 @layer components {
   .btn-primary {
-    @apply px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg
-      hover:bg-blue-700 transition-colors duration-200
-      disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply px-6 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg
-      hover:bg-gray-300 transition-colors duration-200;
+    @apply px-6 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors duration-200;
   }
 
   .input-field {
-    @apply w-full px-4 py-2 border border-gray-300 rounded-lg
-      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-      transition-all duration-200;
+    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200;
   }
 }
 
@@ -60,10 +54,12 @@
 }
 
 @keyframes ft-blink {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.25;
   }
@@ -75,10 +71,12 @@
 
 /* Mobile landscape only — short landscape touch screens */
 @media (orientation: landscape) and (max-width: 1024px) and (max-height: 520px) and (hover: none) and (pointer: coarse) {
+
   /* Keep login input text inside its box on small screens */
   .ft-login-field {
     font-size: clamp(12px, 3.2vw, 16px) !important;
   }
+
   .ft-login-field::placeholder {
     font-size: clamp(10px, 2.6vw, 13px) !important;
   }
@@ -91,9 +89,43 @@
     gap: 1px 3px !important;
     overflow-x: visible !important;
   }
+
   .ft-last-wins-item {
     font-size: clamp(9px, 1.4vw, 12px) !important;
     padding: 0 !important;
     line-height: 1.5 !important;
+  }
+}
+
+/* Desktop */
+.funtarget-game {
+  left: 82%;
+  top: 8%;
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .funtarget-game {
+    left: auto;
+    right: 5%;
+    top: 8%;
+    font-size: 14px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .funtarget-game {
+    left: auto;
+    right: 4%;
+    top: 7%;
+    font-size: 12px;
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .funtarget-game img {
+    width: 30px;
+    height: 17px;
   }
 }
