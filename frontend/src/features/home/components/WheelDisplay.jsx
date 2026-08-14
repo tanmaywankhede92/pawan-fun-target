@@ -3,10 +3,10 @@ import { useSound } from "@hooks/useSound";
 import { istSeconds, secondsToNextMinute } from "@utils/istTime";
 import wheelImg from "@assets/images/wheel/wheel.webp";
 import wheelGif from "@assets/images/gifs/joker_gif1.webp";
-import joker1 from "@assets/images/gifs/joker1.webp";
-import joker2 from "@assets/images/gifs/joker2.webp";
-import joker3 from "@assets/images/gifs/joker3.webp";
-import joker4 from "@assets/images/gifs/joker4.webp";
+import jackpot from "@assets/images/gifs/joker1.webp";
+import goldie from "@assets/images/gifs/joker2.webp";
+import bonus from "@assets/images/gifs/joker3.webp";
+import drum from "@assets/images/gifs/joker4.webp";
 import pointerGif from "@assets/images/gifs/DG.webp";
 
 const POS = {
@@ -29,17 +29,20 @@ const POINTER_POS = {
   height: "auto",
 };
 
-const JOKER_IMAGES = [joker1, joker2, joker3, joker4];
+// The Jackpot image belongs ONLY to joker = 2 — it must never appear
+// randomly on any other value.
+const NON_JACKPOT_IMAGES = [goldie, bonus, drum];
 
-const randomJoker = () =>
-  JOKER_IMAGES[Math.floor(Math.random() * JOKER_IMAGES.length)];
+const randomNonJackpot = () =>
+  NON_JACKPOT_IMAGES[Math.floor(Math.random() * NON_JACKPOT_IMAGES.length)];
 
-// API sends a joker value (1-4); fall back to a random joker when the
-// value is missing or out of range.
-const jokerImageFor = (value) =>
-  value >= 1 && value <= JOKER_IMAGES.length
-    ? JOKER_IMAGES[value - 1]
-    : randomJoker();
+// API sends a joker value (1-4). joker = 2 ALWAYS shows the Jackpot image;
+// every other value (1, 3, 4, missing/out of range) shows a random joker
+// from the NON-Jackpot set, so the Jackpot never appears on joker = 1.
+const jokerImageFor = (value) => {
+  if (Number(value) === 2) return jackpot;
+  return randomNonJackpot();
+};
 
 const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
@@ -58,7 +61,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState(null);
   const [ready, setReady] = useState(false);
-  const [resultJoker, setResultJoker] = useState(() => randomJoker());
+  const [resultJoker, setResultJoker] = useState(() => randomNonJackpot());
 
   const rotationRef = useRef(0);
   const prevTrigger = useRef(spinTrigger);
@@ -127,7 +130,6 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
       onComplete(winner); // the SAME backend result that targeted the spin
     }
   }, [winner, joker, onComplete, play, stop]);
-
 
   useEffect(() => {
     const onVisibilityChange = () => {
