@@ -3,7 +3,7 @@ const POS = {
   left: "55%",
   top: "90%",
   width: "15%",
-  height: "10%",
+  height: "6%",
 };
 
 const EnterButton = ({ onClick, loading }) => {
@@ -15,7 +15,7 @@ const EnterButton = ({ onClick, loading }) => {
       aria-label="Enter"
       className="
         absolute bg-transparent outline-none p-0 m-0 cursor-pointer ft-login-field
-        min-h-[20px] min-w-[80px] hover:text-white hover:bg-black/50
+        min-h-[40px] min-w-[80px] hover:text-white hover:bg-black/50
         transition-colors duration-150 
       "
       style={{
