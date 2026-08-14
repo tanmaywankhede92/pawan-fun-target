@@ -3,7 +3,7 @@ import prevBg from "@assets/images/background/PrevBG.webp";
 import ftLogo from "@assets/images/background/Icon.png";
 import { useAuth } from "@hooks/useAuth";
 import { useSound } from "@hooks/useSound";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // Post-login lobby: shows PrevBG full-screen with the user's ID + balance
 // (from the login data), a FunTarget game list that enters the game on
@@ -11,7 +11,7 @@ import { useState } from "react";
 const PrePage = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { play } = useSound();
+  const { play, stop, stopBgm } = useSound();
   const [gameActive, setGameActive] = useState(false);
 
   const handleOk = () => {
@@ -24,6 +24,29 @@ const PrePage = () => {
     await logout();
     navigate("/login", { replace: true });
   };
+
+  // The lobby must be silent: stop every game/timer sound so nothing that
+  // was still playing in the game (or queued for the next gesture) is heard
+  // here. Sounds should only start once the user enters the game.
+  useEffect(() => {
+    for (const name of [
+      "TICK",
+      "SPIN",
+      "WIN",
+      "LOSE",
+      "TAKE",
+      "BET",
+      "CANCEL",
+      "LOADING",
+      "ENTER",
+      "EXIT",
+      "POPUP",
+      "CLICK",
+    ]) {
+      stop(name);
+    }
+    stopBgm();
+  }, [stop, stopBgm]);
 
   const boxStyle = {
     display: "flex",

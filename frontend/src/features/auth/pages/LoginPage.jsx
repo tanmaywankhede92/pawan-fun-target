@@ -49,12 +49,20 @@ const LoginPage = () => {
 
   const handleClose = useCallback(() => {
     play("CLICK");
-    if (window.close) {
+    // Re-opening the current window via '_self' is the standard trick that
+    // makes window.close() succeed even on tabs that weren't opened by
+    // script (launcher/kiosk windows usually allow the direct close too).
+    try {
+      window.open("", "_self");
       window.close();
-    } else {
-      const confirmed = window.confirm("Exit Fun Target?");
-      if (confirmed) window.location.href = "about:blank";
+    } catch {
+      // ignore
     }
+    // Only if the browser still refused to close the tab: blank the page so
+    // nothing of the app remains on screen (mobile + desktop).
+    setTimeout(() => {
+      if (!window.closed) window.location.replace("about:blank");
+    }, 300);
   }, [play]);
 
   return (

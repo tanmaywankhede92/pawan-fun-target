@@ -221,6 +221,10 @@ export const playSound = (name, { loop = false } = {}) => {
 
 export const stopSound = (name) => {
   loopNames.delete(name);
+  // A stopped sound must never be flushed later by unlock(): leaving it
+  // in pendingSounds would let queued game/timer sounds start on a
+  // different page (e.g. the Pre lobby) after the next user gesture.
+  pendingSounds.delete(name);
   const src = activeSources.get(name);
   if (src) {
     try {

@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useSound } from "@hooks/useSound";
 import { istSeconds, secondsToNextMinute } from "@utils/istTime";
 import wheelImg from "@assets/images/wheel/wheel.webp";
-import wheelGif from "@assets/images/gifs/joker_gif1.webp";
+import wheelGif from "@assets/images/gifs/joker_gif1_slow.webp";
 import jackpot from "@assets/images/gifs/joker1.webp";
 import goldie from "@assets/images/gifs/joker2.webp";
 import bonus from "@assets/images/gifs/joker3.webp";
