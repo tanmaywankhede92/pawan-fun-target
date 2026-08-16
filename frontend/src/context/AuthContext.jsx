@@ -1,6 +1,7 @@
 import { createContext, useReducer, useEffect, useCallback, useRef } from 'react';
 import { authService } from '@services/auth.service';
 import { STORAGE_KEYS } from '@constants';
+import { recordApiResponse } from '@utils/apiLog';
 
 const AuthContext = createContext(null);
 
@@ -59,6 +60,7 @@ export const AuthProvider = ({ children }) => {
   const login = useCallback(async (credentials) => {
     try {
       const { data } = await authService.login(credentials);
+      recordApiResponse('login', { status: 200, body: data });
       const user = data?.user;
       if (!user) {
         throw new Error('Login failed');
@@ -67,6 +69,10 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: 'AUTH_SUCCESS', payload: { user } });
       return { redirect: '/pre', user };
     } catch (err) {
+      recordApiResponse('login', {
+        status: err?.response?.status || 0,
+        body: err?.response?.data || { message: err?.message || 'Unknown error' },
+      });
       const message =
         err?.response?.data?.message || 'Invalid username or password';
       throw new Error(message);
@@ -79,9 +85,13 @@ export const AuthProvider = ({ children }) => {
     const username = userRef.current?.username;
     if (username) {
       try {
-        await authService.logout(username);
-      } catch {
-        // ignore — always clear the local session
+        const { data } = await authService.logout(username);
+        recordApiResponse('logout', { status: 200, body: data });
+      } catch (err) {
+        recordApiResponse('logout', {
+          status: err?.response?.status || 0,
+          body: err?.response?.data || { message: err?.message || 'Unknown error' },
+        });
       }
     }
     localStorage.removeItem(STORAGE_KEYS.USER);

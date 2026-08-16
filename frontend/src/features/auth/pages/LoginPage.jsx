@@ -12,7 +12,9 @@ import EnterButton from "../components/EnterButton";
 import { enterPos } from "../components/EnterButton";
 import CloseButton from "../components/CloseButton";
 import { closePos } from "../components/CloseButton";
+import ApiResponseBox from "../components/ApiResponseBox";
 import { useSound } from "@hooks/useSound";
+import { closeApplication } from "@utils/closeApplication";
 
 const DEBUG = false; // Set to true to show colored rectangles over interactive areas
 
@@ -49,20 +51,9 @@ const LoginPage = () => {
 
   const handleClose = useCallback(() => {
     play("CLICK");
-    // Re-opening the current window via '_self' is the standard trick that
-    // makes window.close() succeed even on tabs that weren't opened by
-    // script (launcher/kiosk windows usually allow the direct close too).
-    try {
-      window.open("", "_self");
-      window.close();
-    } catch {
-      // ignore
-    }
-    // Only if the browser still refused to close the tab: blank the page so
-    // nothing of the app remains on screen (mobile + desktop).
-    setTimeout(() => {
-      if (!window.closed) window.location.replace("about:blank");
-    }, 300);
+    // Exit the application. closeApplication() picks the mechanism suited to
+    // the runtime (native wrapper, WebView bridge, or script-opened window).
+    closeApplication();
   }, [play]);
 
   return (
@@ -81,6 +72,8 @@ const LoginPage = () => {
       />
       <EnterButton onClick={handleEnter} loading={loading} />
       <CloseButton onClick={handleClose} />
+
+      <ApiResponseBox />
 
       {/* Debug overlays — set DEBUG=true above to see element positions */}
       {DEBUG && (
