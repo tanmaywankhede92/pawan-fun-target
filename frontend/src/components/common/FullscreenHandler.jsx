@@ -22,6 +22,23 @@ const isFullscreen = () =>
       document.msFullscreenElement,
   );
 
+// Android Chrome / Samsung Internet can auto-rotate the screen into
+// landscape (requires fullscreen). iOS Safari has no orientation.lock, so
+// this silently no-ops there.
+const isMobileCoarse = () =>
+  window.matchMedia("(hover: none)").matches &&
+  window.matchMedia("(pointer: coarse)").matches;
+
+const lockLandscape = () => {
+  if (!isMobileCoarse()) return;
+  try {
+    const o = window.screen?.orientation;
+    if (o?.lock) o.lock("landscape").catch(() => {});
+  } catch {
+    // unsupported / blocked — fall back to the physical rotate prompt
+  }
+};
+
 // Keeps the whole app in fullscreen on mobile (Android Chrome etc.),
 // for every page. iOS Safari has no Fullscreen API for web pages, so it
 // silently no-ops there and the layout still fills the viewport.
@@ -34,11 +51,13 @@ const FullscreenHandler = () => {
     const onGesture = () => {
       everActed.current = true;
       if (!isFullscreen()) requestFs();
+      lockLandscape();
     };
 
     const onFsChange = () => {
       // If the user left fullscreen, re-enter on the next interaction.
       if (!isFullscreen() && everActed.current) requestFs();
+      lockLandscape();
     };
 
     window.addEventListener("pointerdown", onGesture);

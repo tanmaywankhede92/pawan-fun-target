@@ -17,6 +17,35 @@ const isMobileDevice = () =>
   window.matchMedia("(hover: none)").matches &&
   window.matchMedia("(pointer: coarse)").matches;
 
+// Android Chrome / Samsung Internet can force the screen into landscape
+// automatically via fullscreen + screen.orientation.lock. iOS Safari has
+// no orientation.lock, so it still needs the physical rotate prompt.
+const canAutoRotate = () =>
+  typeof window !== "undefined" && Boolean(window.screen?.orientation?.lock);
+
+const attemptAutoRotate = async () => {
+  const el = document.documentElement;
+  const fs =
+    el.requestFullscreen ||
+    el.webkitRequestFullscreen ||
+    el.mozRequestFullScreen ||
+    el.msRequestFullscreen;
+  // screen.orientation.lock() only works while the document is fullscreen,
+  // so wait for the fullscreen request to settle before locking.
+  try {
+    await fs?.call(el);
+  } catch {
+    // fullscreen blocked until a user gesture — the lock below is still
+    // attempted for browsers that don't require fullscreen
+  }
+  try {
+    const o = window.screen?.orientation;
+    if (o?.lock) await o.lock("landscape");
+  } catch {
+    // orientation lock unsupported / failed (e.g. iOS Safari)
+  }
+};
+
 const RotateDeviceOverlay = () => {
   const [show, setShow] = useState(false);
 
@@ -30,16 +59,35 @@ const RotateDeviceOverlay = () => {
     const mq = window.matchMedia("(orientation: portrait)");
     mq.addEventListener("change", update);
     window.addEventListener("resize", update);
+
+    // Auto-rotate the screen the moment the browser allows it (fullscreen
+    // needs a user gesture): try on load and again on every tap. Once the
+    // orientation lock succeeds, the portrait matchMedia flips and the
+    // overlay hides on its own.
+    attemptAutoRotate();
+    const onGesture = () => attemptAutoRotate();
+    window.addEventListener("pointerdown", onGesture);
+    window.addEventListener("touchstart", onGesture);
+    window.addEventListener("keydown", onGesture);
+
     return () => {
       mq.removeEventListener("change", update);
       window.removeEventListener("resize", update);
+      window.removeEventListener("pointerdown", onGesture);
+      window.removeEventListener("touchstart", onGesture);
+      window.removeEventListener("keydown", onGesture);
     };
   }, []);
 
   if (!show) return null;
 
+  const autoRotate = canAutoRotate();
+
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden bg-[#0c1520] px-8 text-center">
+    <div
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden bg-[#0c1520] px-8 text-center"
+      onClick={autoRotate ? attemptAutoRotate : undefined}
+    >
       <style>{KEYFRAMES}</style>
 
       <div
@@ -75,12 +123,21 @@ const RotateDeviceOverlay = () => {
         className="mt-5 text-[clamp(16px,4.5vw,22px)] font-extrabold uppercase tracking-[0.3em] text-[#ffdf80]"
         style={{ textShadow: "0 0 12px rgba(255,215,0,0.6)" }}
       >
-        Rotate Your Device
+        {autoRotate ? "Tap to Enter" : "Rotate Your Device"}
       </div>
 
       <p className="mt-3 max-w-[300px] text-[clamp(12px,3.2vw,15px)] font-medium leading-relaxed text-[#d8c9a8]">
-        For the best experience, please rotate your phone to{" "}
-        <span className="font-bold text-[#f5c542]">landscape</span> mode.
+        {autoRotate ? (
+          <>
+            Tap anywhere to open the game in{" "}
+            <span className="font-bold text-[#f5c542]">landscape</span> mode.
+          </>
+        ) : (
+          <>
+            For the best experience, please rotate your phone to{" "}
+            <span className="font-bold text-[#f5c542]">landscape</span> mode.
+          </>
+        )}
       </p>
     </div>
   );

@@ -72,16 +72,22 @@ const decodeOne = (name, src) => {
     .catch(() => {});
 };
 
-// Warm the audio cache in the background while the app boots.
+// Warm the audio cache in the background while the app boots: decode the
+// Web Audio buffers (instant, zero-latency playback) and pre-create the
+// element fallbacks so a synced sound (wheel spin) never waits on a
+// first-use fetch. Called at the bottom of this module once every helper
+// it depends on (getSfxElement, decodeOne) is defined.
 const preloadAll = () => {
   if (typeof window === 'undefined') return;
   if (!getCtx()) return; // no Web Audio support -> element fallback only
   for (const name of Object.keys(SOUNDS)) {
     const src = getSrc(name);
-    if (src) decodeOne(name, src);
+    if (src) {
+      decodeOne(name, src);
+      getSfxElement(name, src);
+    }
   }
 };
-preloadAll();
 
 const playBuffer = (name) => {
   if (muted) return;
@@ -222,10 +228,26 @@ export const toggleSoundMuted = () => {
   return muted;
 };
 
-export const playSound = (name, { loop = false } = {}) => {
+export const playSound = (name, { loop = false, sync = false } = {}) => {
   if (muted || isHidden()) return;
   const src = getSrc(name);
   if (!src) return;
+  if (sync) {
+    // A synced sound is tied to a visual event (e.g. the wheel spin): it
+    // must start in the same instant the event happens and is NEVER queued
+    // or flushed late by a later gesture. Play it now if possible (decoded
+    // buffer + running context = instant; otherwise a ready element),
+    // otherwise skip it silently — a delayed sound is worse than none.
+    loopNames.delete(name);
+    pendingSounds.delete(name);
+    const ac = getCtx();
+    if (ac && ac.state === 'running' && buffers.has(name)) {
+      playBuffer(name);
+    } else if (getSfxElement(name, src).readyState >= 2) {
+      elementPlay(name);
+    }
+    return;
+  }
   if (loop) {
     // Looping sounds (timer ticks) always use the element path so the
     // track keeps repeating seamlessly. Already looping -> keep playing.
@@ -291,3 +313,6 @@ export const stopMusic = () => {
   }
   bgmSrc = null;
 };
+
+// Run once all helpers above are defined.
+preloadAll();

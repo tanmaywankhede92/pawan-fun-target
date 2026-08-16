@@ -70,6 +70,11 @@ const HomePage = () => {
   // True once the backend balance already includes the placed bet amount.
   // Keeps the score flat across Bet Ok (no 990 -> 1000 -> 990 jump).
   const [betApplied, setBetApplied] = useState(true);
+  // Single source of truth for the displayed score. Updated EXPLICITLY (not
+  // derived) so the backend balance refresh and the local bet deduction can
+  // never double-dip — that transient caused a 990 -> 980 -> 990 flash with
+  // a sound on Bet Ok / auto-submit.
+  const [scoreBalance, setScoreBalance] = useState(() => user?.balance ?? 0);
   const manualMsg = useRef(false);
   const autoSubmitted = useRef(false);
   const noBetRounds = useRef(0);
@@ -77,6 +82,12 @@ const HomePage = () => {
   const betOrder = useRef([]);
 
   const totalBet = Object.values(bets).reduce((sum, v) => sum + v, 0);
+
+  // Sync the score to the authoritative backend balance whenever no local
+  // (unapplied) bet deduction is on screen.
+  useEffect(() => {
+    if (betApplied) setScoreBalance(user?.balance ?? 0);
+  }, [betApplied, user?.balance]);
 
   // Betting lock: last 10 seconds of the minute + while the wheel is spinning.
   const clickLocked = wheelSpinning || (time <= 10 && time > 0);
@@ -121,13 +132,18 @@ const HomePage = () => {
       setCancelSpecificUsed(false);
       betOrder.current.push({ num, amt: selectedValue });
       setBets((prev) => ({ ...prev, [num]: (prev[num] || 0) + selectedValue }));
-      // The backend balance does not include this pending bet yet.
+      // The backend balance does not include this pending bet yet: show the
+      // local deduction directly on the score (no derived double-subtraction).
+      const nextTotal = resultRevealed
+        ? selectedValue
+        : totalBet + selectedValue;
+      setScoreBalance(Math.max(0, (user?.balance || 0) - nextTotal));
       setBetApplied(false);
       // Number click keeps this hint on screen until the round advances.
       manualMsg.current = true;
       setGameMessage("You can either make Bet or Press BETOK Button.");
     },
-    [selectedValue, takePending, resultRevealed, submitted],
+    [selectedValue, takePending, resultRevealed, submitted, totalBet, user],
   );
 
   const clearBets = useCallback(() => {
@@ -135,7 +151,8 @@ const HomePage = () => {
     betOrder.current = [];
     setCancelSpecificUsed(false);
     setBetApplied(true);
-  }, []);
+    setScoreBalance(user?.balance ?? 0);
+  }, [user?.balance]);
 
   // Place the bet via the backend. Ticket = "num-amount" pairs.
   const handlePlaceBet = useCallback(async () => {
@@ -169,7 +186,7 @@ const HomePage = () => {
     const payload = {
       currentDate: istDateStr(),
       currentTime: istTimeStr(),
-      drawTime: ist12hStr(0), // current minute, 12h (frontend style)
+      drawTime: ist12hStr(1), // current minute, 12h (frontend style)
       nextdrawTime: ist24hStr(1), // next minute, 24h (backend style)
       ticket,
       qty: totalBet,
@@ -312,8 +329,11 @@ const HomePage = () => {
             setCancelSpecificUsed(false);
             setSubmitted(false);
             setResultRevealed(false);
-            // The loaded ticket is not yet submitted/deducted.
+            // The loaded ticket is not yet submitted/deducted: show the
+            // deduction on the score directly.
             setBetApplied(false);
+            const loadedTotal = Object.values(parsed).reduce((s, v) => s + v, 0);
+            setScoreBalance(Math.max(0, (user?.balance || 0) - loadedTotal));
             // No "loaded" message — the previous ticket just appears.
           } else {
             manualMsg.current = true;
@@ -523,6 +543,7 @@ const HomePage = () => {
           betOrder.current = [];
           setCancelSpecificUsed(false);
           setSubmitted(false);
+          setBetApplied(true);
           setGameMessage("Game over. Press PreBetOK Button or Make Bet.");
         }
       } catch {
@@ -563,12 +584,9 @@ const HomePage = () => {
     <HomeOverlay>
       <HomeBackground />
 
-      {/* Balance minus the pending bets (not yet deducted from the backend
-          balance): the score drops the moment a number is clicked and stays
-          flat across Bet Ok — the deduction is already shown. */}
-      <ScoreDisplay
-        score={Math.max(0, (user?.balance || 0) - (betApplied ? 0 : totalBet))}
-      />
+      {/* Score is a single managed state: the pending-bet deduction is shown
+          the moment a number is clicked and stays flat across Bet Ok. */}
+      <ScoreDisplay score={Math.max(0, scoreBalance)} />
       <TotalBetDisplay total={totalBet} />
       <WinnerDisplay winner={lastWinner} winAmount={winInfo?.win_amount} />
       <TimerDisplay time={time} />

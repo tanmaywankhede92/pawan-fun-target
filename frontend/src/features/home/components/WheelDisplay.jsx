@@ -49,6 +49,13 @@ const SECTOR_ANGLE = 360 / SECTORS;
 const MIN_SPINS = 5;
 const MAX_SPINS = 8;
 
+// The wheel spins for 6 seconds (00:00 -> 00:06). The transition and the
+// sound share this single value: the sound runs exactly as long as the
+// wheel is visibly turning and is force-stopped right after this window.
+const SPIN_DURATION_MS = 6000;
+const SPIN_TRANSITION = `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)`;
+const SPIN_SOUND_MARGIN_MS = 150;
+
 const angleFor = (w) => ((SECTORS - w) % SECTORS) * SECTOR_ANGLE;
 
 const ALIGN_OFFSET = Number(
@@ -75,6 +82,30 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
     rotationRef.current = r;
     setRotation(r);
   }, []);
+
+  // -------------------------------------------------------------------
+  // Wheel spin sound — locked to the wheel's own lifecycle:
+  //  - starts in the same commit the rotation is applied (so it is heard
+  //    the exact moment the wheel begins to turn),
+  //  - stops the instant the transition ends,
+  //  - force-stops after the spin window even if the browser misses the
+  //    transitionend event, so it can never play on without the wheel.
+  // -------------------------------------------------------------------
+  const spinSoundTimer = useRef(null);
+
+  const startSpinSound = useCallback(() => {
+    play("SPIN", { sync: true });
+    clearTimeout(spinSoundTimer.current);
+    spinSoundTimer.current = setTimeout(
+      () => stop("SPIN"),
+      SPIN_DURATION_MS + SPIN_SOUND_MARGIN_MS,
+    );
+  }, [play, stop]);
+
+  const stopSpinSound = useCallback(() => {
+    clearTimeout(spinSoundTimer.current);
+    stop("SPIN");
+  }, [stop]);
 
   // Initial / reload positioning: the moment the first backend result
   // arrives, snap the wheel to its rest angle WITHOUT any animation so
@@ -113,22 +144,23 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
       (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
       360;
 
-    play("SPIN");
+    // Sound starts in the same commit the wheel begins to rotate.
+    startSpinSound();
     setSpinning(true);
     spinningRef.current = true;
     targetRotationRef.current = rotationRef.current + fullSpins + delta;
     setRotationTracked(targetRotationRef.current);
-  }, [spinTrigger, targetWinner, play, setRotationTracked]);
+  }, [spinTrigger, targetWinner, startSpinSound, setRotationTracked]);
 
   const handleTransitionEnd = useCallback(() => {
     spinningRef.current = false;
     setSpinning(false);
     setResultJoker(jokerImageFor(joker));
-    stop("SPIN");
+    stopSpinSound();
     if (winner !== null && onComplete) {
       onComplete(winner); // the SAME backend result that targeted the spin
     }
-  }, [winner, joker, onComplete, play, stop]);
+  }, [winner, joker, onComplete, stopSpinSound]);
 
   useEffect(() => {
     const onVisibilityChange = () => {
@@ -142,7 +174,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
       setRotationTracked(targetRotationRef.current);
       setSpinning(false);
       setResultJoker(jokerImageFor(joker));
-      stop("SPIN");
+      stopSpinSound();
       if (winnerRef.current !== null && onComplete) {
         onComplete(winnerRef.current);
       }
@@ -150,7 +182,17 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () =>
       document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, [onComplete, play, stop, setRotationTracked, joker]);
+  }, [onComplete, stopSpinSound, setRotationTracked, joker]);
+
+  // Unmount: stop the spin sound and timer so nothing keeps playing after
+  // the wheel is gone.
+  useEffect(
+    () => () => {
+      clearTimeout(spinSoundTimer.current);
+      stop("SPIN");
+    },
+    [stop],
+  );
 
   if (!ready) return null;
 
@@ -177,9 +219,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
           className="w-full h-auto"
           style={{
             transform: `rotate(${rotation}deg)`,
-            transition: spinning
-              ? "transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99)"
-              : "none",
+            transition: spinning ? SPIN_TRANSITION : "none",
             transformOrigin: "center center",
           }}
           onTransitionEnd={handleTransitionEnd}
