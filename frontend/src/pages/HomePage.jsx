@@ -188,17 +188,6 @@ const HomePage = () => {
     };
   }, [username]);
 
-  // Timer countdown sound loops continuously. It only mutes while the wheel
-  // is spinning; as soon as the spin finishes the ticking resumes.
-  useEffect(() => {
-    if (wheelSpinning) {
-      stop("TICK");
-      return;
-    }
-    play("TICK", { loop: true });
-    return () => stop("TICK");
-  }, [wheelSpinning, play, stop]);
-
   // Betting lock: last 10 seconds of the minute + while the wheel is spinning.
   const clickLocked = wheelSpinning || (time <= 10 && time > 0);
 
@@ -213,6 +202,19 @@ const HomePage = () => {
   // Once :00 is reached without claiming the win, the timer freezes at 00
   // until the Take is done. After the Take it resumes from the live clock.
   const timerFrozen = takePending && time === 0;
+
+  // Timer countdown sound loops continuously. It mutes while the wheel is
+  // spinning AND while the timer is frozen on a pending Take (00:00) — no
+  // ticking while the countdown itself is stopped. Once the wheel stops or
+  // the Take is claimed, the ticking resumes.
+  useEffect(() => {
+    if (wheelSpinning || timerFrozen) {
+      stop("TICK");
+      return;
+    }
+    play("TICK", { loop: true });
+    return () => stop("TICK");
+  }, [wheelSpinning, timerFrozen, play, stop]);
 
   const handlePanelSelect = useCallback((value) => {
     setSelectedValue(value);
@@ -418,6 +420,9 @@ const HomePage = () => {
         const last = betOrder.current[betOrder.current.length - 1];
         if (last) {
           const num = last.num;
+          // The whole bet placed on that number returns to the score
+          // (e.g. 2x10 on one number clears 20 and gives 20 back).
+          const cancelledAmt = bets[num] || last.amt;
           // Drop every recorded placement of that number and clear its
           // whole bet.
           betOrder.current = betOrder.current.filter((e) => e.num !== num);
@@ -426,6 +431,11 @@ const HomePage = () => {
             delete next[num];
             return next;
           });
+          // The deducted amount goes straight back to the balance.
+          setScoreBalance((prev) => prev + cancelledAmt);
+          if (betOrder.current.length === 0) {
+            clearPendingBet(user?.username || "");
+          }
         }
         setCancelSpecificUsed(true);
       }
@@ -600,6 +610,20 @@ const HomePage = () => {
       }
     }
     refreshBalance();
+    // Start the spin the exact moment the minute turns (:00, timer 0) —
+    // never wait for the API. The result is fetched in parallel; the wheel
+    // begins rotating as soon as it arrives and still stops at :06 (timer
+    // 54). Clearing the old winner first makes the wheel wait for the fresh
+    // result instead of spinning toward the previous draw.
+    setLastWinner(null);
+    setLastJoker(null);
+    setResultRevealed(false);
+    setTaken(false);
+    setWheelSpinning(true);
+    setSpinCount((c) => c + 1);
+    // Spin sound starts EXACTLY at :00 (minute boundary) — no API wait, no
+    // lag. It is stopped by the wheel's own end-of-spin event at :06.
+    play("SPIN", { sync: true });
     try {
       const { data } = await resultService.getCurrentResult();
       const r = data?.result?.[0];
@@ -607,14 +631,12 @@ const HomePage = () => {
       setLastWinner(Number(r.result) % 10);
       setLastJoker(Number(r.joker) || null);
       setResultError(false);
-      setWheelSpinning(true);
-      setResultRevealed(false);
-      setTaken(false);
-      setSpinCount((c) => c + 1);
     } catch {
       setResultError(true);
+      setWheelSpinning(false);
+      stop("SPIN"); // no wheel this draw -> no spin sound
     }
-  }, [refreshBalance, totalBet, logout, navigate, takePending]);
+  }, [refreshBalance, totalBet, logout, navigate, takePending, play, stop]);
 
   useEffect(() => {
     const id = setInterval(() => {

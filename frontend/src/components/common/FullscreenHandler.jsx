@@ -22,9 +22,7 @@ const isFullscreen = () =>
       document.msFullscreenElement,
   );
 
-// Android Chrome / Samsung Internet can auto-rotate the screen into
-// landscape (requires fullscreen). iOS Safari has no orientation.lock, so
-// this silently no-ops there.
+
 const isMobileCoarse = () =>
   window.matchMedia("(hover: none)").matches &&
   window.matchMedia("(pointer: coarse)").matches;
@@ -39,17 +37,13 @@ const lockLandscape = () => {
   }
 };
 
-// Keeps the whole app in fullscreen on mobile (Android Chrome etc.),
-// for every page. iOS Safari has no Fullscreen API for web pages, so it
-// silently no-ops there and the layout still fills the viewport.
+
 const FullscreenHandler = () => {
   const everActed = useRef(false);
 
   useEffect(() => {
     requestFs();
-    // Best-effort on load: browsers that already allow it (PWA fullscreen,
-    // some Android setups) rotate straight away without any overlay. The
-    // gesture handlers below cover the normal case (first tap anywhere).
+
     lockLandscape();
 
     const onGesture = () => {

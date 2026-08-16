@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import prevBg from "@assets/images/background/PrevBG.webp";
-import ftLogo from "@assets/images/background/Icon.png";
+import ftLogo from "@assets/images/background/Icon.webp";
 import { useAuth } from "@hooks/useAuth";
 import { useSound } from "@hooks/useSound";
+import { authService } from "@services/auth.service";
 import { useEffect, useState } from "react";
 
 // Post-login lobby: shows PrevBG full-screen with the user's ID + balance
@@ -10,9 +11,10 @@ import { useEffect, useState } from "react";
 // click, and a logout button.
 const PrePage = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, setAuth, refreshBalance } = useAuth();
   const { play, stop, stopBgm } = useSound();
   const [gameActive, setGameActive] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const handleOk = () => {
     play("CLICK");
@@ -23,6 +25,29 @@ const PrePage = () => {
     play("CLICK");
     await logout();
     navigate("/login", { replace: true });
+  };
+
+  // Posts the balance_received value from the login API to the backend.
+  // As soon as it succeeds, the displayed balance is refreshed so the
+  // credited amount shows up immediately.
+  const handleReceive = async () => {
+    const username = user?.username;
+    const amount = user?.balance_received;
+    if (!username || amount == null) return;
+    play("CLICK");
+    setSaving(true);
+    try {
+      await authService.setBalanceReceived({
+        username,
+        balance_received: amount,
+      });
+      setAuth({ ...user, balance_received: "0.00" });
+      await refreshBalance();
+    } catch {
+      // leave everything as-is so the user can retry
+    } finally {
+      setSaving(false);
+    }
   };
 
   // The lobby must be silent: stop every game/timer sound so nothing that
@@ -96,6 +121,37 @@ const PrePage = () => {
       >
         {Math.max(0, user?.balance || 0)}
       </div>
+
+      {/* Balance received box */}
+      <div
+        className="absolute"
+        style={{
+          ...boxStyle,
+          left: "2%",
+          top: "65%",
+          width: "20%",
+          height: "7%",
+        }}
+      >
+        {user?.balance_received ?? "0.00"}
+      </div>
+
+      {/* Receive button: posts the login API's balance_received to the
+          backend, then refreshes the displayed balance. */}
+      <button
+        className="absolute cursor-pointer"
+        disabled={saving}
+        onClick={handleReceive}
+        style={{
+          ...boxStyle,
+          left: "18%",
+          top: "57%",
+          width: "20%",
+          height: "7%",
+        }}
+      >
+        {saving}
+      </button>
 
       {/* FunTarget game list box -> click enters the game */}
       <div

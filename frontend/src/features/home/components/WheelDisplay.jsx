@@ -68,12 +68,15 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
   const [resultJoker, setResultJoker] = useState(() => randomNonJackpot());
 
   const rotationRef = useRef(0);
-  const prevTrigger = useRef(spinTrigger);
   const initializedRef = useRef(false);
   const targetRotationRef = useRef(0);
   const spinningRef = useRef(false);
   const winnerRef = useRef(null);
-  const { play, stop } = useSound();
+  // Which spinTrigger value has already been spun (or is currently being
+  // waited on). Initialized to the mount-time trigger so a reload never
+  // spins — the wheel only spins for a NEW draw at :00.
+  const spunTriggerRef = useRef(spinTrigger);
+  const { stop } = useSound();
 
   const setRotationTracked = useCallback((r) => {
     rotationRef.current = r;
@@ -98,12 +101,14 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
   // New draw: spin from the CURRENT rotation (never from 0), always in
   // the same clockwise direction, 5-8 full rotations + the exact delta
   // needed to stop with the backend result centered under the pointer.
+  // The trigger fires at :00; the wheel waits only for the result to
+  // arrive and starts rotating the moment it does — still stopping at
+  // :06 (timer 54).
   useEffect(() => {
     if (!initializedRef.current) return;
-    if (spinTrigger === prevTrigger.current) return;
-    prevTrigger.current = spinTrigger;
-
-    if (targetWinner == null) return; // no valid result -> never spin
+    if (spunTriggerRef.current === spinTrigger) return; // already handled
+    if (targetWinner == null) return; // result still loading -> spin on arrival
+    spunTriggerRef.current = spinTrigger;
 
     const w = targetWinner;
     setWinner(w);
@@ -117,14 +122,13 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
       (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
       360;
 
-    // Wheel spinning = sound ON: starts the exact moment the wheel begins
-    // to rotate and is stopped by the wheel's own end-of-spin event below.
-    play("SPIN", { sync: true });
+    // Spin sound is started by HomePage at :00 (exact minute boundary, no
+    // API wait) and stopped here the moment the wheel finishes.
     setSpinning(true);
     spinningRef.current = true;
     targetRotationRef.current = rotationRef.current + fullSpins + delta;
     setRotationTracked(targetRotationRef.current);
-  }, [spinTrigger, targetWinner, play, setRotationTracked]);
+  }, [spinTrigger, targetWinner, setRotationTracked]);
 
   const handleTransitionEnd = useCallback(() => {
     spinningRef.current = false;
