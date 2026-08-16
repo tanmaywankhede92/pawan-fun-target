@@ -43,7 +43,7 @@ const DEBUG = false;
 const HomePage = () => {
   const { user, logout, refreshBalance } = useAuth();
   const navigate = useNavigate();
-  const { play, playBgm, stop } = useSound();
+  const { play, playBgm } = useSound();
   // const [showExitConfirm, setShowExitConfirm] = useState(false); // exit overlay disabled
   const [time, setTime] = useState(() => secondsToNextMinute(istSeconds()));
   const prevSec = useRef(istSeconds());
@@ -554,17 +554,6 @@ const HomePage = () => {
     },
     [bets, totalBet, user, play],
   );
-
-  useEffect(() => {
-    if (wheelSpinning || timerFrozen) {
-      stop("TICK");
-      return;
-    }
-    // Timer sound keeps looping continuously; it only stops while the
-    // wheel is spinning or the timer is frozen on the winning Take.
-    play("TICK", { loop: true });
-    return () => stop("TICK");
-  }, [wheelSpinning, timerFrozen, play, stop]);
 
   useEffect(() => {
     const start = () => {

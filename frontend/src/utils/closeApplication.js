@@ -58,11 +58,24 @@ const closeTauri = () => {
   }
 };
 
-// Electron renderer — window.close() closes the owning BrowserWindow.
+// Electron renderer.
+// Prefers an explicit preload-exposed close API when one exists
+// (window.electronAPI / window.desktopApp, exposed via contextBridge).
+// Otherwise window.close() — in Electron this natively closes the owning
+// BrowserWindow (no browser-tab restrictions apply).
 const closeElectron = () => {
-  if (w()?.process?.type !== "renderer") return false;
+  const win = w();
+  if (!win) return false;
+
+  const preload =
+    win.electronAPI || win.desktopApp || win.ftDesktop || win.ftApp || null;
+  if (preload && callBridgeMethod(preload, ["closeWindow", "close", "exit"])) {
+    return true;
+  }
+
+  if (win.process?.type !== "renderer") return false;
   try {
-    w().close();
+    win.close();
     return true;
   } catch {
     return false;
