@@ -66,12 +66,23 @@ const FullscreenHandler = () => {
     document.addEventListener("fullscreenchange", onFsChange);
     document.addEventListener("webkitfullscreenchange", onFsChange);
 
+    // Dynamic orientation handling: whenever the physical orientation changes
+    // (e.g. the device is rotated back to portrait), re-lock to landscape
+    // immediately. While fullscreen is active a lock needs no user gesture,
+    // so the screen snaps back on its own instead of waiting for a tap.
+    const onOrientationChange = () => lockLandscape();
+    const orient = window.screen?.orientation;
+    orient?.addEventListener?.("change", onOrientationChange);
+    window.addEventListener("orientationchange", onOrientationChange);
+
     return () => {
       window.removeEventListener("pointerdown", onGesture);
       window.removeEventListener("touchstart", onGesture);
       window.removeEventListener("keydown", onGesture);
       document.removeEventListener("fullscreenchange", onFsChange);
       document.removeEventListener("webkitfullscreenchange", onFsChange);
+      orient?.removeEventListener?.("change", onOrientationChange);
+      window.removeEventListener("orientationchange", onOrientationChange);
     };
   }, []);
 

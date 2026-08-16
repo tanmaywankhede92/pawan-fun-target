@@ -194,6 +194,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
             transform: `rotate(${rotation}deg)`,
             transition: spinning ? SPIN_TRANSITION : "none",
             transformOrigin: "center center",
+            willChange: "transform",
           }}
           onTransitionEnd={handleTransitionEnd}
         />
@@ -240,6 +241,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
             width: POINTER_POS.width,
             height: POINTER_POS.height,
             transform: "translate(-50%, -50%)",
+            filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))",
           }}
         />
       </div>

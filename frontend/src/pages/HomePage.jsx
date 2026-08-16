@@ -30,6 +30,11 @@ import MessageDisplay from "@features/home/components/MessageDisplay";
 import { useSound } from "@hooks/useSound";
 import { recordService } from "@services/record.service";
 import {
+  savePendingBet,
+  loadPendingBet,
+  clearPendingBet,
+} from "@utils/pendingBet";
+import {
   istSeconds,
   secondsToNextMinute,
   istDateStr,
@@ -89,8 +94,106 @@ const HomePage = () => {
     if (betApplied) setScoreBalance(user?.balance ?? 0);
   }, [betApplied, user?.balance]);
 
+  // Persist the current round's bet to disk so an interrupted session can be
+  // restored after the user closes the app. Saved whenever the ticket changes;
+  // never cleared here — clearing happens only on Take / round reset, and any
+  // stale snapshot is ignored on restore by the drawTime gate below.
+  const username = user?.username || "";
+  useEffect(() => {
+    if (totalBet > 0) {
+      savePendingBet(username, {
+        bets,
+        betOrder: betOrder.current,
+        submitted,
+        drawTime: ist12hStr(1),
+        amt: totalBet,
+      });
+    }
+  }, [bets, submitted, totalBet, username]);
+
+  // Restore an interrupted session every time the Home screen mounts (fresh
+  // load or return from the Pre lobby):
+  //   - Pending (untaken) win  -> show the bet + total AND the Take option.
+  //   - Accepted bet for the CURRENT draw -> show the bet, settle normally.
+  //   - Numbers chosen but not accepted -> put them back, user can accept.
+  //   - Nothing / past draw with no win -> clean state, user can bet again.
+  useEffect(() => {
+    if (!username) return;
+    let mounted = true;
+
+    const restore = async () => {
+      let pendingWin = null;
+      try {
+        const { data } = await recordService.winAmount({ username });
+        const amount = Number(data?.data?.win_amount || 0);
+        if (amount > 0) pendingWin = data?.data || null;
+      } catch {
+        pendingWin = null;
+      }
+
+      if (!mounted) return;
+      const snap = loadPendingBet(username);
+      const sameDraw = snap?.drawTime === ist12hStr(1) && snap?.amt > 0;
+
+      if (pendingWin) {
+        setWinInfo(pendingWin);
+        setWon(true);
+        setResultRevealed(true);
+        setSubmitted(true);
+        // The win belongs to the draw that just finished: show the ticket
+        // (and its total) next to the Take button.
+        if (snap && !sameDraw) {
+          setBets(snap.bets);
+          betOrder.current = [...(snap.betOrder || [])];
+          setCancelSpecificUsed(false);
+          setBetApplied(true);
+        }
+        manualMsg.current = true;
+        setGameMessage(
+          "Congratulations!!! You Win. Please Take the Winning Points.",
+        );
+        return;
+      }
+
+      if (sameDraw) {
+        setBets(snap.bets);
+        betOrder.current = [...(snap.betOrder || [])];
+        setCancelSpecificUsed(false);
+        if (snap.submitted) {
+          // Accepted before exit — the backend balance already includes the
+          // deduction; keep the score flat and settle this round normally.
+          setSubmitted(true);
+          setBetApplied(true);
+          manualMsg.current = true;
+          setGameMessage("Your Bet has been Accepted. Waiting for Result.");
+        } else {
+          // Numbers chosen but never accepted — restore them so the user can
+          // accept or cancel before the round locks (≤10s).
+          setSubmitted(false);
+          setBetApplied(false);
+          const restoredTotal = Object.values(snap.bets).reduce(
+            (s, v) => s + v,
+            0,
+          );
+          setScoreBalance(
+            Math.max(0, (user?.balance || 0) - restoredTotal),
+          );
+        }
+      }
+    };
+
+    restore();
+    return () => {
+      mounted = false;
+    };
+  }, [username]);
+
   // Betting lock: last 10 seconds of the minute + while the wheel is spinning.
   const clickLocked = wheelSpinning || (time <= 10 && time > 0);
+
+  // No affordable balance (0 balance, or the pending bet already eats the
+  // whole balance): block placing new bets and disable the bet controls.
+  const noBalance = (user?.balance ?? 0) - totalBet <= 0;
 
   // Take appears only when there is a WINNING result on the board. No timer
   // condition — the user can Take any time (even in the last seconds).
@@ -117,6 +220,19 @@ const HomePage = () => {
       if (takePending) {
         manualMsg.current = true;
         setGameMessage("Take your winning first");
+        return;
+      }
+      // Balance validation: with 0 balance (or when the pending bet already
+      // covers the full balance) no more points can be added to the ticket.
+      const balance = user?.balance ?? 0;
+      if (balance <= 0) {
+        manualMsg.current = true;
+        setGameMessage("Score Insufficient. Please recharge your balance.");
+        return;
+      }
+      if (totalBet + selectedValue > balance) {
+        manualMsg.current = true;
+        setGameMessage("Score Insufficient.");
         return;
       }
       // A new bet for the next result stops the winner blink and starts
@@ -152,7 +268,8 @@ const HomePage = () => {
     setCancelSpecificUsed(false);
     setBetApplied(true);
     setScoreBalance(user?.balance ?? 0);
-  }, [user?.balance]);
+    clearPendingBet(user?.username || "");
+  }, [user?.balance, user?.username]);
 
   // Place the bet via the backend. Ticket = "num-amount" pairs.
   const handlePlaceBet = useCallback(async () => {
@@ -544,6 +661,7 @@ const HomePage = () => {
           setCancelSpecificUsed(false);
           setSubmitted(false);
           setBetApplied(true);
+          clearPendingBet(user?.username || "");
           setGameMessage("Game over. Press PreBetOK Button or Make Bet.");
         }
       } catch {
@@ -607,18 +725,18 @@ const HomePage = () => {
       <NumberDisplay
         bets={bets}
         onBet={handleBet}
-        disabled={clickLocked || takePending || (submitted && !resultRevealed)}
+        disabled={clickLocked || noBalance || takePending || (submitted && !resultRevealed)}
         winnerBlink={resultRevealed && !taken ? lastWinner : null}
       />
       <PanelDisplay
         selectedValue={selectedValue}
         onSelect={handlePanelSelect}
-        disabled={clickLocked || takePending || (submitted && !resultRevealed)}
+        disabled={clickLocked || noBalance || takePending || (submitted && !resultRevealed)}
       />
       <ButtonDisplay
         onAction={handleButtonAction}
         hasBets={totalBet > 0}
-        disabled={clickLocked || (submitted && !resultRevealed)}
+        disabled={clickLocked || noBalance || (submitted && !resultRevealed)}
         takeGlow={takePending}
         takeLock={takePending}
         submitted={submitted}

@@ -22,7 +22,7 @@ const BUTTONS = [
   {
     id: "takeBet",
     name: "Take",
-    sound: "CLICK",
+    sound: "TAKE",
     base: takeBtn,
     glow: takeBetGlow,
     zoom: 1.2,
