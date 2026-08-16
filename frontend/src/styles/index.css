@@ -89,7 +89,7 @@
     padding: 20px;
   }
 
-  .ft-login-inner > .ft-login-pos {
+  .ft-login-inner>.ft-login-pos {
     position: static !important;
     left: auto !important;
     right: auto !important;
@@ -157,32 +157,32 @@
 @media (max-width: 480px) {
   .funtarget-game {
     left: auto !important;
-    right: 4% !important;
+    right: 12% !important;
     top: 7% !important;
     width: auto !important;
     min-width: 0 !important;
-    font-size: clamp(8px, 2.2vw, 12px) !important;
-    padding: 3px 7px !important;
-    gap: 5px !important;
+    font-size: clamp(7px, 1.9vw, 10px) !important;
+    padding: 1px 5px !important;
+    gap: 3px !important;
   }
 
   .funtarget-game img {
-    width: clamp(16px, 5vw, 30px) !important;
-    height: clamp(10px, 2.7vw, 17px) !important;
+    width: clamp(14px, 3.8vw, 24px) !important;
+    height: clamp(8px, 2vw, 13px) !important;
   }
 }
 
-/* Very small phones (iPhone SE 1st gen / old Androids ~320px wide) */
-@media (max-width: 340px) {
+/* Small phones (iPhone SE / older Androids ~320-390px wide) */
+@media (max-width: 390px) {
   .funtarget-game {
-    font-size: clamp(8px, 2.4vw, 10px) !important;
-    padding: 2px 6px !important;
-    gap: 4px !important;
+    font-size: clamp(5.5px, 1.9vw, 8px) !important;
+    padding: 1px 4px !important;
+    gap: 2px !important;
   }
 
   .funtarget-game img {
-    width: clamp(15px, 4.6vw, 24px) !important;
-    height: clamp(8px, 2.5vw, 13px) !important;
+    width: clamp(9px, 3.4vw, 20px) !important;
+    height: clamp(6px, 1.8vw, 11px) !important;
   }
 }
 
@@ -190,13 +190,13 @@
 @media (orientation: landscape) and (max-width: 1024px) and (max-height: 520px) and (hover: none) and (pointer: coarse) {
   .funtarget-game {
     right: 3% !important;
-    font-size: clamp(8px, 2vw, 11px) !important;
-    padding: 3px 7px !important;
-    gap: 5px !important;
+    font-size: clamp(5.5px, 1.7vw, 9px) !important;
+    padding: 1px 5px !important;
+    gap: 3px !important;
   }
 
   .funtarget-game img {
-    width: clamp(16px, 4.5vw, 26px) !important;
-    height: clamp(9px, 2.4vw, 15px) !important;
+    width: clamp(12px, 3.5vw, 22px) !important;
+    height: clamp(6px, 1.9vw, 12px) !important;
   }
 }
