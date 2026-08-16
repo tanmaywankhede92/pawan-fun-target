@@ -14,7 +14,7 @@ const EnterButton = ({ onClick, loading }) => {
       disabled={loading}
       aria-label="Enter"
       className="
-        absolute bg-transparent outline-none p-0 m-0 cursor-pointer ft-login-field
+        absolute bg-transparent outline-none p-0 m-0 cursor-pointer ft-login-field ft-login-pos
         min-h-[40px] min-w-[80px] hover:text-white hover:bg-black/50
         transition-colors duration-150 
       "

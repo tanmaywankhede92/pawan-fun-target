@@ -69,6 +69,44 @@
   animation: ft-blink 0.8s ease-in-out infinite;
 }
 
+/* Login: keep the page glued to the visible area when the mobile keyboard
+   opens — no scroll, no pan. */
+.ft-login-root {
+  overscroll-behavior: none;
+  touch-action: pan-x;
+}
+
+/* Portrait mobile — stack the login fields in a centered column so the
+   landscape % positions never overlap and the fields stay above the
+   keyboard. */
+@media (orientation: portrait) and (max-width: 768px) {
+  .ft-login-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 20px;
+  }
+
+  .ft-login-inner > .ft-login-pos {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    width: 78% !important;
+    height: 44px !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    flex: none;
+  }
+
+  .ft-login-bg {
+    background-size: cover !important;
+  }
+}
+
 /* Mobile landscape only — short landscape touch screens */
 @media (orientation: landscape) and (max-width: 1024px) and (max-height: 520px) and (hover: none) and (pointer: coarse) {
 
@@ -106,26 +144,59 @@
 /* Tablet */
 @media (max-width: 768px) {
   .funtarget-game {
-    left: auto;
-    right: 5%;
-    top: 8%;
-    font-size: 14px;
+    left: auto !important;
+    right: 5% !important;
+    top: 8% !important;
+    width: auto !important;
+    min-width: 0 !important;
+    font-size: 14px !important;
   }
 }
 
 /* Mobile */
 @media (max-width: 480px) {
   .funtarget-game {
-    left: auto;
-    right: 4%;
-    top: 7%;
-    font-size: 12px;
-    padding: 4px 8px;
-    gap: 6px;
+    left: auto !important;
+    right: 4% !important;
+    top: 7% !important;
+    width: auto !important;
+    min-width: 0 !important;
+    font-size: clamp(8px, 2.2vw, 12px) !important;
+    padding: 3px 7px !important;
+    gap: 5px !important;
   }
 
   .funtarget-game img {
-    width: 30px;
-    height: 17px;
+    width: clamp(16px, 5vw, 30px) !important;
+    height: clamp(10px, 2.7vw, 17px) !important;
+  }
+}
+
+/* Very small phones (iPhone SE 1st gen / old Androids ~320px wide) */
+@media (max-width: 340px) {
+  .funtarget-game {
+    font-size: clamp(8px, 2.4vw, 10px) !important;
+    padding: 2px 6px !important;
+    gap: 4px !important;
+  }
+
+  .funtarget-game img {
+    width: clamp(15px, 4.6vw, 24px) !important;
+    height: clamp(8px, 2.5vw, 13px) !important;
+  }
+}
+
+/* Mobile landscape — short landscape touch screens */
+@media (orientation: landscape) and (max-width: 1024px) and (max-height: 520px) and (hover: none) and (pointer: coarse) {
+  .funtarget-game {
+    right: 3% !important;
+    font-size: clamp(8px, 2vw, 11px) !important;
+    padding: 3px 7px !important;
+    gap: 5px !important;
+  }
+
+  .funtarget-game img {
+    width: clamp(16px, 4.5vw, 26px) !important;
+    height: clamp(9px, 2.4vw, 15px) !important;
   }
 }

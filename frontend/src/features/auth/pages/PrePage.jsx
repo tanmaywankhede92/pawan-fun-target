@@ -99,7 +99,7 @@ const PrePage = () => {
 
       {/* FunTarget game list box -> click enters the game */}
       <div
-        className="absolute cursor-pointer transition-all duration-150"
+        className="absolute cursor-pointer transition-all duration-150 funtarget-game"
         style={{
           display: "inline-flex",
           alignItems: "center",

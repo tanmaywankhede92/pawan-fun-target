@@ -3,7 +3,6 @@ import { AuthProvider } from '@context/AuthContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import AppRoutes from '@routes/AppRoutes';
-import RotateDeviceOverlay from '@components/common/RotateDeviceOverlay';
 import SplashScreen from '@components/common/SplashScreen';
 import FullscreenHandler from '@components/common/FullscreenHandler';
 
@@ -14,7 +13,6 @@ const App = () => {
         <FullscreenHandler />
         <AppRoutes />
         <SplashScreen />
-        <RotateDeviceOverlay />
         <ToastContainer
           position="top-right"
           autoClose={3000}

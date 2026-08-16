@@ -3,7 +3,7 @@ import loginBg from "@assets/images/login/login-bg.webp";
 const GameBackground = () => {
   return (
     <div
-      className="absolute inset-0 bg-center bg-no-repeat"
+      className="absolute inset-0 bg-center bg-no-repeat ft-login-bg"
       style={{
         backgroundImage: `url(${loginBg})`,
         backgroundSize: "100% 100%",

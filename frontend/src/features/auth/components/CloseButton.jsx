@@ -15,7 +15,7 @@ const CloseButton = ({ onClick }) => {
       onClick={onClick}
       aria-label="Close"
       className="
-        absolute flex items-center justify-center cursor-pointer
+        absolute flex items-center justify-center cursor-pointer ft-login-pos
         bg-black/30 text-white/80 hover:text-white hover:bg-black/50
         transition-colors duration-150
       "

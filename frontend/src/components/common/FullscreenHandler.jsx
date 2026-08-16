@@ -47,6 +47,10 @@ const FullscreenHandler = () => {
 
   useEffect(() => {
     requestFs();
+    // Best-effort on load: browsers that already allow it (PWA fullscreen,
+    // some Android setups) rotate straight away without any overlay. The
+    // gesture handlers below cover the normal case (first tap anywhere).
+    lockLandscape();
 
     const onGesture = () => {
       everActed.current = true;

@@ -48,7 +48,7 @@ const DEBUG = false;
 const HomePage = () => {
   const { user, logout, refreshBalance } = useAuth();
   const navigate = useNavigate();
-  const { play, playBgm } = useSound();
+  const { play, playBgm, stop } = useSound();
   // const [showExitConfirm, setShowExitConfirm] = useState(false); // exit overlay disabled
   const [time, setTime] = useState(() => secondsToNextMinute(istSeconds()));
   const prevSec = useRef(istSeconds());
@@ -187,6 +187,17 @@ const HomePage = () => {
       mounted = false;
     };
   }, [username]);
+
+  // Timer countdown sound loops continuously. It only mutes while the wheel
+  // is spinning; as soon as the spin finishes the ticking resumes.
+  useEffect(() => {
+    if (wheelSpinning) {
+      stop("TICK");
+      return;
+    }
+    play("TICK", { loop: true });
+    return () => stop("TICK");
+  }, [wheelSpinning, play, stop]);
 
   // Betting lock: last 10 seconds of the minute + while the wheel is spinning.
   const clickLocked = wheelSpinning || (time <= 10 && time > 0);

@@ -14,7 +14,7 @@ const UsernameInput = ({ value, onChange, onKeyDown }) => {
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={onKeyDown}
       autoComplete="username"
-      className="absolute bg-transparent outline-none text-black caret-black cursor-text p-1 m-0 ft-login-field justify-center text-center font-bold"
+      className="absolute bg-transparent outline-none text-black caret-black cursor-text p-1 m-0 ft-login-field ft-login-pos justify-center text-center font-bold"
       style={{
         left: POS.left,
         top: POS.top,
