@@ -228,6 +228,7 @@ const HomePage = () => {
     setTaken(false);
     setWheelSpinning(true);
     setSpinCount((c) => c + 1);
+    play("SPIN", { loop: true });
     try {
       const { data } = await resultService.getCurrentResult();
       const r = data?.result?.[0];
@@ -540,55 +541,53 @@ const HomePage = () => {
           setGameMessage("Failed to load last bet");
         }
       }
-      // take: claim winnings via the backend -> sync balance -> clear bets
+      // take: claim winnings — instant optimistic UI, background API sync
       if (id === "takeBet") {
         if (!takePending) return;
-        // Ensure we have the winning record before claiming.
-        let info = winInfo;
-        if (!info?.barcode) {
-          try {
-            const res = await recordService.winAmount({
-              username: user?.username || "",
-            });
-            info = res?.data?.data || null;
-          } catch {
-            info = null;
-          }
-        }
+        const info = winInfo;
         if (!info?.barcode) {
           manualMsg.current = true;
           setGameMessage("Could not claim winnings. Try again.");
           return;
         }
-        try {
-          const { data } = await recordService.take({
+        // ── Instant UI update ────────────────────────────────────────
+        play("TAKE");
+        const winAmt = Number(info.win_amount || 0);
+        // Add winnings to score immediately (optimistic).
+        setScoreBalance((prev) => prev + winAmt);
+        setBetApplied(true);
+        setTaken(true);
+        setResultRevealed(false);
+        setWon(false);
+        setSubmitted(false);
+        setWinInfo(null);
+        setCancelSpecificUsed(false);
+        clearBets();
+        manualMsg.current = false;
+        setGameMessage("Take successful.");
+        // ── Background API sync (non-blocking) ───────────────────────
+        recordService
+          .take({
             username: user?.username || "",
             win_amount: info.win_amount,
             barcode: info.barcode,
             id: info.id,
-          });
-          if (data?.success === false) {
+          })
+          .then(({ data }) => {
+            if (data?.success === false) {
+              manualMsg.current = true;
+              setGameMessage(data?.message || "Take failed. Try again.");
+              // Revert optimistic update on failure.
+              setScoreBalance((prev) => prev - winAmt);
+              return;
+            }
+            refreshBalance();
+          })
+          .catch(() => {
             manualMsg.current = true;
-            setGameMessage(data?.message || "Take failed. Try again.");
-            return;
-          }
-          setTaken(true);
-          setResultRevealed(false);
-          setWon(false);
-          setSubmitted(false);
-          setWinInfo(null);
-          // Clear the placed bets first so the score does not dip below the
-          // balance while the new balance is being fetched.
-          clearBets();
-          // Normal flow resumes: let the phase messages take over again.
-          manualMsg.current = false;
-          // Balance (winnings included) comes from the backend. The score
-          // then rolls up to the new balance number by number.
-          await refreshBalance();
-        } catch {
-          manualMsg.current = true;
-          setGameMessage("Take failed. Try again.");
-        }
+            setGameMessage("Take failed. Try again.");
+            setScoreBalance((prev) => prev - winAmt);
+          });
       }
       // exit overlay disabled - exit returns to the Pre (PrevBG) lobby
       // screen without logging out (the session stays active).
@@ -608,6 +607,7 @@ const HomePage = () => {
       takePending,
       submitted,
       winInfo,
+      play,
     ],
   );
 

@@ -70,7 +70,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
   const spinStartedRef = useRef(false);
   const targetSetRef = useRef(false);
   const spinStartRef = useRef(0);
-  const { play, stop } = useSound();
+  const { stop } = useSound();
 
   const setRotationTracked = useCallback((r) => {
     rotationRef.current = r;
@@ -103,7 +103,6 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
     spinStartedRef.current = true;
     targetSetRef.current = false;
     spinStartRef.current = performance.now();
-    play("SPIN", { loop: true });
 
     const fullSpins =
       (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
