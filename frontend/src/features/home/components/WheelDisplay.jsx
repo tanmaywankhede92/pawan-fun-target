@@ -44,7 +44,7 @@ const SECTOR_ANGLE = 360 / SECTORS;
 const MIN_SPINS = 5;
 const MAX_SPINS = 8;
 
-const SPIN_DURATION_MS = 6000;
+const SPIN_DURATION_MS = 7000;
 const SPIN_EASING = "cubic-bezier(0.17, 0.67, 0.12, 0.99)";
 
 const angleFor = (w) => ((SECTORS - w) % SECTORS) * SECTOR_ANGLE;
@@ -70,7 +70,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
   const spinStartedRef = useRef(false);
   const targetSetRef = useRef(false);
   const spinStartRef = useRef(0);
-  const { stop } = useSound();
+  const { play, stop } = useSound();
 
   const setRotationTracked = useCallback((r) => {
     rotationRef.current = r;
@@ -103,6 +103,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
     spinStartedRef.current = true;
     targetSetRef.current = false;
     spinStartRef.current = performance.now();
+    play("SPIN", { loop: true });
 
     const fullSpins =
       (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *

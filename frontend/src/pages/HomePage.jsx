@@ -208,7 +208,10 @@ const HomePage = () => {
   // ── Minute boundary handler ─────────────────────────────────────
   // Fired by useTimer exactly once per IST minute crossing.
   const handleNewMinute = useCallback(async () => {
-    if (totalBet > 0) {
+    // If a winning take is pending (user hasn't claimed yet), freeze
+    // everything at :00 — no new spin, no sound, timer stops at 0.
+    if (takePendingRef.current) return;
+    if (totalBet > 0) { 
       noBetRounds.current = 0;
     } else {
       noBetRounds.current += 1;
@@ -225,7 +228,6 @@ const HomePage = () => {
     setTaken(false);
     setWheelSpinning(true);
     setSpinCount((c) => c + 1);
-    play("SPIN", { loop: true });
     try {
       const { data } = await resultService.getCurrentResult();
       const r = data?.result?.[0];
@@ -243,25 +245,36 @@ const HomePage = () => {
   // ── Server-calibrated IST countdown ─────────────────────────────
   // useTimer fires handleNewMinute exactly once per :00 boundary.
   // Drift-corrected, background-tab-safe, Luxon-backed.
-  const time = useTimer({ onMinuteStart: handleNewMinute });
+  const rawTime = useTimer({ onMinuteStart: handleNewMinute });
+
+  // ── Freeze at :00 when take is pending ───────────────────────────
+  // Once the timer hits 0 and the user hasn't taken yet, freeze
+  // EVERYTHING (timer, sound, wheel) until the Take is claimed.
+  // A ref is used because rawTime keeps ticking past 0 → 59, and we
+  // need the frozen state to persist across those ticks.
+  const frozenRef = useRef(false);
+  if (takePending && rawTime === 0) frozenRef.current = true;
+  if (!takePending) frozenRef.current = false;
+  const timerFrozen = frozenRef.current;
+  const time = timerFrozen ? 0 : rawTime;
 
   // Betting lock: last 10 seconds of the minute + while the wheel is spinning.
-  const clickLocked = wheelSpinning || (time <= 10 && time > 0);
+  const clickLocked = wheelSpinning || timerFrozen || (time <= 10 && time > 0);
 
   // No affordable balance (0 balance, or the pending bet already eats the
   // whole balance): block placing new bets and disable the bet controls.
   const noBalance = (user?.balance ?? 0) - totalBet <= 0;
 
-  // Timer countdown sound loops continuously. Mutes only while the wheel
-  // is spinning (6-second spin window at :00).
+  // Timer countdown sound loops continuously. Mutes while the wheel
+  // is spinning OR while the timer is frozen on a pending take.
   useEffect(() => {
-    if (wheelSpinning) {
+    if (wheelSpinning || timerFrozen) {
       stop("TICK");
       return;
     }
     play("TICK", { loop: true });
     return () => stop("TICK");
-  }, [wheelSpinning, play, stop]);
+  }, [wheelSpinning, timerFrozen, play, stop]);
 
   const handlePanelSelect = useCallback((value) => {
     setSelectedValue(value);
