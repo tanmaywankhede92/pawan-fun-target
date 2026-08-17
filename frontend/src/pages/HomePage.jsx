@@ -28,6 +28,7 @@ import MessageDisplay from "@features/home/components/MessageDisplay";
 // import GameLoadingOverlay from "@features/auth/components/GameLoadingOverlay"; // loading disabled
 // import SoundToggle from "@components/common/SoundToggle";
 import { useSound } from "@hooks/useSound";
+import { useTimer } from "@hooks/useTimer";
 import { recordService } from "@services/record.service";
 import {
   savePendingBet,
@@ -36,7 +37,6 @@ import {
 } from "@utils/pendingBet";
 import {
   istSeconds,
-  secondsToNextMinute,
   istDateStr,
   istTimeStr,
   ist12hStr,
@@ -49,9 +49,6 @@ const HomePage = () => {
   const { user, logout, refreshBalance } = useAuth();
   const navigate = useNavigate();
   const { play, playBgm, stop } = useSound();
-  // const [showExitConfirm, setShowExitConfirm] = useState(false); // exit overlay disabled
-  const [time, setTime] = useState(() => secondsToNextMinute(istSeconds()));
-  const prevSec = useRef(istSeconds());
   const [spinCount, setSpinCount] = useState(0);
   const [wheelSpinning, setWheelSpinning] = useState(false);
   const [lastWinner, setLastWinner] = useState(null);
@@ -188,20 +185,66 @@ const HomePage = () => {
     };
   }, [username]);
 
+  // ── Take / round state ──────────────────────────────────────────
+  // Take appears only when there is a WINNING result on the board.
+  const takePending = resultRevealed && !taken && won;
+
+  // ── Minute boundary handler ─────────────────────────────────────
+  // Fired by useTimer exactly once per IST minute crossing.
+  const handleNewMinute = useCallback(async () => {
+    if (takePending) {
+      manualMsg.current = true;
+      setGameMessage("Please Take the Winning Points.");
+      return;
+    }
+    if (totalBet > 0) {
+      noBetRounds.current = 0;
+    } else {
+      noBetRounds.current += 1;
+      if (noBetRounds.current >= 3) {
+        await logout();
+        navigate("/login", { replace: true });
+        return;
+      }
+    }
+    refreshBalance();
+    setLastWinner(null);
+    setLastJoker(null);
+    setResultRevealed(false);
+    setTaken(false);
+    setWheelSpinning(true);
+    setSpinCount((c) => c + 1);
+    play("SPIN", { sync: true });
+    try {
+      const { data } = await resultService.getCurrentResult();
+      const r = data?.result?.[0];
+      if (!r) throw new Error("no result");
+      setLastWinner(Number(r.result) % 10);
+      setLastJoker(Number(r.joker) || null);
+      setResultError(false);
+    } catch {
+      setResultError(true);
+      setWheelSpinning(false);
+      stop("SPIN");
+    }
+  }, [refreshBalance, totalBet, logout, navigate, takePending, play, stop]);
+
+  // ── Server-calibrated IST countdown ─────────────────────────────
+  // useTimer fires handleNewMinute exactly once per :00 boundary.
+  // Drift-corrected, background-tab-safe, Luxon-backed.
+  const rawTime = useTimer({ onMinuteStart: handleNewMinute });
+
+  // Once :00 is reached without claiming the win, the timer freezes at 00
+  // until the Take is done.  After the Take it resumes from the live clock.
+  const timerFrozen = takePending && rawTime === 0;
+  const time = timerFrozen ? 0 : rawTime;
+
   // Betting lock: last 10 seconds of the minute + while the wheel is spinning.
   const clickLocked = wheelSpinning || (time <= 10 && time > 0);
 
   // No affordable balance (0 balance, or the pending bet already eats the
   // whole balance): block placing new bets and disable the bet controls.
   const noBalance = (user?.balance ?? 0) - totalBet <= 0;
-
-  // Take appears only when there is a WINNING result on the board. No timer
-  // condition — the user can Take any time (even in the last seconds).
-  const takePending = resultRevealed && !taken && won;
-
-  // Once :00 is reached without claiming the win, the timer freezes at 00
-  // until the Take is done. After the Take it resumes from the live clock.
-  const timerFrozen = takePending && time === 0;
 
   // Timer countdown sound loops continuously. It mutes while the wheel is
   // spinning AND while the timer is frozen on a pending Take (00:00) — no
@@ -586,82 +629,6 @@ const HomePage = () => {
       mounted = false;
     };
   }, [refreshBalance]);
-
-  // Sync countdown to IST minute boundary; at :00 fetch the fresh
-  // result + balance. No local/random fallback — on failure show an error.
-  const handleNewMinute = useCallback(async () => {
-    // A winning Take is still pending: do NOT advance to the next draw
-    // until the winnings are claimed. Remind the user instead — the timer
-    // keeps running and the Take button stays live.
-    if (takePending) {
-      manualMsg.current = true;
-      setGameMessage("Please Take the Winning Points.");
-      return;
-    }
-    // Auto-logout: after 3 consecutive games with no bet, kick the user out.
-    if (totalBet > 0) {
-      noBetRounds.current = 0;
-    } else {
-      noBetRounds.current += 1;
-      if (noBetRounds.current >= 3) {
-        await logout();
-        navigate("/login", { replace: true });
-        return;
-      }
-    }
-    refreshBalance();
-    // Start the spin the exact moment the minute turns (:00, timer 0) —
-    // never wait for the API. The result is fetched in parallel; the wheel
-    // begins rotating as soon as it arrives and still stops at :06 (timer
-    // 54). Clearing the old winner first makes the wheel wait for the fresh
-    // result instead of spinning toward the previous draw.
-    setLastWinner(null);
-    setLastJoker(null);
-    setResultRevealed(false);
-    setTaken(false);
-    setWheelSpinning(true);
-    setSpinCount((c) => c + 1);
-    // Spin sound starts EXACTLY at :00 (minute boundary) — no API wait, no
-    // lag. It is stopped by the wheel's own end-of-spin event at :06.
-    play("SPIN", { sync: true });
-    try {
-      const { data } = await resultService.getCurrentResult();
-      const r = data?.result?.[0];
-      if (!r) throw new Error("no result");
-      setLastWinner(Number(r.result) % 10);
-      setLastJoker(Number(r.joker) || null);
-      setResultError(false);
-    } catch {
-      setResultError(true);
-      setWheelSpinning(false);
-      stop("SPIN"); // no wheel this draw -> no spin sound
-    }
-  }, [refreshBalance, totalBet, logout, navigate, takePending, play, stop]);
-
-  // Precise countdown: fires exactly at each IST second boundary instead
-  // of a coarse 250 ms interval.  This keeps the display, wheel spin, and
-  // sound perfectly aligned to the server clock.
-  useEffect(() => {
-    let timeoutId;
-
-    const tick = () => {
-      const s = istSeconds();
-      if (!timerFrozen) {
-        setTime(secondsToNextMinute(s));
-      }
-      if (s === 0 && prevSec.current === 59) {
-        handleNewMinute();
-      }
-      prevSec.current = s;
-
-      // Schedule the next tick at the next IST second boundary (±1 ms).
-      const msIntoCurrentSecond = Date.now() % 1000;
-      timeoutId = setTimeout(tick, 1000 - msIntoCurrentSecond + 1);
-    };
-
-    tick();
-    return () => clearTimeout(timeoutId);
-  }, [handleNewMinute, timerFrozen]);
 
   const handleSpinComplete = useCallback(
     async (winner) => {
