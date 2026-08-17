@@ -2,7 +2,7 @@ import useAnimatedNumber from "@hooks/useAnimatedNumber";
 import { SOUNDS } from "@constants/sounds";
 
 const POS = {
-  left: "10%",
+  left: "8%",
   top: "10%",
   width: "8%",
   height: "8%",

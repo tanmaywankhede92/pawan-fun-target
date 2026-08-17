@@ -1,10 +1,10 @@
-import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from '@context/AuthContext';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import AppRoutes from '@routes/AppRoutes';
-import SplashScreen from '@components/common/SplashScreen';
-import FullscreenHandler from '@components/common/FullscreenHandler';
+import { BrowserRouter } from "react-router-dom";
+import { AuthProvider } from "@context/AuthContext";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import AppRoutes from "@routes/AppRoutes";
+import SplashScreen from "@components/common/SplashScreen";
+import FullscreenHandler from "@components/common/FullscreenHandler";
 
 const App = () => {
   return (
@@ -13,7 +13,7 @@ const App = () => {
         <FullscreenHandler />
         <AppRoutes />
         <SplashScreen />
-        <ToastContainer
+        {/* <ToastContainer
           position="top-right"
           autoClose={3000}
           hideProgressBar={false}
@@ -23,7 +23,7 @@ const App = () => {
           draggable
           pauseOnHover
           theme="dark"
-        />
+        /> */}
       </AuthProvider>
     </BrowserRouter>
   );
