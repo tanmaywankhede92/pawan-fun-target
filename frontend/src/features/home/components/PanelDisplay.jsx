@@ -6,7 +6,7 @@ import p100 from "@assets/images/panels/100.webp";
 import p500 from "@assets/images/panels/500.webp";
 import p1000 from "@assets/images/panels/1000.webp";
 import p5000 from "@assets/images/panels/5000.webp";
-import { Fragment } from "react";
+import { Fragment, memo } from "react";
 import { useSound } from "@hooks/useSound";
 
 const IMAGES = {
@@ -76,4 +76,4 @@ const PanelDisplay = ({ selectedValue, onSelect, disabled = false }) => {
   );
 };
 
-export default PanelDisplay;
+export default memo(PanelDisplay);

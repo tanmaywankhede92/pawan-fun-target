@@ -15,6 +15,7 @@ import { closePos } from "../components/CloseButton";
 import ApiResponseBox from "../components/ApiResponseBox";
 import { useSound } from "@hooks/useSound";
 import { closeApplication } from "@utils/closeApplication";
+import { deviceUuid } from "@utils/deviceUuid";
 
 const DEBUG = false; // Set to true to show colored rectangles over interactive areas
 
@@ -32,7 +33,7 @@ const LoginPage = () => {
     play("CLICK");
     setLoading(true);
     try {
-      const result = await login({ username: username.trim(), password });
+      const result = await login({ username: username.trim(), password, device_uuid: deviceUuid });
       navigate(result.redirect || "/pre", { replace: true });
     } catch (err) {
       toast.error(err?.message || "Invalid username or password");

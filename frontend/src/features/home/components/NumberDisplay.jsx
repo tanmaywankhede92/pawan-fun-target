@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, memo } from "react";
 import { useSound } from "@hooks/useSound";
 import n0 from "@assets/images/numbers/0.webp";
 import n1 from "@assets/images/numbers/1.webp";
@@ -182,4 +182,4 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
   );
 };
 
-export default NumberDisplay;
+export default memo(NumberDisplay);

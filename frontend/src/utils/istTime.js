@@ -44,8 +44,8 @@ export const secondsToNextMinute = (s) => (s === 0 ? 0 : 60 - s);
 /** "2026-08-17" */
 export const istDateStr = () => getNow().toFormat("yyyy-MM-dd");
 
-/** "14:30" (24h, no seconds) */
-export const istTimeStr = () => getNow().toFormat("HH:mm");
+/** "14:30:00" (24h with seconds) */
+export const istTimeStr = () => getNow().toFormat("HH:mm:ss");
 
 /** "02:30:00 PM" (12h). minuteOffset advances into the next minute. */
 export const ist12hStr = (minuteOffset = 0) =>

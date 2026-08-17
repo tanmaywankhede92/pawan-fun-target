@@ -45,7 +45,7 @@ const MIN_SPINS = 5;
 const MAX_SPINS = 8;
 
 const SPIN_DURATION_MS = 6000;
-const SPIN_TRANSITION = `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)`;
+const SPIN_EASING = "cubic-bezier(0.17, 0.67, 0.12, 0.99)";
 
 const angleFor = (w) => ((SECTORS - w) % SECTORS) * SECTOR_ANGLE;
 
@@ -59,6 +59,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
   const [winner, setWinner] = useState(null);
   const [ready, setReady] = useState(false);
   const [resultJoker, setResultJoker] = useState(() => randomNonJackpot());
+  const [transitionMs, setTransitionMs] = useState(SPIN_DURATION_MS);
 
   const rotationRef = useRef(0);
   const initializedRef = useRef(false);
@@ -68,6 +69,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
   const spunTriggerRef = useRef(spinTrigger);
   const spinStartedRef = useRef(false);
   const targetSetRef = useRef(false);
+  const spinStartRef = useRef(0);
   const { stop } = useSound();
 
   const setRotationTracked = useCallback((r) => {
@@ -100,6 +102,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
     setResultJoker(null);
     spinStartedRef.current = true;
     targetSetRef.current = false;
+    spinStartRef.current = performance.now();
 
     const fullSpins =
       (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
@@ -107,6 +110,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
 
     setSpinning(true);
     spinningRef.current = true;
+    setTransitionMs(SPIN_DURATION_MS);
     targetRotationRef.current = rotationRef.current + fullSpins;
     setRotationTracked(targetRotationRef.current);
   }, [spinTrigger, setRotationTracked]);
@@ -114,7 +118,9 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
   // ── Phase 2 — Adjust landing when the API result arrives ─────────
   // When the backend result comes in (usually within 100-300 ms), add
   // the exact delta needed so the wheel stops with the correct sector
-  // under the pointer. CSS smoothly redirects the in-progress animation.
+  // under the pointer.  We also REDUCE the transition duration so the
+  // total spin time equals SPIN_DURATION_MS from the Phase 1 start,
+  // not SPIN_DURATION_MS from the moment Phase 2 fires.
   useEffect(() => {
     if (targetWinner == null) return;
     if (!spinStartedRef.current) return;
@@ -129,6 +135,11 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
     const targetRest = angleFor(w) + ALIGN_OFFSET;
     const currentMod = ((rotationRef.current % 360) + 360) % 360;
     const delta = (((targetRest - currentMod) % 360) + 360) % 360;
+
+    // Remaining time so total spin = SPIN_DURATION_MS from Phase 1 start.
+    const elapsed = performance.now() - spinStartRef.current;
+    const remaining = Math.max(200, SPIN_DURATION_MS - elapsed);
+    setTransitionMs(remaining);
 
     targetRotationRef.current = rotationRef.current + delta;
     setRotationTracked(targetRotationRef.current);
@@ -205,7 +216,9 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
           className="w-full h-auto"
           style={{
             transform: `rotate(${rotation}deg)`,
-            transition: spinning ? SPIN_TRANSITION : "none",
+            transition: spinning
+              ? `transform ${transitionMs}ms ${SPIN_EASING}`
+              : "none",
             transformOrigin: "center center",
             willChange: "transform",
           }}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@hooks/useAuth";
 import { resultService } from "@services/result.service";
@@ -82,8 +82,23 @@ const HomePage = () => {
   const noBetRounds = useRef(0);
   // Placement order for cancel-specific (last come first out).
   const betOrder = useRef([]);
+  // Refs to keep handleBet / handleButtonAction references stable so
+  // child components wrapped in React.memo don't re-render on every tick.
+  const selectedRef = useRef(selectedValue);
+  selectedRef.current = selectedValue;
+  const betsRef = useRef(bets);
+  betsRef.current = bets;
+  const submittedRef = useRef(submitted);
+  submittedRef.current = submitted;
+  const resultRevealedRef = useRef(resultRevealed);
+  resultRevealedRef.current = resultRevealed;
+  const takePendingRef = useRef(false);
+  const totalBetRef = useRef(0);
+  const userRef = useRef(user);
+  userRef.current = user;
 
   const totalBet = Object.values(bets).reduce((sum, v) => sum + v, 0);
+  totalBetRef.current = totalBet;
 
   // Sync the score to the authoritative backend balance whenever no local
   // (unapplied) bet deduction is on screen.
@@ -188,15 +203,11 @@ const HomePage = () => {
   // ── Take / round state ──────────────────────────────────────────
   // Take appears only when there is a WINNING result on the board.
   const takePending = resultRevealed && !taken && won;
+  takePendingRef.current = takePending;
 
   // ── Minute boundary handler ─────────────────────────────────────
   // Fired by useTimer exactly once per IST minute crossing.
   const handleNewMinute = useCallback(async () => {
-    if (takePending) {
-      manualMsg.current = true;
-      setGameMessage("Please Take the Winning Points.");
-      return;
-    }
     if (totalBet > 0) {
       noBetRounds.current = 0;
     } else {
@@ -214,7 +225,7 @@ const HomePage = () => {
     setTaken(false);
     setWheelSpinning(true);
     setSpinCount((c) => c + 1);
-    play("SPIN", { sync: true });
+    play("SPIN", { loop: true });
     try {
       const { data } = await resultService.getCurrentResult();
       const r = data?.result?.[0];
@@ -227,17 +238,12 @@ const HomePage = () => {
       setWheelSpinning(false);
       stop("SPIN");
     }
-  }, [refreshBalance, totalBet, logout, navigate, takePending, play, stop]);
+  }, [refreshBalance, totalBet, logout, navigate, play, stop]);
 
   // ── Server-calibrated IST countdown ─────────────────────────────
   // useTimer fires handleNewMinute exactly once per :00 boundary.
   // Drift-corrected, background-tab-safe, Luxon-backed.
-  const rawTime = useTimer({ onMinuteStart: handleNewMinute });
-
-  // Once :00 is reached without claiming the win, the timer freezes at 00
-  // until the Take is done.  After the Take it resumes from the live clock.
-  const timerFrozen = takePending && rawTime === 0;
-  const time = timerFrozen ? 0 : rawTime;
+  const time = useTimer({ onMinuteStart: handleNewMinute });
 
   // Betting lock: last 10 seconds of the minute + while the wheel is spinning.
   const clickLocked = wheelSpinning || (time <= 10 && time > 0);
@@ -246,18 +252,16 @@ const HomePage = () => {
   // whole balance): block placing new bets and disable the bet controls.
   const noBalance = (user?.balance ?? 0) - totalBet <= 0;
 
-  // Timer countdown sound loops continuously. It mutes while the wheel is
-  // spinning AND while the timer is frozen on a pending Take (00:00) — no
-  // ticking while the countdown itself is stopped. Once the wheel stops or
-  // the Take is claimed, the ticking resumes.
+  // Timer countdown sound loops continuously. Mutes only while the wheel
+  // is spinning (6-second spin window at :00).
   useEffect(() => {
-    if (wheelSpinning || timerFrozen) {
+    if (wheelSpinning) {
       stop("TICK");
       return;
     }
     play("TICK", { loop: true });
     return () => stop("TICK");
-  }, [wheelSpinning, timerFrozen, play, stop]);
+  }, [wheelSpinning, play, stop]);
 
   const handlePanelSelect = useCallback((value) => {
     setSelectedValue(value);
@@ -265,35 +269,38 @@ const HomePage = () => {
 
   const handleBet = useCallback(
     (num) => {
-      if (selectedValue === null) return;
+      const sv = selectedRef.current;
+      const tp = takePendingRef.current;
+      const tr = totalBetRef.current;
+      const ur = userRef.current;
+      if (sv === null) return;
       // Once a bet is accepted, no further bets until the result arrives.
-      if (submitted && !resultRevealed) {
+      if (submittedRef.current && !resultRevealedRef.current) {
         manualMsg.current = true;
         setGameMessage("Bet already accepted. Wait for the result.");
         return;
       }
       // If a winning bet is pending, must take before placing new bets.
-      if (takePending) {
+      if (tp) {
         manualMsg.current = true;
         setGameMessage("Take your winning first");
         return;
       }
-      // Balance validation: with 0 balance (or when the pending bet already
-      // covers the full balance) no more points can be added to the ticket.
-      const balance = user?.balance ?? 0;
+      // Balance validation
+      const balance = ur?.balance ?? 0;
       if (balance <= 0) {
         manualMsg.current = true;
         setGameMessage("Score Insufficient. Please recharge your balance.");
         return;
       }
-      if (totalBet + selectedValue > balance) {
+      if (tr + sv > balance) {
         manualMsg.current = true;
         setGameMessage("Score Insufficient.");
         return;
       }
       // A new bet for the next result stops the winner blink and starts
-      // a fresh round (old placed bets from the previous draw are cleared).
-      if (resultRevealed) {
+      // a fresh round.
+      if (resultRevealedRef.current) {
         setBets({});
         betOrder.current = [];
         setResultRevealed(false);
@@ -302,20 +309,15 @@ const HomePage = () => {
       }
       // A new bet re-arms Cancel Specific for one more use.
       setCancelSpecificUsed(false);
-      betOrder.current.push({ num, amt: selectedValue });
-      setBets((prev) => ({ ...prev, [num]: (prev[num] || 0) + selectedValue }));
-      // The backend balance does not include this pending bet yet: show the
-      // local deduction directly on the score (no derived double-subtraction).
-      const nextTotal = resultRevealed
-        ? selectedValue
-        : totalBet + selectedValue;
-      setScoreBalance(Math.max(0, (user?.balance || 0) - nextTotal));
+      betOrder.current.push({ num, amt: sv });
+      setBets((prev) => ({ ...prev, [num]: (prev[num] || 0) + sv }));
+      const nextTotal = resultRevealedRef.current ? sv : tr + sv;
+      setScoreBalance(Math.max(0, (ur?.balance || 0) - nextTotal));
       setBetApplied(false);
-      // Number click keeps this hint on screen until the round advances.
       manualMsg.current = true;
       setGameMessage("You can either make Bet or Press BETOK Button.");
     },
-    [selectedValue, takePending, resultRevealed, submitted, totalBet, user],
+    [],
   );
 
   const clearBets = useCallback(() => {
