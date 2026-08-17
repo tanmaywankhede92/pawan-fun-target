@@ -38,7 +38,6 @@ import {
 import {
   istSeconds,
   istDateStr,
-  istTimeStr,
   ist12hStr,
   ist24hStr,
 } from "@utils/istTime";
@@ -228,6 +227,9 @@ const HomePage = () => {
     setResultRevealed(false);
     setTaken(false);
     setSpinStartMs(performance.now());
+    setWheelSpinning(true);
+    setSpinCount((c) => c + 1);
+    play("SPIN", { loop: true });
     try {
       const { data } = await resultService.getCurrentResult();
       const r = data?.result?.[0];
@@ -235,11 +237,10 @@ const HomePage = () => {
       setLastWinner(Number(r.result) % 10);
       setLastJoker(Number(r.joker) || null);
       setResultError(false);
-      setWheelSpinning(true);
-      setSpinCount((c) => c + 1);
-      play("SPIN", { loop: true });
     } catch {
       setResultError(true);
+      setWheelSpinning(false);
+      stop("SPIN");
     }
   }, [refreshBalance, totalBet, logout, navigate, play, stop]);
 
@@ -374,9 +375,8 @@ const HomePage = () => {
 
     const payload = {
       currentDate: istDateStr(),
-      currentTime: istTimeStr(),
-      drawTime: ist12hStr(1), // current minute, 12h (frontend style)
-      nextdrawTime: ist24hStr(1), // next minute, 24h (backend style)
+      drawTime: ist12hStr(1), // "03:26 PM" (12h, no seconds)
+      nextdrawTime: ist24hStr(1), // "15:26" (24h, no seconds)
       ticket,
       qty: totalBet,
       totalAmount: totalBet,

@@ -65,6 +65,7 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
   const winnerRef = useRef(null);
   const spunTriggerRef = useRef(spinTrigger);
   const spinStartedRef = useRef(false);
+  const targetSetRef = useRef(false);
   const { stop } = useSound();
 
   const setRotationTracked = useCallback((r) => {
@@ -85,47 +86,67 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
     setReady(true);
   }, [targetWinner, joker, setRotationTracked]);
 
-  // ── Single-phase spin: triggered when API result arrives ─────────
-  // Wheel starts ONLY when the backend returns a valid targetWinner.
-  // We calculate remaining time from the :00 timestamp (spinStartMs)
-  // so the wheel stops exactly at the 54-second mark (6 s from :00).
+  // ── Phase 1 — Blind spin at :00 (no result needed) ──────────────
+  // Fires the instant the minute boundary is detected. The wheel starts
+  // rotating immediately so there is zero visual lag. The final landing
+  // angle is unknown at this point — it will be adjusted in Phase 2.
   useEffect(() => {
     if (!initializedRef.current) return;
     if (spunTriggerRef.current === spinTrigger) return;
-    if (targetWinner == null) return;
     spunTriggerRef.current = spinTrigger;
 
     setResultJoker(null);
     spinStartedRef.current = true;
+    targetSetRef.current = false;
+
+    const fullSpins =
+      (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
+      360;
+
+    setSpinning(true);
+    spinningRef.current = true;
+    setTransitionMs(SPIN_DURATION_MS);
+    targetRotationRef.current = rotationRef.current + fullSpins;
+    setRotationTracked(targetRotationRef.current);
+  }, [spinTrigger, setRotationTracked]);
+
+  // ── Phase 2 — Adjust landing when the API result arrives ─────────
+  // When the backend result comes in (usually within 100-300 ms), add
+  // the exact delta needed so the wheel stops with the correct sector
+  // under the pointer.  We calculate remaining time from the exact :00
+  // timestamp (spinStartMs), NOT from when Phase 1 fired — this
+  // eliminates the React render-cycle delay that caused ±50ms drift.
+  useEffect(() => {
+    if (targetWinner == null) return;
+    if (!spinStartedRef.current) return;
+    if (targetSetRef.current) return;
+    targetSetRef.current = true;
+    spinStartedRef.current = false;
 
     const w = targetWinner;
     setWinner(w);
     winnerRef.current = w;
 
-    // Random full spins (5-8) plus the exact sector delta.
-    const fullSpins =
-      (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
-      360;
     const targetRest = angleFor(w) + ALIGN_OFFSET;
-
-    const baseEnd = rotationRef.current + fullSpins;
-    const currentMod = ((baseEnd % 360) + 360) % 360;
+    const currentMod = ((rotationRef.current % 360) + 360) % 360;
     const delta = (((targetRest - currentMod) % 360) + 360) % 360;
 
-    // Remaining time from the :00 moment so the wheel stops at :54.
     const elapsed = performance.now() - spinStartMs;
     const remaining = Math.max(200, SPIN_DURATION_MS - elapsed);
-
-    setSpinning(true);
-    spinningRef.current = true;
     setTransitionMs(remaining);
-    targetRotationRef.current = baseEnd + delta;
+
+    targetRotationRef.current = rotationRef.current + delta;
     setRotationTracked(targetRotationRef.current);
-  }, [spinTrigger, targetWinner, spinStartMs, setRotationTracked]);
+  }, [targetWinner, spinStartMs, setRotationTracked]);
 
   const handleTransitionEnd = useCallback(() => {
+    // Ignore transitionend fired by the interrupted blind-spin transition.
+    // The real landing transition will fire its own event later.
+    if (spinStartedRef.current && !targetSetRef.current) return;
+
     spinningRef.current = false;
     spinStartedRef.current = false;
+    targetSetRef.current = false;
     setSpinning(false);
     setResultJoker(jokerImageFor(joker, winner));
     stop("SPIN");

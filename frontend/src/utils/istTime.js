@@ -47,17 +47,17 @@ export const istDateStr = () => getNow().toFormat("yyyy-MM-dd");
 /** "14:30:00" (24h with seconds) */
 export const istTimeStr = () => getNow().toFormat("HH:mm:ss");
 
-/** "02:30:00 PM" (12h). minuteOffset advances into the next minute. */
-export const ist12hStr = (minuteOffset = 0) =>
-  getNow()
-    .plus({ minutes: minuteOffset })
-    .toFormat("hh:mm:ss a");
+/** "02:30:00 PM" (12h, seconds fixed to 00). minuteOffset advances into the next minute. */
+export const ist12hStr = (minuteOffset = 0) => {
+  const t = getNow().plus({ minutes: minuteOffset });
+  return t.toFormat("hh:mm") + ":00 " + t.toFormat("a");
+};
 
-/** "14:30:00" (24h). minuteOffset advances into the next minute. */
+/** "14:30:00" (24h, seconds fixed to 00). minuteOffset advances into the next minute. */
 export const ist24hStr = (minuteOffset = 0) =>
   getNow()
     .plus({ minutes: minuteOffset })
-    .toFormat("HH:mm:ss");
+    .toFormat("HH:mm") + ":00";
 
 // Back-compat alias (used by old callers).
 export const istNow = getNow;
