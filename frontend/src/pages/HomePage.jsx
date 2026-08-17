@@ -227,10 +227,7 @@ const HomePage = () => {
     setLastJoker(null);
     setResultRevealed(false);
     setTaken(false);
-    setWheelSpinning(true);
     setSpinStartMs(performance.now());
-    setSpinCount((c) => c + 1);
-    play("SPIN", { loop: true });
     try {
       const { data } = await resultService.getCurrentResult();
       const r = data?.result?.[0];
@@ -238,10 +235,11 @@ const HomePage = () => {
       setLastWinner(Number(r.result) % 10);
       setLastJoker(Number(r.joker) || null);
       setResultError(false);
+      setWheelSpinning(true);
+      setSpinCount((c) => c + 1);
+      play("SPIN", { loop: true });
     } catch {
       setResultError(true);
-      setWheelSpinning(false);
-      stop("SPIN");
     }
   }, [refreshBalance, totalBet, logout, navigate, play, stop]);
 
