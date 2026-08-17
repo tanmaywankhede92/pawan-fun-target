@@ -638,11 +638,14 @@ const HomePage = () => {
     }
   }, [refreshBalance, totalBet, logout, navigate, takePending, play, stop]);
 
+  // Precise countdown: fires exactly at each IST second boundary instead
+  // of a coarse 250 ms interval.  This keeps the display, wheel spin, and
+  // sound perfectly aligned to the server clock.
   useEffect(() => {
-    const id = setInterval(() => {
+    let timeoutId;
+
+    const tick = () => {
       const s = istSeconds();
-      // While a winning Take is pending at :00, freeze the timer at 00 until
-      // the win is claimed. On Take it resumes from the live clock.
       if (!timerFrozen) {
         setTime(secondsToNextMinute(s));
       }
@@ -650,8 +653,14 @@ const HomePage = () => {
         handleNewMinute();
       }
       prevSec.current = s;
-    }, 250);
-    return () => clearInterval(id);
+
+      // Schedule the next tick at the next IST second boundary (±1 ms).
+      const msIntoCurrentSecond = Date.now() % 1000;
+      timeoutId = setTimeout(tick, 1000 - msIntoCurrentSecond + 1);
+    };
+
+    tick();
+    return () => clearTimeout(timeoutId);
   }, [handleNewMinute, timerFrozen]);
 
   const handleSpinComplete = useCallback(

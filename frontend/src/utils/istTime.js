@@ -1,19 +1,36 @@
-// Real-world Indian time (IST = UTC+5:30). Backend results are
-// published every minute at HH:MM:00 IST, so everything time-based
-// (game timer, result refresh) is synced to the IST minute boundary.
+// Global IST (Indian Standard Time = UTC+5:30) clock calibrated against the
+// backend server.  A response interceptor in api.js feeds every HTTP Date
+// header into calibrateTime() so the frontend stays locked to the server
+// regardless of the user's device clock.
+
 export const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
+
+// How many ms the server clock is ahead of (or behind) the local clock.
+// Starts at 0; corrected by calibrateTime() on the first API response.
+let serverOffsetMs = 0;
 
 const pad = (n) => String(n).padStart(2, "0");
 
-export const istSeconds = () => {
-  const d = new Date(Date.now() + IST_OFFSET_MS);
-  return d.getUTCSeconds();
+// Calibrate from an HTTP Date header (e.g. "Tue, 17 Aug 2026 14:30:00 GMT").
+// Called automatically by the api.js response interceptor; harmless to call
+// repeatedly — each call tightens the sync.
+export const calibrateTime = (serverDateHeader) => {
+  if (!serverDateHeader) return;
+  const serverUtcMs = new Date(serverDateHeader).getTime();
+  if (Number.isNaN(serverUtcMs)) return;
+  serverOffsetMs = serverUtcMs - Date.now();
 };
+
+// ── IST helpers (server-calibrated) ────────────────────────────────
+
+export const istNow = () => new Date(Date.now() + serverOffsetMs + IST_OFFSET_MS);
+
+export const istSeconds = () => istNow().getUTCSeconds();
 
 export const secondsToNextMinute = (s) => (s === 0 ? 0 : 60 - s);
 
 const getIstParts = () => {
-  const d = new Date(Date.now() + IST_OFFSET_MS);
+  const d = istNow();
   return {
     year: d.getUTCFullYear(),
     month: d.getUTCMonth() + 1,

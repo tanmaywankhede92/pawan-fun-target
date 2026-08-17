@@ -29,16 +29,11 @@ const POINTER_POS = {
   height: "auto",
 };
 
-// The Jackpot image belongs ONLY to joker = 2 — it must never appear
-// randomly on any other value.
 const NON_JACKPOT_IMAGES = [goldie, bonus, drum];
 
 const randomNonJackpot = () =>
   NON_JACKPOT_IMAGES[Math.floor(Math.random() * NON_JACKPOT_IMAGES.length)];
 
-// API sends a joker value (1-4). joker = 2 ALWAYS shows the Jackpot image;
-// every other value (1, 3, 4, missing/out of range) shows a random joker
-// from the NON-Jackpot set, so the Jackpot never appears on joker = 1.
 const jokerImageFor = (value) => {
   if (Number(value) === 2) return jackpot;
   return randomNonJackpot();
@@ -49,7 +44,6 @@ const SECTOR_ANGLE = 360 / SECTORS;
 const MIN_SPINS = 5;
 const MAX_SPINS = 8;
 
-// The wheel spins for 6 seconds (00:00 -> 00:06).
 const SPIN_DURATION_MS = 6000;
 const SPIN_TRANSITION = `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)`;
 
@@ -58,7 +52,6 @@ const angleFor = (w) => ((SECTORS - w) % SECTORS) * SECTOR_ANGLE;
 const ALIGN_OFFSET = Number(
   new URLSearchParams(window.location.search).get("align") || 0,
 );
-// ============================================================
 
 const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
   const [rotation, setRotation] = useState(0);
@@ -72,10 +65,9 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
   const targetRotationRef = useRef(0);
   const spinningRef = useRef(false);
   const winnerRef = useRef(null);
-  // Which spinTrigger value has already been spun (or is currently being
-  // waited on). Initialized to the mount-time trigger so a reload never
-  // spins — the wheel only spins for a NEW draw at :00.
   const spunTriggerRef = useRef(spinTrigger);
+  const spinStartedRef = useRef(false);
+  const targetSetRef = useRef(false);
   const { stop } = useSound();
 
   const setRotationTracked = useCallback((r) => {
@@ -83,10 +75,8 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
     setRotation(r);
   }, []);
 
-  // Initial / reload positioning: the moment the first backend result
-  // arrives, snap the wheel to its rest angle WITHOUT any animation so
-  // the user never sees a temporary "0". The wheel stays hidden until
-  // then.
+  // Initial / reload positioning: snap the wheel to the current result
+  // without any animation.
   useEffect(() => {
     if (initializedRef.current) return;
     if (targetWinner == null) return;
@@ -98,57 +88,78 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
     setReady(true);
   }, [targetWinner, joker, setRotationTracked]);
 
-  // New draw: spin from the CURRENT rotation (never from 0), always in
-  // the same clockwise direction, 5-8 full rotations + the exact delta
-  // needed to stop with the backend result centered under the pointer.
-  // The trigger fires at :00; the wheel waits only for the result to
-  // arrive and starts rotating the moment it does — still stopping at
-  // :06 (timer 54).
+  // ── Phase 1 — Blind spin at :00 (no result needed) ──────────────
+  // Fires the instant the minute boundary is detected. The wheel starts
+  // rotating immediately so there is zero visual lag. The final landing
+  // angle is unknown at this point — it will be adjusted in Phase 2.
   useEffect(() => {
     if (!initializedRef.current) return;
-    if (spunTriggerRef.current === spinTrigger) return; // already handled
-    if (targetWinner == null) return; // result still loading -> spin on arrival
+    if (spunTriggerRef.current === spinTrigger) return;
     spunTriggerRef.current = spinTrigger;
 
-    const w = targetWinner;
-    setWinner(w);
-    winnerRef.current = w;
     setResultJoker(null);
+    spinStartedRef.current = true;
+    targetSetRef.current = false;
 
-    const targetRest = angleFor(w) + ALIGN_OFFSET;
-    const currentMod = ((rotationRef.current % 360) + 360) % 360;
-    const delta = (((targetRest - currentMod) % 360) + 360) % 360;
     const fullSpins =
       (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
       360;
 
-    // Spin sound is started by HomePage at :00 (exact minute boundary, no
-    // API wait) and stopped here the moment the wheel finishes.
     setSpinning(true);
     spinningRef.current = true;
-    targetRotationRef.current = rotationRef.current + fullSpins + delta;
+    targetRotationRef.current = rotationRef.current + fullSpins;
     setRotationTracked(targetRotationRef.current);
-  }, [spinTrigger, targetWinner, setRotationTracked]);
+  }, [spinTrigger, setRotationTracked]);
+
+  // ── Phase 2 — Adjust landing when the API result arrives ─────────
+  // When the backend result comes in (usually within 100-300 ms), add
+  // the exact delta needed so the wheel stops with the correct sector
+  // under the pointer. CSS smoothly redirects the in-progress animation.
+  useEffect(() => {
+    if (targetWinner == null) return;
+    if (!spinStartedRef.current) return;
+    if (targetSetRef.current) return;
+    targetSetRef.current = true;
+    spinStartedRef.current = false;
+
+    const w = targetWinner;
+    setWinner(w);
+    winnerRef.current = w;
+
+    const targetRest = angleFor(w) + ALIGN_OFFSET;
+    const currentMod = ((rotationRef.current % 360) + 360) % 360;
+    const delta = (((targetRest - currentMod) % 360) + 360) % 360;
+
+    targetRotationRef.current = rotationRef.current + delta;
+    setRotationTracked(targetRotationRef.current);
+  }, [targetWinner, setRotationTracked]);
 
   const handleTransitionEnd = useCallback(() => {
+    // Ignore transitionend fired by the interrupted blind-spin transition.
+    // The real landing transition will fire its own event later.
+    if (spinStartedRef.current && !targetSetRef.current) return;
+
     spinningRef.current = false;
+    spinStartedRef.current = false;
+    targetSetRef.current = false;
     setSpinning(false);
     setResultJoker(jokerImageFor(joker));
-    stop("SPIN"); // wheel stopped = sound OFF
+    stop("SPIN");
     if (winner !== null && onComplete) {
-      onComplete(winner); // the SAME backend result that targeted the spin
+      onComplete(winner);
     }
   }, [winner, joker, onComplete, stop]);
 
+  // If the tab is hidden during the spin and the draw is already over,
+  // snap the wheel to its final position so nothing looks broken.
   useEffect(() => {
     const onVisibilityChange = () => {
       if (document.visibilityState !== "visible") return;
       if (!spinningRef.current) return;
-      // Only snap when the draw is already over (the user was away through
-      // the whole spin). If they return within the spin window, let the
-      // animation resume normally — the active-tab experience is unchanged.
       if (secondsToNextMinute(istSeconds()) > 55) return;
       spinningRef.current = false;
+      spinStartedRef.current = false;
+      targetSetRef.current = false;
       setRotationTracked(targetRotationRef.current);
       setSpinning(false);
       setResultJoker(jokerImageFor(joker));
@@ -162,8 +173,6 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
   }, [onComplete, setRotationTracked, joker, stop]);
 
-  // Unmount: make sure the spin sound is never left running after the wheel
-  // is gone.
   useEffect(
     () => () => {
       stop("SPIN");
