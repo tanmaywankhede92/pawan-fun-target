@@ -31,12 +31,9 @@ const POINTER_POS = {
 
 const NON_JACKPOT_IMAGES = [goldie, bonus, drum];
 
-const randomNonJackpot = () =>
-  NON_JACKPOT_IMAGES[Math.floor(Math.random() * NON_JACKPOT_IMAGES.length)];
-
-const jokerImageFor = (value) => {
-  if (Number(value) === 2) return jackpot;
-  return randomNonJackpot();
+const jokerImageFor = (joker, winner) => {
+  if (Number(joker) === 2) return jackpot;
+  return NON_JACKPOT_IMAGES[Number(winner || 0) % NON_JACKPOT_IMAGES.length];
 };
 
 const SECTORS = 10;
@@ -44,7 +41,7 @@ const SECTOR_ANGLE = 360 / SECTORS;
 const MIN_SPINS = 5;
 const MAX_SPINS = 8;
 
-const SPIN_DURATION_MS = 7000;
+const SPIN_DURATION_MS = 6000;
 const SPIN_EASING = "cubic-bezier(0.17, 0.67, 0.12, 0.99)";
 
 const angleFor = (w) => ((SECTORS - w) % SECTORS) * SECTOR_ANGLE;
@@ -53,12 +50,12 @@ const ALIGN_OFFSET = Number(
   new URLSearchParams(window.location.search).get("align") || 0,
 );
 
-const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
+const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplete }) => {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState(null);
   const [ready, setReady] = useState(false);
-  const [resultJoker, setResultJoker] = useState(() => randomNonJackpot());
+  const [resultJoker, setResultJoker] = useState(() => jokerImageFor(null, null));
   const [transitionMs, setTransitionMs] = useState(SPIN_DURATION_MS);
 
   const rotationRef = useRef(0);
@@ -69,7 +66,6 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
   const spunTriggerRef = useRef(spinTrigger);
   const spinStartedRef = useRef(false);
   const targetSetRef = useRef(false);
-  const spinStartRef = useRef(0);
   const { stop } = useSound();
 
   const setRotationTracked = useCallback((r) => {
@@ -85,7 +81,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
     initializedRef.current = true;
     setWinner(targetWinner);
     winnerRef.current = targetWinner;
-    setResultJoker(jokerImageFor(joker));
+    setResultJoker(jokerImageFor(joker, targetWinner));
     setRotationTracked(angleFor(targetWinner) + ALIGN_OFFSET);
     setReady(true);
   }, [targetWinner, joker, setRotationTracked]);
@@ -102,7 +98,6 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
     setResultJoker(null);
     spinStartedRef.current = true;
     targetSetRef.current = false;
-    spinStartRef.current = performance.now();
 
     const fullSpins =
       (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
@@ -118,9 +113,9 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
   // ── Phase 2 — Adjust landing when the API result arrives ─────────
   // When the backend result comes in (usually within 100-300 ms), add
   // the exact delta needed so the wheel stops with the correct sector
-  // under the pointer.  We also REDUCE the transition duration so the
-  // total spin time equals SPIN_DURATION_MS from the Phase 1 start,
-  // not SPIN_DURATION_MS from the moment Phase 2 fires.
+  // under the pointer.  We calculate remaining time from the exact :00
+  // timestamp (spinStartMs), NOT from when Phase 1 fired — this
+  // eliminates the React render-cycle delay that caused ±50ms drift.
   useEffect(() => {
     if (targetWinner == null) return;
     if (!spinStartedRef.current) return;
@@ -136,14 +131,14 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
     const currentMod = ((rotationRef.current % 360) + 360) % 360;
     const delta = (((targetRest - currentMod) % 360) + 360) % 360;
 
-    // Remaining time so total spin = SPIN_DURATION_MS from Phase 1 start.
-    const elapsed = performance.now() - spinStartRef.current;
+    // Measure elapsed from the exact :00 moment, not from Phase 1.
+    const elapsed = performance.now() - spinStartMs;
     const remaining = Math.max(200, SPIN_DURATION_MS - elapsed);
     setTransitionMs(remaining);
 
     targetRotationRef.current = rotationRef.current + delta;
     setRotationTracked(targetRotationRef.current);
-  }, [targetWinner, setRotationTracked]);
+  }, [targetWinner, spinStartMs, setRotationTracked]);
 
   const handleTransitionEnd = useCallback(() => {
     // Ignore transitionend fired by the interrupted blind-spin transition.
@@ -154,7 +149,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
     spinStartedRef.current = false;
     targetSetRef.current = false;
     setSpinning(false);
-    setResultJoker(jokerImageFor(joker));
+    setResultJoker(jokerImageFor(joker, winner));
     stop("SPIN");
     if (winner !== null && onComplete) {
       onComplete(winner);
@@ -173,7 +168,7 @@ const WheelDisplay = ({ spinTrigger, targetWinner, joker, onComplete }) => {
       targetSetRef.current = false;
       setRotationTracked(targetRotationRef.current);
       setSpinning(false);
-      setResultJoker(jokerImageFor(joker));
+    setResultJoker(jokerImageFor(joker, targetWinner));
       stop("SPIN");
       if (winnerRef.current !== null && onComplete) {
         onComplete(winnerRef.current);

@@ -50,6 +50,7 @@ const HomePage = () => {
   const navigate = useNavigate();
   const { play, playBgm, stop } = useSound();
   const [spinCount, setSpinCount] = useState(0);
+  const [spinStartMs, setSpinStartMs] = useState(0);
   const [wheelSpinning, setWheelSpinning] = useState(false);
   const [lastWinner, setLastWinner] = useState(null);
   const [lastJoker, setLastJoker] = useState(null);
@@ -227,6 +228,7 @@ const HomePage = () => {
     setResultRevealed(false);
     setTaken(false);
     setWheelSpinning(true);
+    setSpinStartMs(performance.now());
     setSpinCount((c) => c + 1);
     play("SPIN", { loop: true });
     try {
@@ -725,6 +727,7 @@ const HomePage = () => {
       <GifDisplay />
       <WheelDisplay
         spinTrigger={spinCount}
+        spinStartMs={spinStartMs}
         targetWinner={lastWinner}
         joker={lastJoker}
         onComplete={handleSpinComplete}

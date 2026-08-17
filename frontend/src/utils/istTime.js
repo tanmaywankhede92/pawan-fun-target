@@ -39,7 +39,7 @@ export const getNow = () =>
 export const istSeconds = () => getNow().second;
 
 /** Seconds remaining until the next IST minute boundary. */
-export const secondsToNextMinute = (s) => (s === 0 ? 0 : 60 - s);
+export const secondsToNextMinute = (s) => (s === 0 ? 60 : 60 - s);
 
 /** "2026-08-17" */
 export const istDateStr = () => getNow().toFormat("yyyy-MM-dd");
