@@ -116,7 +116,7 @@ const HomePage = () => {
   // stale snapshot is ignored on restore by the drawTime gate below.
   const username = user?.username || "";
   useEffect(() => {
-    if (totalBet > 0) {
+    if (submitted && totalBet > 0) {
       savePendingBet(username, {
         bets,
         betOrder: betOrder.current,
@@ -349,53 +349,53 @@ const HomePage = () => {
   }, [user?.balance, user?.username]);
 
   // Place the bet via the backend. Ticket = "num-amount" pairs.
+  const placingRef = useRef(false);
   const handlePlaceBet = useCallback(async () => {
-    const ticket = Object.entries(bets)
-      .filter(([, amt]) => amt > 0)
-      .sort((a, b) => Number(a[0]) - Number(b[0]))
-      .map(([n, amt]) => `${n}-${amt}`)
-      .join(",");
-
-    if (!ticket) {
-      manualMsg.current = true;
-      setGameMessage("Select a number first");
-      return;
-    }
-
-    // Minimum bet validation.
-    if (totalBet < 1) {
-      manualMsg.current = true;
-      setGameMessage("Minimum bet amount is 1.");
-      return;
-    }
-
-    // Balance validation: bet amount cannot exceed balance.
-    const balance = user?.balance ?? 0;
-    if (totalBet > balance) {
-      manualMsg.current = true;
-      setGameMessage("Score Insufficient.");
-      return;
-    }
-
-    const payload = {
-      currentDate: istDateStr(),
-      drawTime: ist12hStr(1), // "03:26 PM" (12h, no seconds)
-      nextdrawTime: ist24hStr(1), // "15:26" (24h, no seconds)
-      ticket,
-      qty: totalBet,
-      totalAmount: totalBet,
-      username: user?.username || "",
-    };
-
+    if (placingRef.current) return;
+    placingRef.current = true;
     try {
+      const ticket = Object.entries(bets)
+        .filter(([, amt]) => amt > 0)
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(([n, amt]) => `${n}-${amt}`)
+        .join(",");
+
+      if (!ticket) {
+        manualMsg.current = true;
+        setGameMessage("Select a number first");
+        return;
+      }
+
+      // Minimum bet validation.
+      if (totalBet < 1) {
+        manualMsg.current = true;
+        setGameMessage("Minimum bet amount is 1.");
+        return;
+      }
+
+      // Balance validation: bet amount cannot exceed balance.
+      const balance = user?.balance ?? 0;
+      if (totalBet > balance) {
+        manualMsg.current = true;
+        setGameMessage("Score Insufficient.");
+        return;
+      }
+
+      const payload = {
+        currentDate: istDateStr(),
+        drawTime: ist12hStr(1), // "03:26 PM" (12h, no seconds)
+        nextdrawTime: ist24hStr(1), // "15:26" (24h, no seconds)
+        ticket,
+        qty: totalBet,
+        totalAmount: totalBet,
+        username: user?.username || "",
+      };
+
       const { data } = await recordService.insertRecord(payload);
       if (data?.success) {
         manualMsg.current = true;
         setGameMessage("Your Bet has been Accepted");
-        // Keep showing the placed bets; they clear only on Take.
         setSubmitted(true);
-        // Wait for the refreshed (already-deducted) balance so the score
-        // never jumps back up after Bet Ok.
         const newBalance = await refreshBalance();
         if (newBalance != null) setBetApplied(true);
       } else {
@@ -405,6 +405,8 @@ const HomePage = () => {
     } catch {
       manualMsg.current = true;
       setGameMessage("Bet failed. Try again.");
+    } finally {
+      placingRef.current = false;
     }
   }, [bets, totalBet, user, refreshBalance]);
 
