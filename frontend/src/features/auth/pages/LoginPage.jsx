@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "@hooks/useAuth";
@@ -16,16 +16,23 @@ import ApiResponseBox from "../components/ApiResponseBox";
 import { useSound } from "@hooks/useSound";
 import { closeApplication } from "@utils/closeApplication";
 import { deviceUuid } from "@utils/deviceUuid";
+import prevImg from "@assets/images/background/prevImg.webp";
 
-const DEBUG = false; // Set to true to show colored rectangles over interactive areas
+const DEBUG = false;
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
   const { play } = useSound();
+
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 500);
+    return () => clearTimeout(t);
+  }, []);
 
   const handleEnter = useCallback(async () => {
     if (!username.trim() || !password) return;
@@ -76,34 +83,18 @@ const LoginPage = () => {
 
       <ApiResponseBox />
 
-      {/* Debug overlays — set DEBUG=true above to see element positions */}
-      {DEBUG && (
-        <>
-          <div
-            className="absolute border-2 border-red-500 bg-red-500/20 pointer-events-none"
-            style={usernamePos}
-          >
-            <span className="text-red-300 text-xs">Account</span>
-          </div>
-          <div
-            className="absolute border-2 border-blue-500 bg-blue-500/20 pointer-events-none"
-            style={passwordPos}
-          >
-            <span className="text-blue-300 text-xs">Password</span>
-          </div>
-          <div
-            className="absolute border-2 border-green-500 bg-green-500/20 pointer-events-none flex items-center justify-center"
-            style={enterPos}
-          >
-            <span className="text-green-300 text-xs">ENTER</span>
-          </div>
-          <div
-            className="absolute border-2 border-yellow-500 bg-yellow-500/20 pointer-events-none flex items-center justify-center"
-            style={closePos}
-          >
-            <span className="text-yellow-300 text-xs">X</span>
-          </div>
-        </>
+      {!ready && (
+        <div
+          className="fixed inset-0 z-[200] overflow-hidden bg-black"
+          style={{ transition: "opacity 0.3s ease" }}
+        >
+          <img
+            decoding="async"
+            src={prevImg}
+            alt="Fun Target"
+            className="h-full w-full object-fill"
+          />
+        </div>
       )}
     </LoginOverlay>
   );
