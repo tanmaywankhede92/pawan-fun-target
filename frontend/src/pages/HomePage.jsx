@@ -29,6 +29,7 @@ import MessageDisplay from "@features/home/components/MessageDisplay";
 // import SoundToggle from "@components/common/SoundToggle";
 import { useSound } from "@hooks/useSound";
 import { useTimer } from "@hooks/useTimer";
+import useGameSessionGuard from "@hooks/useGameSessionGuard";
 import { recordService } from "@services/record.service";
 import {
   savePendingBet,
@@ -48,6 +49,9 @@ const HomePage = () => {
   const { user, logout, refreshBalance } = useAuth();
   const navigate = useNavigate();
   const { play, playBgm, stop } = useSound();
+
+  // Auto-logout when app becomes hidden (tab switch, minimize, Home, background).
+  useGameSessionGuard(logout, navigate);
   const [spinCount, setSpinCount] = useState(0);
   const [spinStartMs, setSpinStartMs] = useState(0);
   const [wheelSpinning, setWheelSpinning] = useState(false);
