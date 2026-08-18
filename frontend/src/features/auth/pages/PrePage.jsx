@@ -6,6 +6,14 @@ import { useSound } from "@hooks/useSound";
 import { authService } from "@services/auth.service";
 import { useEffect, useState } from "react";
 
+import wheelImg from "@assets/images/wheel/wheel.webp";
+import wheelGif from "@assets/images/gifs/joker_gif1_slow.webp";
+import jackpot from "@assets/images/gifs/joker1.webp";
+import goldie from "@assets/images/gifs/joker2.webp";
+import bonus from "@assets/images/gifs/joker3.webp";
+import drum from "@assets/images/gifs/joker4.webp";
+import pointerGif from "@assets/images/gifs/DG.webp";
+
 // Post-login lobby: shows PrevBG full-screen with the user's ID + balance
 // (from the login data), a FunTarget game list that enters the game on
 // click, and a logout button.
@@ -49,6 +57,19 @@ const PrePage = () => {
       setSaving(false);
     }
   };
+
+  // Preload game images in background so /game loads instantly on click.
+  useEffect(() => {
+    [wheelImg, wheelGif, jackpot, goldie, bonus, drum, pointerGif].forEach(
+      (src) => {
+        const link = document.createElement("link");
+        link.rel = "preload";
+        link.as = "image";
+        link.href = src;
+        document.head.appendChild(link);
+      }
+    );
+  }, []);
 
   // The lobby must be silent: stop every game/timer sound so nothing that
   // was still playing in the game (or queued for the next gesture) is heard

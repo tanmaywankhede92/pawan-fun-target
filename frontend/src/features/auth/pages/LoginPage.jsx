@@ -5,32 +5,32 @@ import { useAuth } from "@hooks/useAuth";
 import GameBackground from "../components/GameBackground";
 import LoginOverlay from "../components/LoginOverlay";
 import UsernameInput from "../components/UsernameInput";
-import { usernamePos } from "../components/UsernameInput";
 import PasswordInput from "../components/Password";
-import { passwordPos } from "../components/Password";
 import EnterButton from "../components/EnterButton";
-import { enterPos } from "../components/EnterButton";
 import CloseButton from "../components/CloseButton";
-import { closePos } from "../components/CloseButton";
 import ApiResponseBox from "../components/ApiResponseBox";
 import { useSound } from "@hooks/useSound";
 import { closeApplication } from "@utils/closeApplication";
 import { deviceUuid } from "@utils/deviceUuid";
 import prevImg from "@assets/images/background/prevImg.webp";
 
-const DEBUG = false;
+let showedOnce = false;
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(() => showedOnce);
   const { login } = useAuth();
   const navigate = useNavigate();
   const { play } = useSound();
 
   useEffect(() => {
-    const t = setTimeout(() => setReady(true), 500);
+    if (showedOnce) return;
+    const t = setTimeout(() => {
+      showedOnce = true;
+      setReady(true);
+    }, 500);
     return () => clearTimeout(t);
   }, []);
 
