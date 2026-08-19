@@ -5,6 +5,7 @@ import { useAuth } from "@hooks/useAuth";
 import { useSound } from "@hooks/useSound";
 import { authService } from "@services/auth.service";
 import { useEffect, useState } from "react";
+import useGameSessionGuard from "@hooks/useGameSessionGuard";
 
 import wheelImg from "@assets/images/wheel/wheel.webp";
 import wheelGif from "@assets/images/gifs/joker_gif1_slow.webp";
@@ -23,6 +24,8 @@ const PrePage = () => {
   const { play, stop, stopBgm } = useSound();
   const [gameActive, setGameActive] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  useGameSessionGuard(logout, navigate);
 
   const handleOk = () => {
     play("CLICK");
