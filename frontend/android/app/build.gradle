@@ -26,7 +26,7 @@ android {
     }
     signingConfigs {
         release {
-            def keystorePath = System.getenv("KEYSTORE_PATH") ?: "keystore/funtarget.jks"
+            def keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootProject.projectDir}/keystore/funtarget.jks"
             def keystoreFile = file(keystorePath)
             if (keystoreFile.exists()) {
                 storeFile keystoreFile

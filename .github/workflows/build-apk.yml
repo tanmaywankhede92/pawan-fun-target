@@ -57,7 +57,7 @@ jobs:
 
       - name: Build Release APK
         env:
-          KEYSTORE_PATH: keystore/funtarget.jks
+          KEYSTORE_PATH: ${{ github.workspace }}/frontend/android/keystore/funtarget.jks
           KEYSTORE_PASSWORD: funtarget123
           KEY_ALIAS: funtarget
           KEY_PASSWORD: funtarget123
