@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Fun Target</string>
+    <string name="title_activity_main">Fun Target</string>
+    <string name="package_name">com.funtarget.app</string>
+    <string name="custom_url_scheme">com.funtarget.app</string>
+</resources>

@@ -30,6 +30,12 @@ coverage/
 frontend/dist/
 backend/dist/
 
+# Android build artifacts (keep android/ source, ignore build dirs)
+frontend/android/app/build/
+frontend/android/.gradle/
+frontend/android/build/
+frontend/android/capacitor-cordova-android-plugins/build/
+
 # Runtime uploads and temp files
 tmp/
 temp/
