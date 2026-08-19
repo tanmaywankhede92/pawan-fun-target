@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "@hooks/useAuth";
@@ -12,27 +12,14 @@ import ApiResponseBox from "../components/ApiResponseBox";
 import { useSound } from "@hooks/useSound";
 import { closeApplication } from "@utils/closeApplication";
 import { deviceUuid } from "@utils/deviceUuid";
-import prevImg from "@assets/images/background/prevImg.webp";
-
-let showedOnce = false;
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [ready, setReady] = useState(() => showedOnce);
   const { login } = useAuth();
   const navigate = useNavigate();
   const { play } = useSound();
-
-  useEffect(() => {
-    if (showedOnce) return;
-    const t = setTimeout(() => {
-      showedOnce = true;
-      setReady(true);
-    }, 500);
-    return () => clearTimeout(t);
-  }, []);
 
   const handleEnter = useCallback(async () => {
     if (!username.trim() || !password) return;
@@ -82,20 +69,6 @@ const LoginPage = () => {
       <CloseButton onClick={handleClose} />
 
       <ApiResponseBox />
-
-      {!ready && (
-        <div
-          className="fixed inset-0 z-[200] overflow-hidden bg-black"
-          style={{ transition: "opacity 0.3s ease" }}
-        >
-          <img
-            decoding="async"
-            src={prevImg}
-            alt="Fun Target"
-            className="h-full w-full object-fill"
-          />
-        </div>
-      )}
     </LoginOverlay>
   );
 };

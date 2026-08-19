@@ -3,10 +3,30 @@ import prevImg from "@assets/images/background/prevImg.webp";
 
 const SPLASH_MS = 2000;
 
+// Preload images while splash is showing so they're ready instantly.
+const PRELOAD_IMAGES = [
+  // Login background
+  import("@assets/images/background/PrevBG.webp"),
+  // Game wheel
+  import("@assets/images/wheel/wheel.webp"),
+  // Game GIFs
+  import("@assets/images/gifs/joker_gif1_slow.webp"),
+  import("@assets/images/gifs/joker1.webp"),
+  import("@assets/images/gifs/joker2.webp"),
+  import("@assets/images/gifs/joker3.webp"),
+  import("@assets/images/gifs/joker4.webp"),
+  import("@assets/images/gifs/DG.webp"),
+  import("@assets/images/gifs/FTlogo2.webp"),
+  import("@assets/images/gifs/timerDisplay.webp"),
+];
+
 const SplashScreen = () => {
   const [phase, setPhase] = useState("show");
 
   useEffect(() => {
+    // Preload all critical images in background.
+    PRELOAD_IMAGES.forEach((p) => p.catch(() => {}));
+
     const tFade = setTimeout(() => setPhase("fade"), SPLASH_MS - 300);
     const tHide = setTimeout(() => setPhase("hide"), SPLASH_MS);
     return () => {
