@@ -767,7 +767,7 @@ const HomePage = () => {
       <ButtonDisplay
         onAction={handleButtonAction}
         hasBets={totalBet > 0}
-        disabled={clickLocked || noBalance || (submitted && !resultRevealed)}
+        disabled={clickLocked || (submitted && !resultRevealed)}
         takeGlow={takePending}
         takeLock={takePending}
         submitted={submitted}

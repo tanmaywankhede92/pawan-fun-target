@@ -152,9 +152,9 @@ const closeWebView2 = () => {
 const closeNativeBridge = () =>
   closeTauri() ||
   closeElectron() ||
+  closeAndroidBridge() ||
   closeCapacitor() ||
   closeCordova() ||
-  closeAndroidBridge() ||
   closeIosWebview() ||
   closeWebView2();
 

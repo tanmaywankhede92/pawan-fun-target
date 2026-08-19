@@ -4,6 +4,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -15,19 +17,11 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Fullscreen immersive: hide status bar + navigation bar.
+        // Full-screen immersive: hide status bar + navigation bar.
         hideSystemUI();
 
         // Keep screen on while the game is running.
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        // Re-apply immersive mode when the window gains/loses focus.
-        final Window window = getWindow();
-        window.getDecorView().setOnSystemUiVisibilityChangeListener(visibility -> {
-            if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
-                hideSystemUI();
-            }
-        });
 
         // After Capacitor bridge initialises, configure the WebView and inject
         // the native → JS bridge that closeApplication.js and the session
@@ -36,15 +30,31 @@ public class MainActivity extends BridgeActivity {
     }
 
     private void hideSystemUI() {
-        View decorView = getWindow().getDecorView();
-        decorView.setSystemUiVisibility(
-            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-            | View.SYSTEM_UI_FLAG_FULLSCREEN
-        );
+        Window window = getWindow();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // API 30+ (Android 11+): modern WindowInsetsController.
+            WindowInsetsController controller = window.getInsetsController();
+            if (controller != null) {
+                controller.hide(WindowInsets.Type.statusBars()
+                        | WindowInsets.Type.navigationBars());
+                controller.setSystemBarsBehavior(
+                        WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                );
+            }
+            // Let content draw behind system bars.
+            window.setDecorFitsSystemWindows(false);
+        } else {
+            // Legacy API for older devices.
+            View decorView = window.getDecorView();
+            decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+            );
+        }
     }
 
     private void configureWebView() {
@@ -96,6 +106,13 @@ public class MainActivity extends BridgeActivity {
         if (hasFocus) {
             hideSystemUI();
         }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Re-apply immersive every resume to cover all edge cases.
+        hideSystemUI();
     }
 
     @Override
