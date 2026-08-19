@@ -41,31 +41,34 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Generate signing keystore
+        run: |
+          mkdir -p android/keystore
+          keytool -genkeypair -v \
+            -keystore android/keystore/funtarget.jks \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -alias funtarget \
+            -storepass funtarget123 \
+            -keypass funtarget123 \
+            -dname "CN=FunTarget, OU=Dev, O=FunTarget, L=Mumbai, ST=MH, C=IN"
+
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Build Debug APK
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
       - name: Build Release APK
+        env:
+          KEYSTORE_PATH: keystore/funtarget.jks
+          KEYSTORE_PASSWORD: funtarget123
+          KEY_ALIAS: funtarget
+          KEY_PASSWORD: funtarget123
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease
 
-      - name: Upload Debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: fun-target-debug-apk
-          path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 14
-
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: fun-target-release-apk
-          path: frontend/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          path: frontend/android/app/build/outputs/apk/release/app-release.apk
           retention-days: 14
