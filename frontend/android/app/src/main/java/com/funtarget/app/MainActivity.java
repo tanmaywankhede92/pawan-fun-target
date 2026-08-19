@@ -1,11 +1,12 @@
 package com.funtarget.app;
 
+import android.os.Build;
 import android.os.Bundle;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
+import android.view.View;
+import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -14,13 +15,36 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Fullscreen immersive: hide status bar + navigation bar.
+        hideSystemUI();
+
         // Keep screen on while the game is running.
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        // Re-apply immersive mode when the window gains/loses focus.
+        final Window window = getWindow();
+        window.getDecorView().setOnSystemUiVisibilityChangeListener(visibility -> {
+            if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
+                hideSystemUI();
+            }
+        });
 
         // After Capacitor bridge initialises, configure the WebView and inject
         // the native → JS bridge that closeApplication.js and the session
         // guard hook look for.
         getBridge().getWebView().postDelayed(this::configureWebView, 500);
+    }
+
+    private void hideSystemUI() {
+        View decorView = getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_FULLSCREEN
+        );
     }
 
     private void configureWebView() {
@@ -63,6 +87,15 @@ public class MainActivity extends BridgeActivity {
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
         webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        // Re-apply immersive mode when app regains focus (e.g. after notification).
+        if (hasFocus) {
+            hideSystemUI();
+        }
     }
 
     @Override
