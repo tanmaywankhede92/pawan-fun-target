@@ -4,7 +4,7 @@ import cancelBetGlow from "@assets/images/buttons/cancelBetglow.webp";
 import previewGlow from "@assets/images/buttons/BetOk_Glow.webp";
 import exitGlow from "@assets/images/buttons/takeglow.webp";
 import takeBetGlow from "@assets/images/buttons/Take_Glow.webp";
-import cancelBtn from "@assets/images/buttons/cancelBtn.webp";
+import cancelBtn from "@assets/images/buttons/cancelbtn.webp";
 import previewBtn from "@assets/images/buttons/bet1.webp";
 import takeBtn from "@assets/images/buttons/take.webp";
 import exitBtn from "@assets/images/buttons/bet1.webp";
