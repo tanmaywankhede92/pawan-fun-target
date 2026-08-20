@@ -1,29 +1,44 @@
+import { useState, useEffect } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@context/AuthContext";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import AppRoutes from "@routes/AppRoutes";
-import SplashScreen from "@components/common/SplashScreen";
 import FullscreenHandler from "@components/common/FullscreenHandler";
+import prevImg from "@assets/images/background/prevImg.webp";
 
 const App = () => {
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowSplash(false), 2000);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (showSplash) {
+    return (
+      <div
+        style={{
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: "#000",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <img
+          src={prevImg}
+          alt="Fun Target"
+          style={{ width: "100%", height: "100%", objectFit: "fill" }}
+        />
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       <AuthProvider>
         <FullscreenHandler />
         <AppRoutes />
-        <SplashScreen />
-        {/* <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="dark"
-        /> */}
       </AuthProvider>
     </BrowserRouter>
   );

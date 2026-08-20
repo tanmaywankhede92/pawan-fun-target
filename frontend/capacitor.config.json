@@ -16,12 +16,13 @@
       "enabled": true
     },
     "SplashScreen": {
-      "launchAutoHide": false,
+      "launchAutoHide": true,
+      "launchShowDuration": 2,
+      "backgroundColor": "#000000",
+      "showSpinner": false,
       "androidScaleType": "CENTER_CROP",
       "splashFullScreen": true,
-      "splashImmersive": true,
-      "backgroundColor": "#000000",
-      "showSpinner": false
+      "splashImmersive": true
     }
   }
 }
