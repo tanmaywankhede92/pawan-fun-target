@@ -185,8 +185,6 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
     [stop],
   );
 
-  if (!ready) return null;
-
   const showGif = spinning;
 
   return (
