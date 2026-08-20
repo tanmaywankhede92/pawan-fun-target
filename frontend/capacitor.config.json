@@ -22,7 +22,8 @@
       "splashImmersive": true,
       "backgroundColor": "#000000",
       "showSpinner": false,
-      "launchShowDuration": 1
+      "launchShowDuration": 2,
+      "resource": "splash"
     }
   }
 }
