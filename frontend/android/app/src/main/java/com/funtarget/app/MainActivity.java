@@ -1,5 +1,6 @@
 package com.funtarget.app;
 
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -13,9 +14,21 @@ import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
 
+    private static final String PREFS = "funtarget_session";
+    private static final String KEY_RUNNING = "app_running";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // If the app was previously running but onDestroy never fired,
+        // the process was killed from recents. Clear the saved session
+        // so the user lands on the login page.
+        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        if (prefs.getBoolean(KEY_RUNNING, false)) {
+            prefs.edit().putBoolean(KEY_RUNNING, false).apply();
+            clearWebSession();
+        }
 
         // Full-screen immersive: hide status bar + navigation bar.
         hideSystemUI();
@@ -27,6 +40,19 @@ public class MainActivity extends BridgeActivity {
         // the native → JS bridge that closeApplication.js and the session
         // guard hook look for.
         getBridge().getWebView().postDelayed(this::configureWebView, 500);
+    }
+
+    private void clearWebSession() {
+        try {
+            WebView webView = getBridge().getWebView();
+            if (webView != null) {
+                webView.evaluateJavascript(
+                    "localStorage.removeItem('ft_user');",
+                    null
+                );
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     private void hideSystemUI() {
@@ -105,7 +131,6 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        // Re-apply immersive mode when app regains focus (e.g. after notification).
         if (hasFocus) {
             hideSystemUI();
         }
@@ -114,15 +139,15 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
-        // Re-apply immersive every resume to cover all edge cases.
         hideSystemUI();
+        // Mark app as running — cleared in onDestroy for clean shutdown.
+        getSharedPreferences(PREFS, MODE_PRIVATE)
+            .edit().putBoolean(KEY_RUNNING, true).apply();
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        // Fallback: if visibilitychange doesn't fire in the WebView,
-        // trigger the frontend session guard from native side.
         try {
             WebView webView = getBridge().getWebView();
             if (webView != null) {
@@ -135,12 +160,19 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
+    public void onDestroy() {
+        // Clean shutdown: clear the running flag so next launch
+        // knows this was a normal exit (not a force-kill).
+        getSharedPreferences(PREFS, MODE_PRIVATE)
+            .edit().putBoolean(KEY_RUNNING, false).apply();
+        super.onDestroy();
+    }
+
+    @Override
     public void onBackPressed() {
-        // Prevent back button from navigating away from the game.
         WebView webView = getBridge().getWebView();
         if (webView != null && webView.canGoBack()) {
             webView.goBack();
         }
-        // Do NOT call super — blocks back navigation entirely.
     }
 }

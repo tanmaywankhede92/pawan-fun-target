@@ -4,16 +4,38 @@ import { AuthProvider } from "@context/AuthContext";
 import AppRoutes from "@routes/AppRoutes";
 import FullscreenHandler from "@components/common/FullscreenHandler";
 import prevImg from "@assets/images/background/prevImg.webp";
+import { Capacitor } from "@capacitor/core";
+import { SplashScreen as CapSplash } from "@capacitor/splash-screen";
+
+const SPLASH_LOGO_MS = 300;
+const SPLASH_PREV_MS = 2000;
 
 const App = () => {
-  const [showSplash, setShowSplash] = useState(true);
+  const [phase, setPhase] = useState("logo");
 
   useEffect(() => {
-    const t = setTimeout(() => setShowSplash(false), 2000);
-    return () => clearTimeout(t);
+    // Phase 1: Logo (native Capacitor splash shows for 1 sec)
+    // Phase 2: prevImg for 2 sec
+    // Phase 3: App
+    const t1 = setTimeout(() => {
+      setPhase("prev");
+      CapSplash.hide({ fadeOutDuration: 300 }).catch(() => {});
+    }, SPLASH_LOGO_MS);
+
+    const t2 = setTimeout(
+      () => setPhase("app"),
+      SPLASH_LOGO_MS + SPLASH_PREV_MS,
+    );
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, []);
 
-  if (showSplash) {
+  if (phase === "logo") return null;
+
+  if (phase === "prev") {
     return (
       <div
         style={{
