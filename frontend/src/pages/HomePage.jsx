@@ -524,6 +524,13 @@ const HomePage = () => {
                 parsed[Number(n)] = (parsed[Number(n)] || 0) + Number(amt);
               }
             });
+            const loadedTotal = Object.values(parsed).reduce((s, v) => s + v, 0);
+            const balance = user?.balance ?? 0;
+            if (loadedTotal > balance) {
+              manualMsg.current = true;
+              setGameMessage("Score Insufficient.");
+              return;
+            }
             setBets(parsed);
             betOrder.current = Object.entries(parsed).map(([n, amt]) => ({
               num: Number(n),
