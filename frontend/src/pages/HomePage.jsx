@@ -553,7 +553,7 @@ const HomePage = () => {
           setGameMessage("Failed to load last bet");
         }
       }
-      // take: claim winnings — instant optimistic UI, background API sync
+      // take: claim winnings — instant optimistic UI, fire-and-forget API.
       if (id === "takeBet") {
         if (!takePending) return;
         const info = winInfo;
@@ -562,10 +562,8 @@ const HomePage = () => {
           setGameMessage("Could not claim winnings. Try again.");
           return;
         }
-        // ── Instant UI update ────────────────────────────────────────
         play("TAKE");
         const winAmt = Number(info.win_amount || 0);
-        // Add winnings to score immediately (optimistic).
         setScoreBalance((prev) => prev + winAmt);
         setBetApplied(true);
         setTaken(true);
@@ -577,7 +575,7 @@ const HomePage = () => {
         clearBets();
         manualMsg.current = false;
         setGameMessage("Take successful.");
-        // ── Background API sync (non-blocking) ───────────────────────
+        // Fire-and-forget: backend processes take, next round syncs balance.
         recordService
           .take({
             username: user?.username || "",
@@ -589,11 +587,8 @@ const HomePage = () => {
             if (data?.success === false) {
               manualMsg.current = true;
               setGameMessage(data?.message || "Take failed. Try again.");
-              // Revert optimistic update on failure.
               setScoreBalance((prev) => prev - winAmt);
-              return;
             }
-            refreshBalance();
           })
           .catch(() => {
             manualMsg.current = true;
