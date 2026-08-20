@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SplashScreen as CapSplash } from "@capacitor/splash-screen";
 import prevImg from "@assets/images/background/prevImg.webp";
 
 const SPLASH_MS = 2000;
@@ -28,7 +29,11 @@ const SplashScreen = () => {
     PRELOAD_IMAGES.forEach((p) => p.catch(() => {}));
 
     const tFade = setTimeout(() => setPhase("fade"), SPLASH_MS - 300);
-    const tHide = setTimeout(() => setPhase("hide"), SPLASH_MS);
+    const tHide = setTimeout(() => {
+      setPhase("hide");
+      // Hide the native Capacitor splash after our web splash fades out.
+      CapSplash.hide().catch(() => {});
+    }, SPLASH_MS);
     return () => {
       clearTimeout(tFade);
       clearTimeout(tHide);
