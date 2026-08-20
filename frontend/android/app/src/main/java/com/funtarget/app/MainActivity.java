@@ -96,6 +96,9 @@ public class MainActivity extends BridgeActivity {
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
+        // Black background — prevents white flash before web content loads.
+        webView.setBackgroundColor(0xFF000000);
+
         webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
     }
 
