@@ -17,17 +17,22 @@ public class MainActivity extends BridgeActivity {
     private static final String PREFS = "funtarget_session";
     private static final String KEY_RUNNING = "app_running";
 
+    // Set to true in onCreate when a force-kill is detected; cleared
+    // once clearWebSession() runs inside configureWebView() — after
+    // JavaScript is enabled and the bridge is ready.
+    private boolean pendingSessionClear = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         // If the app was previously running but onDestroy never fired,
-        // the process was killed from recents. Clear the saved session
-        // so the user lands on the login page.
+        // the process was killed from recents.  Defer the clear until
+        // configureWebView() so evaluateJavascript actually works.
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         if (prefs.getBoolean(KEY_RUNNING, false)) {
             prefs.edit().putBoolean(KEY_RUNNING, false).apply();
-            clearWebSession();
+            pendingSessionClear = true;
         }
 
         // Full-screen immersive: hide status bar + navigation bar.
@@ -86,6 +91,21 @@ public class MainActivity extends BridgeActivity {
     private void configureWebView() {
         WebView webView = getBridge().getWebView();
 
+        // WebView settings for smooth game performance.
+        WebSettings settings = webView.getSettings();
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setLoadWithOverviewMode(true);
+        settings.setUseWideViewPort(true);
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+
+        // Black background — prevents white flash before web content loads.
+        webView.setBackgroundColor(0xFF000000);
+
+        webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
+
         // JS bridge: window.Android.closeApp() — called by closeApplication.js
         // for a clean exit via finishAndRemoveTask().
         webView.addJavascriptInterface(
@@ -112,20 +132,12 @@ public class MainActivity extends BridgeActivity {
             "Android"
         );
 
-        // WebView settings for smooth game performance.
-        WebSettings settings = webView.getSettings();
-        settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
-        settings.setMediaPlaybackRequiresUserGesture(false);
-        settings.setLoadWithOverviewMode(true);
-        settings.setUseWideViewPort(true);
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-
-        // Black background — prevents white flash before web content loads.
-        webView.setBackgroundColor(0xFF000000);
-
-        webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
+        // If a force-kill was detected in onCreate(), clear localStorage now
+        // that JavaScript is enabled and the bridge is ready.
+        if (pendingSessionClear) {
+            pendingSessionClear = false;
+            clearWebSession();
+        }
     }
 
     @Override
