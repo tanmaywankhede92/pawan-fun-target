@@ -17,6 +17,13 @@ Settings.defaultZone = TIMEZONE;
 // Starts at 0; tightened by calibrateTime() on every API response.
 let serverOffsetMs = 0;
 
+// Listeners notified when a calibration changes the offset by >1 s.
+const calibrateListeners = new Set();
+export const onCalibrate = (fn) => {
+  calibrateListeners.add(fn);
+  return () => calibrateListeners.delete(fn);
+};
+
 /**
  * Calibrate from an HTTP Date header (e.g. "Tue, 17 Aug 2026 14:30:00 GMT").
  * Called automatically by the api.js response interceptor.
@@ -26,7 +33,10 @@ export const calibrateTime = (serverDateHeader) => {
   if (!serverDateHeader) return;
   const serverUtc = DateTime.fromHTTP(serverDateHeader);
   if (!serverUtc.isValid) return;
-  serverOffsetMs = serverUtc.toMillis() - Date.now();
+  const newOffset = serverUtc.toMillis() - Date.now();
+  const jumped = Math.abs(newOffset - serverOffsetMs) > 1000;
+  serverOffsetMs = newOffset;
+  if (jumped) calibrateListeners.forEach((fn) => fn(serverOffsetMs));
 };
 
 // ── IST helpers (server-calibrated) ─────────────────────────────────

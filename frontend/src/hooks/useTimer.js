@@ -3,6 +3,7 @@
  *
  * Fires onMinuteStart() exactly once per IST minute boundary.
  * Self-corrects after browser throttling / background tab pauses.
+ * Re-syncs after a calibration offset jump to prevent false triggers.
  *
  * Usage:
  *   const time = useTimer({ onMinuteStart: handleNewMinute });
@@ -10,7 +11,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { getNow, secondsToNextMinute } from "@utils/istTime";
+import { getNow, secondsToNextMinute, onCalibrate } from "@utils/istTime";
 
 export const useTimer = ({ onMinuteStart }) => {
   const [time, setTime] = useState(() => secondsToNextMinute(getNow().second));
@@ -50,6 +51,20 @@ export const useTimer = ({ onMinuteStart }) => {
       clearInterval(id);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Calibration re-sync ────────────────────────────────────────
+  // When calibrateTime() detects a >1 s offset jump (e.g. first API
+  // response on a device with a wrong clock), re-sync targetMinuteRef
+  // to the newly-calibrated minute so we don't fire a false
+  // onMinuteStart.
+  useEffect(() => {
+    return onCalibrate(() => {
+      const currentMinute = getNow().minute;
+      targetMinuteRef.current = currentMinute;
+      // Also correct the displayed time immediately.
+      setTime(secondsToNextMinute(getNow().second));
+    });
   }, []);
 
   // ── Background-tab recovery ────────────────────────────────────
