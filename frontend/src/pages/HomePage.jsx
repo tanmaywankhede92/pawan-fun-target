@@ -542,7 +542,6 @@ const HomePage = () => {
             // The loaded ticket is not yet submitted/deducted: show the
             // deduction on the score directly.
             setBetApplied(false);
-            const loadedTotal = Object.values(parsed).reduce((s, v) => s + v, 0);
             setScoreBalance(Math.max(0, (user?.balance || 0) - loadedTotal));
             // No "loaded" message — the previous ticket just appears.
           } else {
