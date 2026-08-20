@@ -1,6 +1,5 @@
 package com.funtarget.app;
 
-import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -14,26 +13,14 @@ import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
 
-    private static final String PREFS = "funtarget_session";
-    private static final String KEY_RUNNING = "app_running";
-
-    // Set to true in onCreate when a force-kill is detected; cleared
-    // once clearWebSession() runs inside configureWebView() — after
-    // JavaScript is enabled and the bridge is ready.
-    private boolean pendingSessionClear = false;
+    // Every fresh process start clears the web session so the user
+    // always lands on the login page.  This covers force-kill from
+    // Recents, close button, normal exit — all scenarios.
+    private boolean pendingSessionClear = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // If the app was previously running but onDestroy never fired,
-        // the process was killed from recents.  Defer the clear until
-        // configureWebView() so evaluateJavascript actually works.
-        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        if (prefs.getBoolean(KEY_RUNNING, false)) {
-            prefs.edit().putBoolean(KEY_RUNNING, false).apply();
-            pendingSessionClear = true;
-        }
 
         // Full-screen immersive: hide status bar + navigation bar.
         hideSystemUI();
@@ -132,8 +119,9 @@ public class MainActivity extends BridgeActivity {
             "Android"
         );
 
-        // If a force-kill was detected in onCreate(), clear localStorage now
-        // that JavaScript is enabled and the bridge is ready.
+        // Clear localStorage now that JavaScript is enabled and the bridge
+        // is ready.  Every fresh process start wipes the session so the
+        // user always lands on the login page.
         if (pendingSessionClear) {
             pendingSessionClear = false;
             clearWebSession();
@@ -152,9 +140,6 @@ public class MainActivity extends BridgeActivity {
     public void onResume() {
         super.onResume();
         hideSystemUI();
-        // Mark app as running — cleared in onDestroy for clean shutdown.
-        getSharedPreferences(PREFS, MODE_PRIVATE)
-            .edit().putBoolean(KEY_RUNNING, true).apply();
     }
 
     @Override
@@ -169,15 +154,6 @@ public class MainActivity extends BridgeActivity {
             }
         } catch (Exception ignored) {
         }
-    }
-
-    @Override
-    public void onDestroy() {
-        // Clean shutdown: clear the running flag so next launch
-        // knows this was a normal exit (not a force-kill).
-        getSharedPreferences(PREFS, MODE_PRIVATE)
-            .edit().putBoolean(KEY_RUNNING, false).apply();
-        super.onDestroy();
     }
 
     @Override
