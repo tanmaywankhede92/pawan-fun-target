@@ -4,7 +4,6 @@ import prevImg from "@assets/images/background/prevImg.webp";
 
 const SPLASH_MS = 2000;
 
-// Preload images while splash is showing so they're ready instantly.
 const PRELOAD_IMAGES = [
   import("@assets/images/background/PrevBG.webp"),
   import("@assets/images/wheel/wheel.webp"),
@@ -22,17 +21,6 @@ const SplashScreen = () => {
   const [phase, setPhase] = useState("show");
 
   useEffect(() => {
-    // Show native Capacitor splash with our image immediately — no gap.
-    CapSplash.show({
-      resource: "splash",
-      backgroundColor: "#000000",
-      androidScaleType: "CENTER_CROP",
-      showSpinner: false,
-      splashFullScreen: true,
-      splashImmersive: true,
-    }).catch(() => {});
-
-    // Preload all critical images in background.
     PRELOAD_IMAGES.forEach((p) => p.catch(() => {}));
 
     const tFade = setTimeout(() => setPhase("fade"), SPLASH_MS - 300);
