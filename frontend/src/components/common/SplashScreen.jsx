@@ -6,11 +6,8 @@ const SPLASH_MS = 2000;
 
 // Preload images while splash is showing so they're ready instantly.
 const PRELOAD_IMAGES = [
-  // Login background
   import("@assets/images/background/PrevBG.webp"),
-  // Game wheel
   import("@assets/images/wheel/wheel.webp"),
-  // Game GIFs
   import("@assets/images/gifs/joker_gif1_slow.webp"),
   import("@assets/images/gifs/joker1.webp"),
   import("@assets/images/gifs/joker2.webp"),
@@ -25,14 +22,23 @@ const SplashScreen = () => {
   const [phase, setPhase] = useState("show");
 
   useEffect(() => {
+    // Show native Capacitor splash with our image immediately — no gap.
+    CapSplash.show({
+      resource: "splash",
+      backgroundColor: "#000000",
+      androidScaleType: "CENTER_CROP",
+      showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: true,
+    }).catch(() => {});
+
     // Preload all critical images in background.
     PRELOAD_IMAGES.forEach((p) => p.catch(() => {}));
 
     const tFade = setTimeout(() => setPhase("fade"), SPLASH_MS - 300);
     const tHide = setTimeout(() => {
       setPhase("hide");
-      // Hide the native Capacitor splash after our web splash fades out.
-      CapSplash.hide().catch(() => {});
+      CapSplash.hide({ fadeOutDuration: 300 }).catch(() => {});
     }, SPLASH_MS);
     return () => {
       clearTimeout(tFade);
