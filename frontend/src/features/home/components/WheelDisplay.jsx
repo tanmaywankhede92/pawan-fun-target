@@ -94,7 +94,6 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
     if (spunTriggerRef.current === spinTrigger) return;
     spunTriggerRef.current = spinTrigger;
 
-    setResultJoker(null);
     spinStartedRef.current = true;
     targetSetRef.current = false;
   }, [spinTrigger]);
@@ -130,20 +129,21 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
     setTransitionMs(0);
     setRotationTracked(snapRotation);
 
-    // 2) After ~4ms: start spin + SPIN sound.
+    // 2) After ~10ms: start spin + SPIN sound.
     spinRafRef.current = setTimeout(() => {
       spinRafRef.current = null;
 
       // Guard: abort if a new round started during the frame.
       if (spunTriggerRef.current !== roundId) return;
 
+      setResultJoker(null);
       play("SPIN", { loop: true });
       setTransitionMs(SPIN_DURATION_MS);
       setSpinning(true);
       spinningRef.current = true;
       targetRotationRef.current = finalRotation;
       setRotationTracked(finalRotation);
-    }, 0);
+    }, 10);
 
     return () => {
       if (spinRafRef.current != null) {
