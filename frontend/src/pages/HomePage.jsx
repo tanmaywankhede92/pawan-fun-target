@@ -46,7 +46,7 @@ import {
 const DEBUG = false;
 
 const HomePage = () => {
-  const { user, logout, refreshBalance } = useAuth();
+  const { user, logout, refreshBalance, setAuth } = useAuth();
   const navigate = useNavigate();
   const { play, playBgm, stop } = useSound();
 
@@ -564,7 +564,10 @@ const HomePage = () => {
         }
         play("TAKE");
         const winAmt = Number(info.win_amount || 0);
-        setScoreBalance((prev) => prev + winAmt);
+        const oldBalance = user?.balance || 0;
+        const newBalance = oldBalance + winAmt;
+        setScoreBalance(newBalance);
+        setAuth({ ...user, balance: newBalance });
         setBetApplied(true);
         setTaken(true);
         setResultRevealed(false);
@@ -587,13 +590,15 @@ const HomePage = () => {
             if (data?.success === false) {
               manualMsg.current = true;
               setGameMessage(data?.message || "Take failed. Try again.");
-              setScoreBalance((prev) => prev - winAmt);
+              setScoreBalance(oldBalance);
+              setAuth({ ...user, balance: oldBalance });
             }
           })
           .catch(() => {
             manualMsg.current = true;
             setGameMessage("Take failed. Try again.");
-            setScoreBalance((prev) => prev - winAmt);
+            setScoreBalance(oldBalance);
+            setAuth({ ...user, balance: oldBalance });
           });
       }
       // exit overlay disabled - exit returns to the Pre (PrevBG) lobby
@@ -611,6 +616,7 @@ const HomePage = () => {
       navigate,
       clickLocked,
       refreshBalance,
+      setAuth,
       takePending,
       submitted,
       winInfo,
