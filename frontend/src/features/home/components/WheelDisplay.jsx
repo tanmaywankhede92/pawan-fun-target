@@ -54,7 +54,6 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState(null);
-  const [ready, setReady] = useState(false);
   const [resultJoker, setResultJoker] = useState(() => jokerImageFor(null, null));
   const [transitionMs, setTransitionMs] = useState(SPIN_DURATION_MS);
 
@@ -66,7 +65,8 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
   const spunTriggerRef = useRef(spinTrigger);
   const spinStartedRef = useRef(false);
   const targetSetRef = useRef(false);
-  const { stop } = useSound();
+  const spinRafRef = useRef(null);
+  const { play, stop } = useSound();
 
   const setRotationTracked = useCallback((r) => {
     rotationRef.current = r;
@@ -83,7 +83,6 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
     winnerRef.current = targetWinner;
     setResultJoker(jokerImageFor(joker, targetWinner));
     setRotationTracked(angleFor(targetWinner) + ALIGN_OFFSET);
-    setReady(true);
   }, [targetWinner, joker, setRotationTracked]);
 
   // ── Phase 1 — Mark ready at :00 (no spin yet) ────────────────────
@@ -113,33 +112,51 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
     spinStartedRef.current = false;
 
     const w = targetWinner;
+    const roundId = spinTrigger;
+
     setWinner(w);
     winnerRef.current = w;
 
-    // 1) Snap to result position — no transition so it's instant.
+    // Compute both rotations from the same base — no ref dependency.
+    const snapRotation = angleFor(w) + ALIGN_OFFSET;
+    const fullSpins =
+      (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
+      360;
+    const finalRotation = snapRotation + fullSpins;
+
+    // 1) Instant snap — no transition.
     setSpinning(false);
     spinningRef.current = false;
     setTransitionMs(0);
-    setRotationTracked(angleFor(w) + ALIGN_OFFSET);
+    setRotationTracked(snapRotation);
 
-    // 2) After the snap renders, start spinning from that position.
-    requestAnimationFrame(() => {
-      const fullSpins =
-        (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
-        360;
+    // 2) Next frame: start spin + SPIN sound.
+    spinRafRef.current = requestAnimationFrame(() => {
+      spinRafRef.current = null;
 
+      // Guard: abort if a new round started during the frame.
+      if (spunTriggerRef.current !== roundId) return;
+
+      play("SPIN", { loop: true });
       setTransitionMs(SPIN_DURATION_MS);
       setSpinning(true);
       spinningRef.current = true;
-      targetRotationRef.current = rotationRef.current + fullSpins;
-      setRotationTracked(targetRotationRef.current);
+      targetRotationRef.current = finalRotation;
+      setRotationTracked(finalRotation);
     });
-  }, [targetWinner, spinStartMs, setRotationTracked]);
+
+    return () => {
+      if (spinRafRef.current != null) {
+        cancelAnimationFrame(spinRafRef.current);
+        spinRafRef.current = null;
+      }
+    };
+  }, [targetWinner, spinStartMs, setRotationTracked, play]);
 
   const handleTransitionEnd = useCallback(() => {
-    // Ignore transitionend fired by the interrupted blind-spin transition.
-    // The real landing transition will fire its own event later.
-    if (spinStartedRef.current && !targetSetRef.current) return;
+    // Ignore any transitionend that fires while the wheel is not actively
+    // spinning (e.g. the instant snap phase or an interrupted transition).
+    if (!spinningRef.current) return;
 
     spinningRef.current = false;
     spinStartedRef.current = false;

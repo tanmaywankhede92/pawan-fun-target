@@ -73,6 +73,7 @@ const HomePage = () => {
   // Cancel Specific works once per betting session, then disables until a
   // new bet is placed.
   const [cancelSpecificUsed, setCancelSpecificUsed] = useState(false);
+  const [fetching, setFetching] = useState(false);
   // True once the backend balance already includes the placed bet amount.
   // Keeps the score flat across Bet Ok (no 990 -> 1000 -> 990 jump).
   const [betApplied, setBetApplied] = useState(true);
@@ -233,7 +234,6 @@ const HomePage = () => {
     setSpinStartMs(performance.now());
     setWheelSpinning(true);
     setSpinCount((c) => c + 1);
-    play("SPIN", { loop: true });
     try {
       const { data } = await resultService.getCurrentResult();
       const r = data?.result?.[0];
@@ -246,7 +246,7 @@ const HomePage = () => {
       setWheelSpinning(false);
       stop("SPIN");
     }
-  }, [refreshBalance, totalBet, logout, navigate, play, stop]);
+  }, [refreshBalance, totalBet, logout, navigate, stop]);
 
   // ── Server-calibrated IST countdown ─────────────────────────────
   // useTimer fires handleNewMinute exactly once per :00 boundary.
@@ -353,6 +353,7 @@ const HomePage = () => {
   const handlePlaceBet = useCallback(async () => {
     if (placingRef.current) return;
     placingRef.current = true;
+    setFetching(true);
     try {
       const ticket = Object.entries(bets)
         .filter(([, amt]) => amt > 0)
@@ -407,6 +408,7 @@ const HomePage = () => {
       setGameMessage("Bet failed. Try again.");
     } finally {
       placingRef.current = false;
+      setFetching(false);
     }
   }, [bets, totalBet, user, refreshBalance]);
 
@@ -457,6 +459,15 @@ const HomePage = () => {
       // Once a bet is accepted, nothing works until the result arrives
       // (Exit always works).
       if (submitted && !resultRevealed && id !== "exit") return;
+      // Exit always works — handle immediately, no fetch lock needed.
+      if (id === "exit") {
+        navigate("/pre", { replace: true });
+        return;
+      }
+      // From here on every path is either sync or async — lock buttons
+      // instantly so the user cannot double-click while the API call runs.
+      setFetching(true);
+      try {
       // Cancel All clears every placed bet.
       // Once the bet is accepted, bets can no longer be cancelled.
       if (submitted && (id === "cancelAll" || id === "cancelSpecific")) {
@@ -592,10 +603,8 @@ const HomePage = () => {
             setGameMessage("Take failed. Try again.");
           });
       }
-      // exit overlay disabled - exit returns to the Pre (PrevBG) lobby
-      // screen without logging out (the session stays active).
-      if (id === "exit") {
-        navigate("/pre", { replace: true });
+      } finally {
+        setFetching(false);
       }
     },
     [
@@ -753,18 +762,18 @@ const HomePage = () => {
       <NumberDisplay
         bets={bets}
         onBet={handleBet}
-        disabled={clickLocked || noBalance || takePending || (submitted && !resultRevealed)}
+        disabled={clickLocked || noBalance || takePending || fetching || (submitted && !resultRevealed)}
         winnerBlink={resultRevealed && !taken ? lastWinner : null}
       />
       <PanelDisplay
         selectedValue={selectedValue}
         onSelect={handlePanelSelect}
-        disabled={clickLocked || noBalance || takePending || (submitted && !resultRevealed)}
+        disabled={clickLocked || noBalance || takePending || fetching || (submitted && !resultRevealed)}
       />
       <ButtonDisplay
         onAction={handleButtonAction}
         hasBets={totalBet > 0}
-        disabled={clickLocked || (submitted && !resultRevealed)}
+        disabled={clickLocked || fetching || (submitted && !resultRevealed)}
         takeGlow={takePending}
         takeLock={takePending}
         submitted={submitted}
