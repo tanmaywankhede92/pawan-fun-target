@@ -286,8 +286,14 @@ const HomePage = () => {
     setSelectedValue(value);
   }, []);
 
+  // Bet-submission lock: true the moment a Bet OK / auto-submit API call
+  // starts.  Prevents handleBet from adding new numbers while the backend
+  // is still processing the previous submission.
+  const placingRef = useRef(false);
+
   const handleBet = useCallback(
     (num) => {
+      if (placingRef.current) return;
       const sv = selectedRef.current;
       const tp = takePendingRef.current;
       const tr = totalBetRef.current;
@@ -349,7 +355,6 @@ const HomePage = () => {
   }, [user?.balance, user?.username]);
 
   // Place the bet via the backend. Ticket = "num-amount" pairs.
-  const placingRef = useRef(false);
   const handlePlaceBet = useCallback(async () => {
     if (placingRef.current) return;
     placingRef.current = true;

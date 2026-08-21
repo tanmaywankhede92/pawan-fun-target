@@ -38,8 +38,7 @@ const jokerImageFor = (joker, winner) => {
 
 const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
-const MIN_SPINS = 5;
-const MAX_SPINS = 8;
+const FULL_SPINS = 6;
 
 const SPIN_DURATION_MS = 6000;
 const SPIN_EASING = "cubic-bezier(0.17, 0.67, 0.12, 0.99)";
@@ -65,7 +64,7 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
   const spunTriggerRef = useRef(spinTrigger);
   const spinStartedRef = useRef(false);
   const targetSetRef = useRef(false);
-  const spinRafRef = useRef(null);
+  const spinRafId = useRef(null);
   const { play, stop } = useSound();
 
   const setRotationTracked = useCallback((r) => {
@@ -102,7 +101,15 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
   // When the backend result arrives, snap the wheel to the result
   // sector (so the user sees the number under the pointer), then
   // start spinning from there.  The wheel lands back on the same
-  // result after full 360° rotations.
+  // result after exactly FULL_SPINS complete 360° rotations.
+  //
+  // WHY TWO rAFs: React18 batches all state updates in the same task
+  // into ONE render.  If snap + spin are in the same task, the browser
+  // only sees the final state and animates from the OLD accumulated
+  // rotation — the snap is never painted.  Two nested rAFs force TWO
+  // separate renders:
+  //   rAF 1 → commit snap (transition:none, rotation:snapAngle)
+  //   rAF 2 → commit spin (transition:6s, rotation:finalAngle)
   useEffect(() => {
     if (targetWinner == null) return;
     if (!spinStartedRef.current) return;
@@ -116,12 +123,8 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
     setWinner(w);
     winnerRef.current = w;
 
-    // Compute both rotations from the same base — no ref dependency.
     const snapRotation = angleFor(w) + ALIGN_OFFSET;
-    const fullSpins =
-      (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
-      360;
-    const finalRotation = snapRotation + fullSpins;
+    const finalRotation = snapRotation + FULL_SPINS * 360;
 
     // 1) Instant snap — no transition.
     setSpinning(false);
@@ -129,26 +132,30 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
     setTransitionMs(0);
     setRotationTracked(snapRotation);
 
-    // 2) After ~10ms: start spin + SPIN sound.
-    spinRafRef.current = setTimeout(() => {
-      spinRafRef.current = null;
+    // 2) Two nested rAFs: first forces the snap render to commit,
+    //    second starts the actual spin in a guaranteed-separate frame.
+    spinRafId.current = requestAnimationFrame(() => {
+      // Intermediate rAF — React commits the snap state here.
+      // Now schedule the real spin in the NEXT frame.
+      spinRafId.current = requestAnimationFrame(() => {
+        spinRafId.current = null;
 
-      // Guard: abort if a new round started during the frame.
-      if (spunTriggerRef.current !== roundId) return;
+        if (spunTriggerRef.current !== roundId) return;
 
-      setResultJoker(null);
-      play("SPIN", { loop: true });
-      setTransitionMs(SPIN_DURATION_MS);
-      setSpinning(true);
-      spinningRef.current = true;
-      targetRotationRef.current = finalRotation;
-      setRotationTracked(finalRotation);
-    }, 10);
+        setResultJoker(null);
+        play("SPIN", { loop: true });
+        setTransitionMs(SPIN_DURATION_MS);
+        setSpinning(true);
+        spinningRef.current = true;
+        targetRotationRef.current = finalRotation;
+        setRotationTracked(finalRotation);
+      });
+    });
 
     return () => {
-      if (spinRafRef.current != null) {
-        clearTimeout(spinRafRef.current);
-        spinRafRef.current = null;
+      if (spinRafId.current != null) {
+        cancelAnimationFrame(spinRafId.current);
+        spinRafId.current = null;
       }
     };
   }, [targetWinner, spinStartMs, setRotationTracked, play]);
