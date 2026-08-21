@@ -44,7 +44,7 @@ public class MainActivity extends BridgeActivity {
      * a completely blank WebView — no old URL, no old DOM, no old scroll.
      */
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    public void onSaveInstanceState(Bundle outState) {
         // Intentionally empty — do not save any state.
     }
 
