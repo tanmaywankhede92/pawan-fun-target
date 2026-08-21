@@ -3,7 +3,7 @@ const POS = {
   bottom: "0%",
   width: "70%",
   height: "5%",
-  fontSize: "clamp(8px, 1.8vw, 22px)",
+  fontSize: "clamp(6px, 1.5vw, 20px)",
 };
 
 const MessageDisplay = ({ message = "" }) => {
@@ -19,7 +19,8 @@ const MessageDisplay = ({ message = "" }) => {
         fontSize: POS.fontSize,
         fontFamily: '"Times New Roman", serif',
         fontWeight: 700,
-
+        whiteSpace: "nowrap",
+        overflow: "visible",
         borderRadius: "10px",
       }}
     >

@@ -6,7 +6,7 @@ const POS = {
   top: "10%",
   width: "25%",
   height: "8%",
-  fontSize: "clamp(8px, 1.6vw, 26px)",
+  fontSize: "clamp(6px, 1.4vw, 26px)",
 };
 
 // Winner amount rolls number by number. It counts up when a win appears and
@@ -27,6 +27,8 @@ const WinnerDisplay = ({ winner, winAmount }) => {
         fontSize: POS.fontSize,
         fontFamily: '"Bodoni Moda", serif',
         fontWeight: 700,
+        whiteSpace: "nowrap",
+        overflow: "visible",
       }}
     >
       {` ${display}`}

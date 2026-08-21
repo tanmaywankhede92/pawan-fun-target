@@ -1,16 +1,17 @@
 import useAnimatedNumber from "@hooks/useAnimatedNumber";
 import { SOUNDS } from "@constants/sounds";
 
+// Score uses a generous width and fixed font sizing so it never overflows
+// on any Android device.  Bodoni Moda renders 15-20% wider on Android
+// WebView than desktop Chrome, so we size for the worst case.
 const POS = {
   left: "6%",
   top: "10%",
   width: "14%",
   height: "8%",
-  fontSize: "clamp(6px, 1.7vw, 36px)",
+  fontSize: "clamp(6px, 1.4vw, 30px)",
 };
 
-// Balance rolls up number by number when it increases (e.g. winnings taken
-// or balance added). Decreases snap instantly so betting stays responsive.
 const ScoreDisplay = ({ score = 0 }) => {
   const display = useAnimatedNumber(score, { snapDown: true, sound: SOUNDS.BET });
   return (

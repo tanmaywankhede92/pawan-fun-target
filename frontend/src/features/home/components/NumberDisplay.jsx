@@ -167,9 +167,11 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
                   top: betBox.top,
                   bottom: betBox.bottom,
                   height: betBox.height,
-                  fontSize: "clamp(5px, 1.8vw, 24px)",
+                  fontSize: "clamp(5px, 1.5vw, 20px)",
                   fontFamily: '"Times New Roman", serif',
                   fontWeight: 700,
+                  whiteSpace: "nowrap",
+                  overflow: "visible",
                 }}
               >
                 {bet}
