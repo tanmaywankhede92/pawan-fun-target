@@ -86,10 +86,10 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
     setReady(true);
   }, [targetWinner, joker, setRotationTracked]);
 
-  // ── Phase 1 — Blind spin at :00 (no result needed) ──────────────
-  // Fires the instant the minute boundary is detected. The wheel starts
-  // rotating immediately so there is zero visual lag. The final landing
-  // angle is unknown at this point — it will be adjusted in Phase 2.
+  // ── Phase 1 — Mark ready at :00 (no spin yet) ────────────────────
+  // At the minute boundary we only record that a new round started.
+  // The actual spin is deferred to Phase 2 so the wheel can start
+  // from the result number's position.
   useEffect(() => {
     if (!initializedRef.current) return;
     if (spunTriggerRef.current === spinTrigger) return;
@@ -98,24 +98,13 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
     setResultJoker(null);
     spinStartedRef.current = true;
     targetSetRef.current = false;
+  }, [spinTrigger]);
 
-    const fullSpins =
-      (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
-      360;
-
-    setSpinning(true);
-    spinningRef.current = true;
-    setTransitionMs(SPIN_DURATION_MS);
-    targetRotationRef.current = rotationRef.current + fullSpins;
-    setRotationTracked(targetRotationRef.current);
-  }, [spinTrigger, setRotationTracked]);
-
-  // ── Phase 2 — Adjust landing when the API result arrives ─────────
-  // When the backend result comes in (usually within 100-300 ms), add
-  // the exact delta needed so the wheel stops with the correct sector
-  // under the pointer.  We calculate remaining time from the exact :00
-  // timestamp (spinStartMs), NOT from when Phase 1 fired — this
-  // eliminates the React render-cycle delay that caused ±50ms drift.
+  // ── Phase 2 — Snap to result, then spin ──────────────────────────
+  // When the backend result arrives, snap the wheel to the result
+  // sector (so the user sees the number under the pointer), then
+  // start spinning from there.  The wheel lands back on the same
+  // result after full 360° rotations.
   useEffect(() => {
     if (targetWinner == null) return;
     if (!spinStartedRef.current) return;
@@ -127,16 +116,24 @@ const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplet
     setWinner(w);
     winnerRef.current = w;
 
-    const targetRest = angleFor(w) + ALIGN_OFFSET;
-    const currentMod = ((rotationRef.current % 360) + 360) % 360;
-    const delta = (((targetRest - currentMod) % 360) + 360) % 360;
+    // 1) Snap to result position — no transition so it's instant.
+    setSpinning(false);
+    spinningRef.current = false;
+    setTransitionMs(0);
+    setRotationTracked(angleFor(w) + ALIGN_OFFSET);
 
-    const elapsed = performance.now() - spinStartMs;
-    const remaining = Math.max(200, SPIN_DURATION_MS - elapsed);
-    setTransitionMs(remaining);
+    // 2) After the snap renders, start spinning from that position.
+    requestAnimationFrame(() => {
+      const fullSpins =
+        (MIN_SPINS + Math.floor(Math.random() * (MAX_SPINS - MIN_SPINS + 1))) *
+        360;
 
-    targetRotationRef.current = rotationRef.current + delta;
-    setRotationTracked(targetRotationRef.current);
+      setTransitionMs(SPIN_DURATION_MS);
+      setSpinning(true);
+      spinningRef.current = true;
+      targetRotationRef.current = rotationRef.current + fullSpins;
+      setRotationTracked(targetRotationRef.current);
+    });
   }, [targetWinner, spinStartMs, setRotationTracked]);
 
   const handleTransitionEnd = useCallback(() => {
