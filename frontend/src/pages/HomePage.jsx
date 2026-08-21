@@ -46,7 +46,7 @@ import {
 const DEBUG = false;
 
 const HomePage = () => {
-  const { user, logout, refreshBalance, setAuth } = useAuth();
+  const { user, logout, refreshBalance } = useAuth();
   const navigate = useNavigate();
   const { play, playBgm, stop } = useSound();
 
@@ -553,7 +553,7 @@ const HomePage = () => {
           setGameMessage("Failed to load last bet");
         }
       }
-      // take: claim winnings — instant optimistic UI, fire-and-forget API.
+      // take: claim winnings — backend is source of truth for balance.
       if (id === "takeBet") {
         if (!takePending) return;
         const info = winInfo;
@@ -563,12 +563,6 @@ const HomePage = () => {
           return;
         }
         play("TAKE");
-        const winAmt = Number(info.win_amount || 0);
-        const oldBalance = user?.balance || 0;
-        const newBalance = oldBalance + winAmt;
-        setScoreBalance(newBalance);
-        setAuth({ ...user, balance: newBalance });
-        setBetApplied(true);
         setTaken(true);
         setResultRevealed(false);
         setWon(false);
@@ -578,7 +572,6 @@ const HomePage = () => {
         clearBets();
         manualMsg.current = false;
         setGameMessage("Take successful.");
-        // Fire-and-forget: backend processes take, next round syncs balance.
         recordService
           .take({
             username: user?.username || "",
@@ -590,15 +583,13 @@ const HomePage = () => {
             if (data?.success === false) {
               manualMsg.current = true;
               setGameMessage(data?.message || "Take failed. Try again.");
-              setScoreBalance(oldBalance);
-              setAuth({ ...user, balance: oldBalance });
+              return;
             }
+            refreshBalance();
           })
           .catch(() => {
             manualMsg.current = true;
             setGameMessage("Take failed. Try again.");
-            setScoreBalance(oldBalance);
-            setAuth({ ...user, balance: oldBalance });
           });
       }
       // exit overlay disabled - exit returns to the Pre (PrevBG) lobby
@@ -616,7 +607,6 @@ const HomePage = () => {
       navigate,
       clickLocked,
       refreshBalance,
-      setAuth,
       takePending,
       submitted,
       winInfo,
