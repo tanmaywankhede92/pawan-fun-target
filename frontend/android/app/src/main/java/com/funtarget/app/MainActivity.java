@@ -7,20 +7,23 @@ import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
+import android.webkit.CookieManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
 
-    // Every fresh process start clears the web session so the user
-    // always lands on the login page.  This covers force-kill from
-    // Recents, close button, normal exit — all scenarios.
-    private boolean pendingSessionClear = true;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        // CRITICAL: Pass null instead of savedInstanceState.
+        // This prevents BridgeActivity from restoring the old WebView state
+        // (URL, DOM, scroll position) after the activity was destroyed by
+        // Android when the user killed the app from Recents. Without this,
+        // the previous /game page is restored visually before our JS
+        // session-clear code runs — creating a security leak and a jarring
+        // flash of the old page.
+        super.onCreate(null);
 
         // Full-screen immersive: hide status bar + navigation bar.
         hideSystemUI();
@@ -34,15 +37,37 @@ public class MainActivity extends BridgeActivity {
         getBridge().getWebView().postDelayed(this::configureWebView, 500);
     }
 
+    /**
+     * Prevent Android from saving any activity / WebView state into the
+     * instance-state bundle.  Combined with super.onCreate(null), this
+     * guarantees that a killed-and-recreated activity always starts from
+     * a completely blank WebView — no old URL, no old DOM, no old scroll.
+     */
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        // Intentionally empty — do not save any state.
+    }
+
     private void clearWebSession() {
         try {
             WebView webView = getBridge().getWebView();
-            if (webView != null) {
-                webView.evaluateJavascript(
-                    "localStorage.removeItem('ft_user');",
-                    null
-                );
-            }
+            if (webView == null) return;
+
+            // 1) Clear localStorage (React session key).
+            webView.evaluateJavascript(
+                "try{localStorage.clear();}catch(e){}", null
+            );
+
+            // 2) Clear sessionStorage.
+            webView.evaluateJavascript(
+                "try{sessionStorage.clear();}catch(e){}", null
+            );
+
+            // 3) Clear all WebView cookies (session cookies, auth cookies).
+            CookieManager.getInstance().removeAllCookies(null);
+
+            // 4) Clear WebView cache to prevent stale page restores.
+            webView.clearCache(false);
         } catch (Exception ignored) {
         }
     }
@@ -56,7 +81,7 @@ public class MainActivity extends BridgeActivity {
                 controller.hide(WindowInsets.Type.statusBars()
                         | WindowInsets.Type.navigationBars());
                 controller.setSystemBarsBehavior(
-                        WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                 );
             }
             // Let content draw behind system bars.
@@ -119,13 +144,11 @@ public class MainActivity extends BridgeActivity {
             "Android"
         );
 
-        // Clear localStorage now that JavaScript is enabled and the bridge
-        // is ready.  Every fresh process start wipes the session so the
-        // user always lands on the login page.
-        if (pendingSessionClear) {
-            pendingSessionClear = false;
-            clearWebSession();
-        }
+        // Always wipe the web session on every activity creation.
+        // Since super.onCreate(null) is used, the WebView starts blank —
+        // this clears any residual storage so the React app boots into
+        // the login page.
+        clearWebSession();
     }
 
     @Override

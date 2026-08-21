@@ -2,9 +2,9 @@ import useAnimatedNumber from "@hooks/useAnimatedNumber";
 import { SOUNDS } from "@constants/sounds";
 
 const POS = {
-  left: "8%",
+  left: "6%",
   top: "10%",
-  width: "8%",
+  width: "14%",
   height: "8%",
   fontSize: "clamp(6px, 1.7vw, 36px)",
 };
@@ -24,6 +24,8 @@ const ScoreDisplay = ({ score = 0 }) => {
         fontSize: POS.fontSize,
         fontFamily: '"Bodoni Moda", serif',
         fontWeight: 700,
+        whiteSpace: "nowrap",
+        overflow: "visible",
       }}
     >
       {display}.00
