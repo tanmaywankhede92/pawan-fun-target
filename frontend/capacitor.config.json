@@ -1,6 +1,6 @@
 {
   "appId": "com.funtarget.app",
-  "appName": "Fun Target",
+  "appName": "FunGame",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"
