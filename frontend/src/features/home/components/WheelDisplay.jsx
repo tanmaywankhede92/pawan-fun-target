@@ -41,7 +41,7 @@ const SECTOR_ANGLE = 360 / SECTORS;
 const FULL_SPINS = 6;
 
 const SPIN_DURATION_MS = 6000;
-const SPIN_EASING = "cubic-bezier(0.17, 0.67, 0.12, 0.99)";
+const SPIN_EASING = "cubic-bezier(0.05, 0.40, 0.70, 0.99)";
 
 const angleFor = (w) => ((SECTORS - w) % SECTORS) * SECTOR_ANGLE;
 

@@ -66,7 +66,7 @@ const ScoreDisplay = ({ score = 0 }) => {
         overflow: "visible",
       }}
     >
-      {exactScore}.00
+      {exactScore}
     </div>
   );
 };
