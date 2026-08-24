@@ -30,6 +30,7 @@ import MessageDisplay from "@features/home/components/MessageDisplay";
 import { useSound } from "@hooks/useSound";
 import { useTimer } from "@hooks/useTimer";
 import useGameSessionGuard from "@hooks/useGameSessionGuard";
+import useDigitBets from "@hooks/useDigitBets";
 import { recordService } from "@services/record.service";
 import {
   savePendingBet,
@@ -344,6 +345,29 @@ const HomePage = () => {
     },
     [],
   );
+
+  // Keyboard/remote digit shortcuts: pressing "0"-"9" places a bet straight
+  // onto that board number. Same lock gate as tapping the numbers.
+  const numbersLockedRef = useRef(false);
+  numbersLockedRef.current =
+    clickLocked || noBalance || takePending || fetching || (submitted && !resultRevealed);
+
+  const handleDigitBet = useCallback(
+    (num) => {
+      if (numbersLockedRef.current) return;
+      const sv = selectedRef.current;
+      if (sv === null) {
+        manualMsg.current = true;
+        setGameMessage("Select a number first");
+        return;
+      }
+      play("BET");
+      handleBet(num);
+    },
+    [play, handleBet],
+  );
+
+  useDigitBets(handleDigitBet);
 
   const clearBets = useCallback(() => {
     setBets({});

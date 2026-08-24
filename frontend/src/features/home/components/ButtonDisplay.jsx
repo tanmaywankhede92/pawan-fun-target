@@ -120,6 +120,9 @@ const ButtonDisplay = ({
         return (
           <div
             key={btn.id}
+            tabIndex={btnLocked ? -1 : 0}
+            role="button"
+            aria-disabled={btnLocked}
             className="absolute overflow-hidden cursor-pointer flex items-center justify-center z-20"
             style={{
               left: btn.box.left,

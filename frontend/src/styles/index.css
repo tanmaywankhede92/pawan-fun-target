@@ -69,6 +69,14 @@
   animation: ft-blink 0.8s ease-in-out infinite;
 }
 
+/* Android TV / keyboard navigation focus ring */
+.tv-focus-ring {
+  outline: 3px solid #ffd400 !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 10px rgba(255, 212, 0, 0.8);
+  border-radius: 8px;
+}
+
 /* Login: keep the page glued to the visible area when the mobile keyboard
    opens — no scroll, no pan. */
 .ft-login-root {

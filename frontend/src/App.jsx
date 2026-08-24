@@ -73,6 +73,7 @@ import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@context/AuthContext";
 import AppRoutes from "@routes/AppRoutes";
 import FullscreenHandler from "@components/common/FullscreenHandler";
+import useTvNavigation from "@hooks/useTvNavigation";
 import prevImg from "@assets/images/background/prevImg.webp";
 import { SplashScreen as CapSplash } from "@capacitor/splash-screen";
 
@@ -80,6 +81,7 @@ const SPLASH_PREV_MS = 2000;
 
 const App = () => {
   const [phase, setPhase] = useState("prev");
+  useTvNavigation();
 
   useEffect(() => {
     // Phase 2: prevImg for 2 sec

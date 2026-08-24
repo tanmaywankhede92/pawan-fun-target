@@ -82,6 +82,7 @@ const BET_BOX_CONFIG = {
 
 const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) => {
   const [hoveredNum, setHoveredNum] = useState(null);
+  const [focusedNum, setFocusedNum] = useState(null);
   const { play } = useSound();
   const holdTimer = useRef(null);
 
@@ -132,11 +133,22 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
             }}
           >
             <div
+              tabIndex={disabled ? -1 : 0}
+              role="button"
+              aria-disabled={disabled}
               className="absolute inset-0 overflow-hidden cursor-pointer select-none"
               onMouseEnter={() => setHoveredNum(num)}
               onMouseLeave={() => {
                 setHoveredNum(null);
                 stopHold();
+              }}
+              onFocus={() => setFocusedNum(num)}
+              onBlur={() => setFocusedNum(null)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.repeat) {
+                  e.preventDefault();
+                  doBet(num);
+                }
               }}
               onPointerDown={(e) => {
                 e.preventDefault();
@@ -146,7 +158,7 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
               onPointerLeave={stopHold}
               onPointerCancel={stopHold}
             >
-              {(isHovered || bet > 0 || isWinner) && img && (
+              {(isHovered || focusedNum === num || bet > 0 || isWinner) && img && (
                 <img
                   decoding="async"
                   src={img}

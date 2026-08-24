@@ -50,6 +50,9 @@ const PanelDisplay = ({ selectedValue, onSelect, disabled = false }) => {
         return (
           <Fragment key={value}>
             <div
+              tabIndex={disabled ? -1 : 0}
+              role="button"
+              aria-disabled={disabled}
               className="absolute overflow-hidden cursor-pointer z-20 select-none"
               style={{
                 left: box.left,
