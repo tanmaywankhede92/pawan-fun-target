@@ -40,8 +40,8 @@ const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
 const FULL_SPINS = 6;
 
-const SPIN_DURATION_MS = 6000;
-const SPIN_EASING = "cubic-bezier(0.05, 0.40, 0.70, 0.99)";
+const SPIN_DURATION_MS = 4500;
+const SPIN_EASING = "cubic-bezier(0.17, 0.67, 0.12, 0.75)";
 
 const angleFor = (w) => ((SECTORS - w) % SECTORS) * SECTOR_ANGLE;
 
@@ -49,11 +49,19 @@ const ALIGN_OFFSET = Number(
   new URLSearchParams(window.location.search).get("align") || 0,
 );
 
-const WheelDisplay = ({ spinTrigger, spinStartMs, targetWinner, joker, onComplete }) => {
+const WheelDisplay = ({
+  spinTrigger,
+  spinStartMs,
+  targetWinner,
+  joker,
+  onComplete,
+}) => {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState(null);
-  const [resultJoker, setResultJoker] = useState(() => jokerImageFor(null, null));
+  const [resultJoker, setResultJoker] = useState(() =>
+    jokerImageFor(null, null),
+  );
   const [transitionMs, setTransitionMs] = useState(SPIN_DURATION_MS);
 
   const rotationRef = useRef(0);
