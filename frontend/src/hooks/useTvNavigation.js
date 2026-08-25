@@ -36,19 +36,6 @@ const DIRECTIONS = {
   ArrowRight: { x: 1, y: 0 },
 };
 
-const clearRing = () => {
-  document.querySelectorAll(".tv-focus-ring").forEach((el) => {
-    el.classList.remove("tv-focus-ring");
-  });
-};
-
-const focusElement = (el) => {
-  if (!el) return;
-  el.focus({ preventScroll: true });
-  clearRing();
-  el.classList.add("tv-focus-ring");
-};
-
 const findNext = (current, dir) => {
   const items = listCandidates();
   if (items.length === 0) return null;
@@ -117,23 +104,12 @@ const useTvNavigation = () => {
         active && active !== document.body && active.matches?.(FOCUSABLE)
           ? active
           : null;
-      focusElement(findNext(current, dir));
-    };
-
-    const onFocusIn = (e) => {
-      if (e.target?.matches?.(FOCUSABLE)) {
-        clearRing();
-        e.target.classList.add("tv-focus-ring");
-      }
+      const next = findNext(current, dir);
+      if (next) next.focus({ preventScroll: true });
     };
 
     window.addEventListener("keydown", onKeyDown);
-    document.addEventListener("focusin", onFocusIn);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("focusin", onFocusIn);
-      clearRing();
-    };
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 };
 
