@@ -49,8 +49,10 @@ const POS = {
 };
 
 const ScoreDisplay = ({ score = 0 }) => {
-  const exactScore = Number(score) || 0;
-
+  const display = useAnimatedNumber(Number(score) || 0, {
+    snapDown: true,
+    sound: SOUNDS.BET,
+  });
   return (
     <div
       className="absolute pointer-events-none text-gray-900 flex items-center"
@@ -66,7 +68,7 @@ const ScoreDisplay = ({ score = 0 }) => {
         overflow: "visible",
       }}
     >
-      {exactScore}
+      {display}.00
     </div>
   );
 };

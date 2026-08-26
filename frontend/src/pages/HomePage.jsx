@@ -37,17 +37,12 @@ import {
   loadPendingBet,
   clearPendingBet,
 } from "@utils/pendingBet";
-import {
-  istSeconds,
-  istDateStr,
-  ist12hStr,
-  ist24hStr,
-} from "@utils/istTime";
+import { istSeconds, istDateStr, ist12hStr, ist24hStr } from "@utils/istTime";
 
 const DEBUG = false;
 
 const HomePage = () => {
-  const { user, logout, refreshBalance } = useAuth();
+  const { user, logout, refreshBalance, setAuth } = useAuth();
   const navigate = useNavigate();
   const { play, playBgm, stop } = useSound();
 
@@ -106,10 +101,15 @@ const HomePage = () => {
   const totalBet = Object.values(bets).reduce((sum, v) => sum + v, 0);
   totalBetRef.current = totalBet;
 
+  // True while the post-Take score roll-up is driving the display, so the
+  // backend-balance sync effect doesn't jump the score to its final value.
+  const scoreRollGuardRef = useRef(false);
+
   // Sync the score to the authoritative backend balance whenever no local
   // (unapplied) bet deduction is on screen.
   useEffect(() => {
-    if (betApplied) setScoreBalance(user?.balance ?? 0);
+    if (!betApplied || scoreRollGuardRef.current) return;
+    setScoreBalance(user?.balance ?? 0);
   }, [betApplied, user?.balance]);
 
   // Persist the current round's bet to disk so an interrupted session can be
@@ -193,9 +193,7 @@ const HomePage = () => {
             (s, v) => s + v,
             0,
           );
-          setScoreBalance(
-            Math.max(0, (user?.balance || 0) - restoredTotal),
-          );
+          setScoreBalance(Math.max(0, (user?.balance || 0) - restoredTotal));
         }
       }
     };
@@ -217,7 +215,7 @@ const HomePage = () => {
     // If a winning take is pending (user hasn't claimed yet), freeze
     // everything at :00 — no new spin, no sound, timer stops at 0.
     if (takePendingRef.current) return;
-    if (totalBet > 0) { 
+    if (totalBet > 0) {
       noBetRounds.current = 0;
     } else {
       noBetRounds.current += 1;
@@ -292,65 +290,66 @@ const HomePage = () => {
   // is still processing the previous submission.
   const placingRef = useRef(false);
 
-  const handleBet = useCallback(
-    (num) => {
-      if (placingRef.current) return;
-      const sv = selectedRef.current;
-      const tp = takePendingRef.current;
-      const tr = totalBetRef.current;
-      const ur = userRef.current;
-      if (sv === null) return;
-      // Once a bet is accepted, no further bets until the result arrives.
-      if (submittedRef.current && !resultRevealedRef.current) {
-        manualMsg.current = true;
-        setGameMessage("Bet already accepted. Wait for the result.");
-        return;
-      }
-      // If a winning bet is pending, must take before placing new bets.
-      if (tp) {
-        manualMsg.current = true;
-        setGameMessage("Take your winning first");
-        return;
-      }
-      // Balance validation
-      const balance = ur?.balance ?? 0;
-      if (balance <= 0) {
-        manualMsg.current = true;
-        setGameMessage("Score Insufficient. Please recharge your balance.");
-        return;
-      }
-      if (tr + sv > balance) {
-        manualMsg.current = true;
-        setGameMessage("Score Insufficient.");
-        return;
-      }
-      // A new bet for the next result stops the winner blink and starts
-      // a fresh round.
-      if (resultRevealedRef.current) {
-        setBets({});
-        betOrder.current = [];
-        setResultRevealed(false);
-        setSubmitted(false);
-        setWinInfo(null);
-      }
-      // A new bet re-arms Cancel Specific for one more use.
-      setCancelSpecificUsed(false);
-      betOrder.current.push({ num, amt: sv });
-      setBets((prev) => ({ ...prev, [num]: (prev[num] || 0) + sv }));
-      const nextTotal = resultRevealedRef.current ? sv : tr + sv;
-      setScoreBalance(Math.max(0, (ur?.balance || 0) - nextTotal));
-      setBetApplied(false);
+  const handleBet = useCallback((num) => {
+    if (placingRef.current) return;
+    const sv = selectedRef.current;
+    const tp = takePendingRef.current;
+    const tr = totalBetRef.current;
+    const ur = userRef.current;
+    if (sv === null) return;
+    // Once a bet is accepted, no further bets until the result arrives.
+    if (submittedRef.current && !resultRevealedRef.current) {
       manualMsg.current = true;
-      setGameMessage("You can either make Bet or Press BETOK Button.");
-    },
-    [],
-  );
+      setGameMessage("Bet already accepted. Wait for the result.");
+      return;
+    }
+    // If a winning bet is pending, must take before placing new bets.
+    if (tp) {
+      manualMsg.current = true;
+      setGameMessage("Take your winning first");
+      return;
+    }
+    // Balance validation
+    const balance = ur?.balance ?? 0;
+    if (balance <= 0) {
+      manualMsg.current = true;
+      setGameMessage("Score Insufficient. Please recharge your balance.");
+      return;
+    }
+    if (tr + sv > balance) {
+      manualMsg.current = true;
+      setGameMessage("Score Insufficient.");
+      return;
+    }
+    // A new bet for the next result stops the winner blink and starts
+    // a fresh round.
+    if (resultRevealedRef.current) {
+      setBets({});
+      betOrder.current = [];
+      setResultRevealed(false);
+      setSubmitted(false);
+      setWinInfo(null);
+    }
+    // A new bet re-arms Cancel Specific for one more use.
+    setCancelSpecificUsed(false);
+    betOrder.current.push({ num, amt: sv });
+    setBets((prev) => ({ ...prev, [num]: (prev[num] || 0) + sv }));
+    const nextTotal = resultRevealedRef.current ? sv : tr + sv;
+    setScoreBalance(Math.max(0, (ur?.balance || 0) - nextTotal));
+    setBetApplied(false);
+    manualMsg.current = true;
+    setGameMessage("You can either make Bet or Press BETOK Button.");
+  }, []);
 
   // Keyboard/remote digit shortcuts: pressing "0"-"9" places a bet straight
   // onto that board number. Same lock gate as tapping the numbers.
   const numbersLockedRef = useRef(false);
   numbersLockedRef.current =
-    clickLocked || noBalance || takePending || fetching || (submitted && !resultRevealed);
+    clickLocked ||
+    noBalance ||
+    takePending ||
+    fetching ||
+    (submitted && !resultRevealed);
 
   const handleDigitBet = useCallback(
     (num) => {
@@ -426,8 +425,12 @@ const HomePage = () => {
         manualMsg.current = true;
         setGameMessage("Your Bet has been Accepted");
         setSubmitted(true);
-        const newBalance = await refreshBalance();
-        if (newBalance != null) setBetApplied(true);
+        const bal = Number(data?.balance);
+        if (Number.isFinite(bal)) {
+          const u = userRef.current;
+          if (u) setAuth({ ...u, balance: bal });
+        }
+        setBetApplied(true);
       } else {
         manualMsg.current = true;
         setGameMessage(data?.message || "Bet failed");
@@ -439,7 +442,7 @@ const HomePage = () => {
       placingRef.current = false;
       setFetching(false);
     }
-  }, [bets, totalBet, user, refreshBalance]);
+  }, [bets, totalBet, user]);
 
   // Auto-OK: when the countdown hits the last 10 seconds, submit any
   // pending bets automatically. Runs once per round.
@@ -497,141 +500,172 @@ const HomePage = () => {
       // instantly so the user cannot double-click while the API call runs.
       setFetching(true);
       try {
-      // Cancel All clears every placed bet.
-      // Once the bet is accepted, bets can no longer be cancelled.
-      if (submitted && (id === "cancelAll" || id === "cancelSpecific")) {
-        manualMsg.current = true;
-        setGameMessage("Bet already accepted. Cannot cancel.");
-        return;
-      }
-      if (id === "cancelAll") {
-        clearBets();
-      }
-      // Cancel Specific removes the ENTIRE bet of the MOST RECENTLY placed
-      // number (last come first out) — every unit on that number, e.g. 2x10
-      // on a number clears the full 20. It works ONE time per betting
-      // session — after the click the button disables until a new bet is
-      // placed.
-      if (id === "cancelSpecific") {
-        // If the order tracker is empty but bets are on screen (e.g. after
-        // a round reset), rebuild it from the current bets so cancel keeps
-        // working.
-        if (betOrder.current.length === 0) {
-          betOrder.current = Object.entries(bets).map(([num, amt]) => ({
-            num: Number(num),
-            amt,
-          }));
-        }
-        const last = betOrder.current[betOrder.current.length - 1];
-        if (last) {
-          const num = last.num;
-          // The whole bet placed on that number returns to the score
-          // (e.g. 2x10 on one number clears 20 and gives 20 back).
-          const cancelledAmt = bets[num] || last.amt;
-          // Drop every recorded placement of that number and clear its
-          // whole bet.
-          betOrder.current = betOrder.current.filter((e) => e.num !== num);
-          setBets((prev) => {
-            const next = { ...prev };
-            delete next[num];
-            return next;
-          });
-          // The deducted amount goes straight back to the balance.
-          setScoreBalance((prev) => prev + cancelledAmt);
-          if (betOrder.current.length === 0) {
-            clearPendingBet(user?.username || "");
-          }
-        }
-        setCancelSpecificUsed(true);
-      }
-      // The button is "Prev" with no bets (loads last bet) and "OK Bet"
-      // once a bet exists (places the bet).
-      if (id === "preview" && !submitted && totalBet > 0) {
-        await handlePlaceBet();
-        manualMsg.current = true;
-        setGameMessage("Your Bet has been Accepted");
-      } else if (id === "preview") {
-        try {
-          const { data } = await recordService.getLastBet({
-            username: user?.username || "",
-          });
-          const rec = data?.records?.[0];
-          if (rec?.tck_result) {
-            const parsed = {};
-            rec.tck_result.split(",").forEach((pair) => {
-              const [n, amt] = pair.split("-");
-              if (n !== undefined && amt !== undefined) {
-                parsed[Number(n)] = (parsed[Number(n)] || 0) + Number(amt);
-              }
-            });
-            const loadedTotal = Object.values(parsed).reduce((s, v) => s + v, 0);
-            const balance = user?.balance ?? 0;
-            if (loadedTotal > balance) {
-              manualMsg.current = true;
-              setGameMessage("Score Insufficient.");
-              return;
-            }
-            setBets(parsed);
-            betOrder.current = Object.entries(parsed).map(([n, amt]) => ({
-              num: Number(n),
-              amt,
-            }));
-            setCancelSpecificUsed(false);
-            setSubmitted(false);
-            setResultRevealed(false);
-            // The loaded ticket is not yet submitted/deducted: show the
-            // deduction on the score directly.
-            setBetApplied(false);
-            setScoreBalance(Math.max(0, (user?.balance || 0) - loadedTotal));
-            // No "loaded" message — the previous ticket just appears.
-          } else {
-            manualMsg.current = true;
-            setGameMessage("No previous bet found");
-          }
-        } catch {
+        // Cancel All clears every placed bet.
+        // Once the bet is accepted, bets can no longer be cancelled.
+        if (submitted && (id === "cancelAll" || id === "cancelSpecific")) {
           manualMsg.current = true;
-          setGameMessage("Failed to load last bet");
-        }
-      }
-      // take: claim winnings — backend is source of truth for balance.
-      if (id === "takeBet") {
-        if (!takePending) return;
-        const info = winInfo;
-        if (!info?.barcode) {
-          manualMsg.current = true;
-          setGameMessage("Could not claim winnings. Try again.");
+          setGameMessage("Bet already accepted. Cannot cancel.");
           return;
         }
-        play("TAKE");
-        setTaken(true);
-        setResultRevealed(false);
-        setWon(false);
-        setSubmitted(false);
-        setWinInfo(null);
-        setCancelSpecificUsed(false);
-        clearBets();
-        manualMsg.current = false;
-        setGameMessage("Take successful.");
-        recordService
-          .take({
-            username: user?.username || "",
-            win_amount: info.win_amount,
-            barcode: info.barcode,
-            id: info.id,
-          })
-          .then(({ data }) => {
-            if (data?.success === false) {
-              manualMsg.current = true;
-              setGameMessage(data?.message || "Take failed. Try again.");
-              return;
+        if (id === "cancelAll") {
+          clearBets();
+        }
+        // Cancel Specific removes the ENTIRE bet of the MOST RECENTLY placed
+        // number (last come first out) — every unit on that number, e.g. 2x10
+        // on a number clears the full 20. It works ONE time per betting
+        // session — after the click the button disables until a new bet is
+        // placed.
+        if (id === "cancelSpecific") {
+          // If the order tracker is empty but bets are on screen (e.g. after
+          // a round reset), rebuild it from the current bets so cancel keeps
+          // working.
+          if (betOrder.current.length === 0) {
+            betOrder.current = Object.entries(bets).map(([num, amt]) => ({
+              num: Number(num),
+              amt,
+            }));
+          }
+          const last = betOrder.current[betOrder.current.length - 1];
+          if (last) {
+            const num = last.num;
+            // The whole bet placed on that number returns to the score
+            // (e.g. 2x10 on one number clears 20 and gives 20 back).
+            const cancelledAmt = bets[num] || last.amt;
+            // Drop every recorded placement of that number and clear its
+            // whole bet.
+            betOrder.current = betOrder.current.filter((e) => e.num !== num);
+            setBets((prev) => {
+              const next = { ...prev };
+              delete next[num];
+              return next;
+            });
+            // The deducted amount goes straight back to the balance.
+            setScoreBalance((prev) => prev + cancelledAmt);
+            if (betOrder.current.length === 0) {
+              clearPendingBet(user?.username || "");
             }
-            refreshBalance();
-          })
-          .catch(() => {
+          }
+          setCancelSpecificUsed(true);
+        }
+        // The button is "Prev" with no bets (loads last bet) and "OK Bet"
+        // once a bet exists (places the bet).
+        if (id === "preview" && !submitted && totalBet > 0) {
+          await handlePlaceBet();
+          manualMsg.current = true;
+          setGameMessage("Your Bet has been Accepted");
+        } else if (id === "preview") {
+          try {
+            const { data } = await recordService.getLastBet({
+              username: user?.username || "",
+            });
+            const rec = data?.records?.[0];
+            if (rec?.tck_result) {
+              const parsed = {};
+              rec.tck_result.split(",").forEach((pair) => {
+                const [n, amt] = pair.split("-");
+                if (n !== undefined && amt !== undefined) {
+                  parsed[Number(n)] = (parsed[Number(n)] || 0) + Number(amt);
+                }
+              });
+              const loadedTotal = Object.values(parsed).reduce(
+                (s, v) => s + v,
+                0,
+              );
+              const balance = user?.balance ?? 0;
+              if (loadedTotal > balance) {
+                manualMsg.current = true;
+                setGameMessage("Score Insufficient.");
+                return;
+              }
+              setBets(parsed);
+              betOrder.current = Object.entries(parsed).map(([n, amt]) => ({
+                num: Number(n),
+                amt,
+              }));
+              setCancelSpecificUsed(false);
+              setSubmitted(false);
+              setResultRevealed(false);
+              // The loaded ticket is not yet submitted/deducted: show the
+              // deduction on the score directly.
+              setBetApplied(false);
+              setScoreBalance(Math.max(0, (user?.balance || 0) - loadedTotal));
+              // No "loaded" message — the previous ticket just appears.
+            } else {
+              manualMsg.current = true;
+              setGameMessage("No previous bet found");
+            }
+          } catch {
             manualMsg.current = true;
-            setGameMessage("Take failed. Try again.");
-          });
-      }
+            setGameMessage("Failed to load last bet");
+          }
+        }
+        // take: claim winnings — backend is source of truth for balance.
+        if (id === "takeBet") {
+          if (!takePending) return;
+          const info = winInfo;
+          if (!info?.barcode) {
+            manualMsg.current = true;
+            setGameMessage("Could not claim winnings. Try again.");
+            return;
+          }
+          play("TAKE");
+          setTaken(true);
+          setResultRevealed(false);
+          setWon(false);
+          setSubmitted(false);
+          setWinInfo(null);
+          setCancelSpecificUsed(false);
+          clearBets();
+          manualMsg.current = false;
+          setGameMessage("Take successful.");
+          recordService
+            .take({
+              username: user?.username || "",
+              win_amount: info.win_amount,
+              barcode: info.barcode,
+              id: info.id,
+            })
+            .then(({ data }) => {
+              if (data?.success === false) {
+                manualMsg.current = true;
+                setGameMessage(data?.message || "Take failed. Try again.");
+                return;
+              }
+              // The Take API response itself carries the updated balance —
+              // no separate balance API call needed. The score rolls UP by
+              // the winning amount (base -> final) with the same animated-
+              // number style the winner display uses for its countdown:
+              //   score: 782 -> ... -> 5782   (rolls up)
+              //   winner: 5000 -> ... -> 0    (counts down, in sync)
+              const bal = Number(data?.balance);
+              if (Number.isFinite(bal)) {
+                const u = userRef.current;
+                if (u) setAuth({ ...u, balance: bal });
+                const winAmt = Math.max(0, Number(info?.win_amount || 0));
+                const base = Math.max(0, bal - winAmt);
+                if (bal > base) {
+                  // Baseline first, then target two frames later so React
+                  // commits both renders and the hook animates between them.
+                  scoreRollGuardRef.current = true;
+                  setScoreBalance(base);
+                  requestAnimationFrame(() =>
+                    requestAnimationFrame(() => {
+                      setScoreBalance(bal);
+                      setTimeout(() => {
+                        scoreRollGuardRef.current = false;
+                      }, 1700);
+                    }),
+                  );
+                } else {
+                  setScoreBalance(bal);
+                }
+              }
+            })
+            .catch(() => {
+              manualMsg.current = true;
+              setGameMessage("Take failed. Try again.");
+            });
+        }
       } finally {
         setFetching(false);
       }
@@ -791,13 +825,25 @@ const HomePage = () => {
       <NumberDisplay
         bets={bets}
         onBet={handleBet}
-        disabled={clickLocked || noBalance || takePending || fetching || (submitted && !resultRevealed)}
+        disabled={
+          clickLocked ||
+          noBalance ||
+          takePending ||
+          fetching ||
+          (submitted && !resultRevealed)
+        }
         winnerBlink={resultRevealed && !taken ? lastWinner : null}
       />
       <PanelDisplay
         selectedValue={selectedValue}
         onSelect={handlePanelSelect}
-        disabled={clickLocked || noBalance || takePending || fetching || (submitted && !resultRevealed)}
+        disabled={
+          clickLocked ||
+          noBalance ||
+          takePending ||
+          fetching ||
+          (submitted && !resultRevealed)
+        }
       />
       <ButtonDisplay
         onAction={handleButtonAction}
