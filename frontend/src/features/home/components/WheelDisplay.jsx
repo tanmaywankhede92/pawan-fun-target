@@ -80,19 +80,17 @@ const WheelDisplay = ({
     setRotation(r);
   }, []);
 
-  // Initial / reload positioning: DISABLED — snapping the wheel to the
-  // previous round's result on load looked like a glitch (old number +
-  // joker appeared instantly, and the next spin started from it).
-  // initializedRef must still flip so the first :00 spin pipeline works.
+  // Initial / reload positioning: snap the wheel to the current result
+  // without any animation.
   useEffect(() => {
     if (initializedRef.current) return;
     if (targetWinner == null) return;
     initializedRef.current = true;
-    // setWinner(targetWinner);
-    // winnerRef.current = targetWinner;
-    // setResultJoker(jokerImageFor(joker, targetWinner));
-    // setRotationTracked(angleFor(targetWinner) + ALIGN_OFFSET);
-  }, [targetWinner, joker]);
+    setWinner(targetWinner);
+    winnerRef.current = targetWinner;
+    setResultJoker(jokerImageFor(joker, targetWinner));
+    setRotationTracked(angleFor(targetWinner) + ALIGN_OFFSET);
+  }, [targetWinner, joker, setRotationTracked]);
 
   // ── Phase 1 — Mark ready at :00 (no spin yet) ────────────────────
   // At the minute boundary we only record that a new round started.
