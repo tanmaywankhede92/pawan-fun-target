@@ -618,6 +618,23 @@ const HomePage = () => {
           clearBets();
           manualMsg.current = false;
           setGameMessage("Take successful.");
+          // Start score roll-up immediately (same frame as winner countdown)
+          // rather than waiting for the API response.  Both animations use
+          // the same animated-number hook config so they finish together.
+          const preBalance = Number(userRef.current?.balance ?? 0);
+          const winAmt = Math.max(0, Number(info?.win_amount || 0));
+          if (winAmt > 0) {
+            scoreRollGuardRef.current = true;
+            setScoreBalance(preBalance);
+            requestAnimationFrame(() =>
+              requestAnimationFrame(() =>
+                setScoreBalance(preBalance + winAmt),
+              ),
+            );
+            setTimeout(() => {
+              scoreRollGuardRef.current = false;
+            }, 1700);
+          }
           recordService
             .take({
               username: user?.username || "",
@@ -631,34 +648,12 @@ const HomePage = () => {
                 setGameMessage(data?.message || "Take failed. Try again.");
                 return;
               }
-              // The Take API response itself carries the updated balance —
-              // no separate balance API call needed. The score rolls UP by
-              // the winning amount (base -> final) with the same animated-
-              // number style the winner display uses for its countdown:
-              //   score: 782 -> ... -> 5782   (rolls up)
-              //   winner: 5000 -> ... -> 0    (counts down, in sync)
+              // Just update auth balance from server — score animation is
+              // already running above.
               const bal = Number(data?.balance);
               if (Number.isFinite(bal)) {
                 const u = userRef.current;
                 if (u) setAuth({ ...u, balance: bal });
-                const winAmt = Math.max(0, Number(info?.win_amount || 0));
-                const base = Math.max(0, bal - winAmt);
-                if (bal > base) {
-                  // Baseline first, then target two frames later so React
-                  // commits both renders and the hook animates between them.
-                  scoreRollGuardRef.current = true;
-                  setScoreBalance(base);
-                  requestAnimationFrame(() =>
-                    requestAnimationFrame(() => {
-                      setScoreBalance(bal);
-                      setTimeout(() => {
-                        scoreRollGuardRef.current = false;
-                      }, 1700);
-                    }),
-                  );
-                } else {
-                  setScoreBalance(bal);
-                }
               }
             })
             .catch(() => {
