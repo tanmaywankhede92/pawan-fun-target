@@ -3,7 +3,7 @@ const POS = {
   top: "78%",
   width: "24%",
   height: "6%",
-  fontSize: "clamp(14px, 1.6vw, 24px)",
+  fontSize: "clamp(11px, 3.2vh, 18px)",
 };
 
 const UsernameInput = ({ value, onChange, onKeyDown }) => {
@@ -14,13 +14,15 @@ const UsernameInput = ({ value, onChange, onKeyDown }) => {
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={onKeyDown}
       autoComplete="username"
-      className="absolute bg-transparent outline-none text-black caret-black cursor-text p-1 m-0 ft-login-field ft-login-pos justify-center text-center font-bold"
+      className="absolute bg-transparent outline-none text-black caret-black cursor-text p-0 px-2 m-0 ft-login-field ft-login-pos justify-center text-center font-bold"
       style={{
         left: POS.left,
         top: POS.top,
         width: POS.width,
         height: POS.height,
         fontSize: POS.fontSize,
+        lineHeight: 1,
+        boxSizing: "border-box",
       }}
     />
   );
