@@ -24,7 +24,7 @@ const TimerDisplay = ({ time }) => {
     >
       {`0`}
       <span style={{ fontFamily: "'Digital-7', Arial, sans-serif" }}>:</span>
-      {String(time).padStart(2)}
+      {String(time).padStart(2, "0")}
     </div>
   );
 };

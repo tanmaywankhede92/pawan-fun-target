@@ -6,13 +6,21 @@ const files = import.meta.glob(
 );
 
 const getSrc = (name) => {
-  const base = SOUNDS[name];
+  let base = SOUNDS[name];
   if (!base) return null;
-  const target = `${base.toLowerCase()}.`;
-  const key = Object.keys(files).find((k) => {
+  let target = `${base.toLowerCase()}.`;
+  let key = Object.keys(files).find((k) => {
     const file = k.split('/').pop().toLowerCase();
     return file.startsWith(target);
   });
+  if (!key && (name === 'CANCEL' || name === 'ENTER' || name === 'POPUP')) {
+    const fallbackBase = SOUNDS.CLICK;
+    const fallbackTarget = `${fallbackBase.toLowerCase()}.`;
+    key = Object.keys(files).find((k) => {
+      const file = k.split('/').pop().toLowerCase();
+      return file.startsWith(fallbackTarget);
+    });
+  }
   return key ? files[key].default : null;
 };
 

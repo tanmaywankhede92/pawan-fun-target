@@ -38,16 +38,29 @@ const jokerImageFor = (joker, winner) => {
 
 const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
-const FULL_SPINS = 6;
 
-const SPIN_DURATION_MS = 5500;
+// Spin takes 5.2 seconds, finishing safely before timer reaches 54s (at 6.0s)
+const SPIN_DURATION_MS = 5200;
 const SPIN_EASING = "cubic-bezier(0.17, 0.67, 0.12, 0.80)";
 
-const angleFor = (w) => ((SECTORS - w) % SECTORS) * SECTOR_ANGLE;
+const angleFor = (w) =>
+  ((SECTORS - (Number(w) % SECTORS)) % SECTORS) * SECTOR_ANGLE;
 
 const ALIGN_OFFSET = Number(
   new URLSearchParams(window.location.search).get("align") || 0,
 );
+
+const targetAngle = (w) => angleFor(w) + ALIGN_OFFSET;
+
+// Calculates next clockwise target rotation without snapping backward
+const calculateFinalRotation = (currentRot, winnerNum, minSpins = 5) => {
+  const target = targetAngle(winnerNum);
+  const currentMod = ((currentRot % 360) + 360) % 360;
+  const targetMod = ((target % 360) + 360) % 360;
+  let diff = targetMod - currentMod;
+  if (diff <= 0) diff += 360;
+  return currentRot + diff + minSpins * 360;
+};
 
 const WheelDisplay = ({
   spinTrigger,
@@ -70,9 +83,7 @@ const WheelDisplay = ({
   const spinningRef = useRef(false);
   const winnerRef = useRef(null);
   const spunTriggerRef = useRef(spinTrigger);
-  const spinStartedRef = useRef(false);
-  const targetSetRef = useRef(false);
-  const spinRafId = useRef(null);
+  const spinStartTimeRef = useRef(0);
   const { play, stop } = useSound();
 
   const setRotationTracked = useCallback((r) => {
@@ -89,123 +100,105 @@ const WheelDisplay = ({
     setWinner(targetWinner);
     winnerRef.current = targetWinner;
     setResultJoker(jokerImageFor(joker, targetWinner));
-    setRotationTracked(angleFor(targetWinner) + ALIGN_OFFSET);
+    setRotationTracked(targetAngle(targetWinner));
   }, [targetWinner, joker, setRotationTracked]);
 
-  // ── Phase 1 — Mark ready at :00 (no spin yet) ────────────────────
-  // At the minute boundary we only record that a new round started.
-  // The actual spin is deferred to Phase 2 so the wheel can start
-  // from the result number's position.
+  const completeSpin = useCallback(
+    (w) => {
+      if (!spinningRef.current) return;
+      spinningRef.current = false;
+      setSpinning(false);
+      stop("SPIN");
+      const winNum = w != null ? w : winnerRef.current;
+      if (winNum != null) {
+        setResultJoker(jokerImageFor(joker, winNum));
+        if (onComplete) onComplete(winNum);
+      }
+    },
+    [joker, onComplete, stop],
+  );
+
+  const handleTransitionEnd = useCallback(() => {
+    if (!spinningRef.current) return;
+    completeSpin(winnerRef.current);
+  }, [completeSpin]);
+
+  // ── Wheel spin starts IMMEDIATELY at :00 boundary ──────────────────
+  // The wheel never waits for network responses. It starts rotating right away
+  // at 00.000s, guaranteeing it finishes and stops by 54s.
   useEffect(() => {
     if (!initializedRef.current) return;
     if (spunTriggerRef.current === spinTrigger) return;
     spunTriggerRef.current = spinTrigger;
 
-    spinStartedRef.current = true;
-    targetSetRef.current = false;
-  }, [spinTrigger]);
+    spinStartTimeRef.current = performance.now();
+    spinningRef.current = true;
+    setSpinning(true);
+    setResultJoker(null);
+    play("SPIN", { loop: true });
 
-  // ── Phase 2 — Snap to result, then spin ──────────────────────────
-  // When the backend result arrives, snap the wheel to the result
-  // sector (so the user sees the number under the pointer), then
-  // start spinning from there.  The wheel lands back on the same
-  // result after exactly FULL_SPINS complete 360° rotations.
-  //
-  // WHY TWO rAFs: React18 batches all state updates in the same task
-  // into ONE render.  If snap + spin are in the same task, the browser
-  // only sees the final state and animates from the OLD accumulated
-  // rotation — the snap is never painted.  Two nested rAFs force TWO
-  // separate renders:
-  //   rAF 1 → commit snap (transition:none, rotation:snapAngle)
-  //   rAF 2 → commit spin (transition:6s, rotation:finalAngle)
+    if (targetWinner != null) {
+      const w = targetWinner;
+      setWinner(w);
+      winnerRef.current = w;
+      const finalRot = calculateFinalRotation(rotationRef.current, w, 5);
+      targetRotationRef.current = finalRot;
+      setTransitionMs(SPIN_DURATION_MS);
+      setRotationTracked(finalRot);
+    } else {
+      // If result is still in flight, start fast rotation immediately
+      const initialSpin = rotationRef.current + 360 * 6;
+      targetRotationRef.current = initialSpin;
+      setTransitionMs(SPIN_DURATION_MS);
+      setRotationTracked(initialSpin);
+    }
+  }, [spinTrigger, targetWinner, setRotationTracked, play]);
+
+  // ── When targetWinner arrives while already spinning ───────────────
+  // If the result arrived shortly after :00, adjust the landing angle seamlessly
+  // across the remaining duration so it still lands exactly on target by 54s.
   useEffect(() => {
-    if (targetWinner == null) return;
-    if (!spinStartedRef.current) return;
-    if (targetSetRef.current) return;
-    targetSetRef.current = true;
-    spinStartedRef.current = false;
+    if (targetWinner == null || !spinningRef.current) return;
+    if (winnerRef.current === targetWinner && targetRotationRef.current !== 0) {
+      return;
+    }
 
     const w = targetWinner;
-    const roundId = spinTrigger;
-
     setWinner(w);
     winnerRef.current = w;
 
-    const snapRotation = angleFor(w) + ALIGN_OFFSET;
-    const finalRotation = snapRotation + FULL_SPINS * 360;
+    const elapsed =
+      performance.now() - (spinStartTimeRef.current || performance.now());
+    const remainingMs = Math.max(1200, SPIN_DURATION_MS - elapsed);
+    const minSpins = Math.max(2, Math.round(remainingMs / 1000));
+    const finalRot = calculateFinalRotation(rotationRef.current, w, minSpins);
+    targetRotationRef.current = finalRot;
+    setTransitionMs(remainingMs);
+    setRotationTracked(finalRot);
+  }, [targetWinner, setRotationTracked]);
 
-    // 1) Instant snap — no transition.
-    setSpinning(false);
-    spinningRef.current = false;
-    setTransitionMs(0);
-    setRotationTracked(snapRotation);
-
-    // 2) Two nested rAFs: first forces the snap render to commit,
-    //    second starts the actual spin in a guaranteed-separate frame.
-    spinRafId.current = requestAnimationFrame(() => {
-      // Intermediate rAF — React commits the snap state here.
-      // Now schedule the real spin in the NEXT frame.
-      spinRafId.current = requestAnimationFrame(() => {
-        spinRafId.current = null;
-
-        if (spunTriggerRef.current !== roundId) return;
-
-        setResultJoker(null);
-        play("SPIN", { loop: true });
-        setTransitionMs(SPIN_DURATION_MS);
-        setSpinning(true);
-        spinningRef.current = true;
-        targetRotationRef.current = finalRotation;
-        setRotationTracked(finalRotation);
-      });
-    });
-
-    return () => {
-      if (spinRafId.current != null) {
-        cancelAnimationFrame(spinRafId.current);
-        spinRafId.current = null;
-      }
-    };
-  }, [targetWinner, spinStartMs, setRotationTracked, play]);
-
-  const handleTransitionEnd = useCallback(() => {
-    // Ignore any transitionend that fires while the wheel is not actively
-    // spinning (e.g. the instant snap phase or an interrupted transition).
-    if (!spinningRef.current) return;
-
-    spinningRef.current = false;
-    spinStartedRef.current = false;
-    targetSetRef.current = false;
-    setSpinning(false);
-    setResultJoker(jokerImageFor(joker, winner));
-    stop("SPIN");
-    if (winner !== null && onComplete) {
-      onComplete(winner);
+  // ── Watchdog Safeguard: Wheel MUST stop by 54s ─────────────────────
+  // "wheel kabhi bhi 00 se start honga and 54 per stop ho jayenga iske bad nhi ghumnge any how"
+  useEffect(() => {
+    const s = istSeconds();
+    const remaining = secondsToNextMinute(s);
+    if (remaining <= 54 && remaining > 10 && spinningRef.current) {
+      completeSpin(winnerRef.current);
     }
-  }, [winner, joker, onComplete, stop]);
+  });
 
-  // If the tab is hidden during the spin and the draw is already over,
-  // snap the wheel to its final position so nothing looks broken.
+  // Background-tab recovery
   useEffect(() => {
     const onVisibilityChange = () => {
       if (document.visibilityState !== "visible") return;
       if (!spinningRef.current) return;
-      if (secondsToNextMinute(istSeconds()) > 55) return;
-      if (istSeconds() <= 1) return;
-      spinningRef.current = false;
-      spinStartedRef.current = false;
-      setRotationTracked(targetRotationRef.current);
-      setSpinning(false);
-      setResultJoker(jokerImageFor(joker, targetWinner));
-      stop("SPIN");
-      if (winnerRef.current !== null && onComplete) {
-        onComplete(winnerRef.current);
-      }
+      if (secondsToNextMinute(istSeconds()) > 54) return;
+      completeSpin(targetWinner ?? winnerRef.current);
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () =>
       document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, [onComplete, setRotationTracked, joker, stop, targetWinner]);
+  }, [completeSpin, targetWinner]);
 
   useEffect(
     () => () => {

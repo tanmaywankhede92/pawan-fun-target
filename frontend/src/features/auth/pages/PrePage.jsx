@@ -174,7 +174,7 @@ const PrePage = () => {
           height: "7%",
         }}
       >
-        {saving}
+        {saving ? "..." : ""}
       </button>
 
       {/* FunTarget game list box -> click enters the game */}

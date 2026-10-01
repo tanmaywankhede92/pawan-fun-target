@@ -6,6 +6,11 @@ import p100 from "@assets/images/panels/100.webp";
 import p500 from "@assets/images/panels/500.webp";
 import p1000 from "@assets/images/panels/1000.webp";
 import p5000 from "@assets/images/panels/5000.webp";
+import p1glow from "@assets/images/panels/1glow.webp";
+import p5glow from "@assets/images/panels/5glow.webp";
+import p10glow from "@assets/images/panels/10glow.webp";
+import p50glow from "@assets/images/panels/50glow.webp";
+import p100glow from "@assets/images/panels/100Glow.webp";
 import { Fragment, memo } from "react";
 import { useSound } from "@hooks/useSound";
 
@@ -18,6 +23,14 @@ const IMAGES = {
   500: p500,
   1000: p1000,
   5000: p5000,
+};
+
+const GLOW_IMAGES = {
+  1: p1glow,
+  5: p5glow,
+  10: p10glow,
+  50: p50glow,
+  100: p100glow,
 };
 
 const PANEL_CONFIG = {
@@ -47,26 +60,34 @@ const PanelDisplay = ({ selectedValue, onSelect, disabled = false }) => {
         const { box } = PANEL_CONFIG[value];
         const img = IMAGES[value];
 
+        const isSelected = selectedValue === value;
+        const glowImg = GLOW_IMAGES[value];
+
         return (
           <Fragment key={value}>
             <div
               tabIndex={disabled ? -1 : 0}
               role="button"
               aria-disabled={disabled}
-              className="absolute overflow-hidden cursor-pointer z-20 select-none"
+              className={`absolute overflow-hidden cursor-pointer z-20 select-none transition-transform duration-100 ${
+                isSelected ? "scale-105" : "hover:scale-105"
+              }`}
               style={{
                 left: box.left,
                 right: box.right,
                 top: box.top,
                 width: box.width,
                 height: box.height,
+                ...(isSelected && !glowImg
+                  ? { filter: "drop-shadow(0 0 6px rgba(255, 215, 0, 0.9))" }
+                  : {}),
               }}
               onClick={() => handleSelect(value)}
             >
               {img && (
                 <img
                   decoding="async"
-                  src={img}
+                  src={isSelected && glowImg ? glowImg : img}
                   alt={`panel-${value}`}
                   className="absolute inset-0 w-full h-full object-fill pointer-events-none"
                 />
