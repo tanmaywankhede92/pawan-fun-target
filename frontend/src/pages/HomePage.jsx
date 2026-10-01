@@ -209,9 +209,6 @@ const HomePage = () => {
   const takePending = resultRevealed && !taken && won;
   takePendingRef.current = takePending;
 
-  const prefetchedResultRef = useRef(null);
-  const prefetchingRef = useRef(false);
-
   // ── Minute boundary handler ─────────────────────────────────────
   // Fired by useTimer exactly once per IST minute crossing.
   const handleNewMinute = useCallback(async () => {
@@ -229,23 +226,13 @@ const HomePage = () => {
       }
     }
     refreshBalance();
+    setLastWinner(null);
+    setLastJoker(null);
     setResultRevealed(false);
     setTaken(false);
     setSpinStartMs(performance.now());
     setWheelSpinning(true);
     setSpinCount((c) => c + 1);
-
-    // If pre-fetched result was already captured, use it immediately!
-    const prefetched = prefetchedResultRef.current;
-    if (prefetched && prefetched.winner != null) {
-      setLastWinner(prefetched.winner);
-      setLastJoker(prefetched.joker);
-      setResultError(false);
-      return;
-    }
-
-    setLastWinner(null);
-    setLastJoker(null);
     try {
       const { data } = await resultService.getCurrentResult();
       const r = data?.result?.[0];
@@ -255,7 +242,6 @@ const HomePage = () => {
       setResultError(false);
     } catch {
       setResultError(true);
-      // Failsafe: stop at fallback sector so wheel never spins endlessly
       setLastWinner((prev) => (prev != null ? prev : 0));
     }
   }, [refreshBalance, totalBet, logout, navigate]);
@@ -275,53 +261,6 @@ const HomePage = () => {
   if (!takePending) frozenRef.current = false;
   const timerFrozen = frozenRef.current;
   const time = timerFrozen ? 0 : rawTime;
-
-  // Pre-fetch the upcoming draw result during the last 6 seconds of betting window
-  // (the backend generates the upcoming result at ~XX:56 - XX:00).
-  // Having the result ready before :00 ensures the wheel spins INSTANTLY at :00
-  // and finishes at 54s with ZERO network lag!
-  useEffect(() => {
-    if (
-      time <= 6 &&
-      time > 0 &&
-      !prefetchedResultRef.current &&
-      !prefetchingRef.current
-    ) {
-      prefetchingRef.current = true;
-      resultService
-        .getCurrentResult()
-        .then(({ data }) => {
-          const r = data?.result?.[0];
-          if (r) {
-            const nextTime = ist24hStr(1);
-            const curTime = ist24hStr(0);
-            if (r.result_time24 === nextTime || r.result_time24 === curTime) {
-              prefetchedResultRef.current = {
-                winner: Number(r.result) % 10,
-                joker: Number(r.joker) || null,
-                time24: r.result_time24,
-              };
-            }
-          }
-        })
-        .catch(() => {})
-        .finally(() => {
-          prefetchingRef.current = false;
-        });
-    }
-    if (time > 10) {
-      prefetchedResultRef.current = null;
-      prefetchingRef.current = false;
-    }
-  }, [time]);
-
-  // Watchdog: wheel MUST stop at 54s ("wheel kabhi bhi 00 se start honga and 54 per stop ho jayenga iske bad nhi ghumnge any how")
-  useEffect(() => {
-    if (time <= 54 && time > 10 && wheelSpinning) {
-      setWheelSpinning(false);
-      stop("SPIN");
-    }
-  }, [time, wheelSpinning, stop]);
 
   // Betting lock: last 10 seconds of the minute + while the wheel is spinning.
   const clickLocked = wheelSpinning || timerFrozen || (time <= 10 && time > 0);

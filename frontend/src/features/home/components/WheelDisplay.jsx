@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSound } from "@hooks/useSound";
-import { istSeconds, secondsToNextMinute } from "@utils/istTime";
 import wheelImg from "@assets/images/wheel/wheel.webp";
 import wheelGif from "@assets/images/gifs/joker_gif1_slow.webp";
 import jackpot from "@assets/images/gifs/joker1.webp";
@@ -39,9 +38,10 @@ const jokerImageFor = (joker, winner) => {
 const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
 
-// Spin takes 5.2 seconds, finishing safely before timer reaches 54s (at 6.0s)
-const SPIN_DURATION_MS = 5200;
-const SPIN_EASING = "cubic-bezier(0.17, 0.67, 0.12, 0.80)";
+// Spin takes 5.4 seconds total: starts immediately at 00s, stops smoothly at 54s countdown
+const TOTAL_SPIN_DURATION_MS = 5400;
+const MAX_SPEED = 0.9; // deg/ms = 900 deg/sec = 2.5 rev/sec
+const ACCEL_TIME_MS = 600;
 
 const angleFor = (w) =>
   ((SECTORS - (Number(w) % SECTORS)) % SECTORS) * SECTOR_ANGLE;
@@ -53,7 +53,7 @@ const ALIGN_OFFSET = Number(
 const targetAngle = (w) => angleFor(w) + ALIGN_OFFSET;
 
 // Calculates next clockwise target rotation without snapping backward
-const calculateFinalRotation = (currentRot, winnerNum, minSpins = 5) => {
+const calculateFinalRotation = (currentRot, winnerNum, minSpins = 3) => {
   const target = targetAngle(winnerNum);
   const currentMod = ((currentRot % 360) + 360) % 360;
   const targetMod = ((target % 360) + 360) % 360;
@@ -75,134 +75,251 @@ const WheelDisplay = ({
   const [resultJoker, setResultJoker] = useState(() =>
     jokerImageFor(null, null),
   );
-  const [transitionMs, setTransitionMs] = useState(SPIN_DURATION_MS);
 
+  const wheelImgRef = useRef(null);
   const rotationRef = useRef(0);
   const initializedRef = useRef(false);
-  const targetRotationRef = useRef(0);
   const spinningRef = useRef(false);
-  const winnerRef = useRef(null);
   const spunTriggerRef = useRef(spinTrigger);
-  const spinStartTimeRef = useRef(0);
+  const rafIdRef = useRef(null);
+  const safetyTimeoutRef = useRef(null);
+
+  // Deceleration state refs for the rAF animation loop
+  const decelStartTimeRef = useRef(null);
+  const decelDurationRef = useRef(null);
+  const decelStartAngleRef = useRef(0);
+  const decelFinalAngleRef = useRef(0);
+  const winnerResolvedRef = useRef(null);
+
+  // Keep latest props in refs for direct frame-by-frame rAF loop access
+  const targetWinnerRef = useRef(targetWinner);
+  targetWinnerRef.current = targetWinner;
+
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
+  const jokerRef = useRef(joker);
+  jokerRef.current = joker;
+
   const { play, stop } = useSound();
 
-  const setRotationTracked = useCallback((r) => {
-    rotationRef.current = r;
-    setRotation(r);
-  }, []);
-
-  // Initial / reload positioning: snap the wheel to the current result
-  // without any animation.
+  // Initial / reload positioning: snap wheel to current result without animation
   useEffect(() => {
     if (initializedRef.current) return;
     if (targetWinner == null) return;
     initializedRef.current = true;
+    const initialAngle = targetAngle(targetWinner);
+    rotationRef.current = initialAngle;
+    setRotation(initialAngle);
     setWinner(targetWinner);
-    winnerRef.current = targetWinner;
     setResultJoker(jokerImageFor(joker, targetWinner));
-    setRotationTracked(targetAngle(targetWinner));
-  }, [targetWinner, joker, setRotationTracked]);
+    if (wheelImgRef.current) {
+      wheelImgRef.current.style.transform = `rotate(${initialAngle}deg)`;
+    }
+  }, [targetWinner, joker]);
 
-  const completeSpin = useCallback(
-    (w) => {
+  const finishSpin = useCallback(
+    (winNum) => {
       if (!spinningRef.current) return;
       spinningRef.current = false;
+
+      if (rafIdRef.current != null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      if (safetyTimeoutRef.current != null) {
+        clearTimeout(safetyTimeoutRef.current);
+        safetyTimeoutRef.current = null;
+      }
+
+      const finalWinner =
+        winNum != null
+          ? winNum
+          : winnerResolvedRef.current != null
+          ? winnerResolvedRef.current
+          : targetWinnerRef.current != null
+          ? targetWinnerRef.current
+          : 0;
+
+      const finalAngle =
+        decelFinalAngleRef.current ||
+        calculateFinalRotation(rotationRef.current, finalWinner, 1);
+
+      rotationRef.current = finalAngle;
+      setRotation(finalAngle);
+      if (wheelImgRef.current) {
+        wheelImgRef.current.style.transform = `rotate(${finalAngle}deg)`;
+      }
+
       setSpinning(false);
       stop("SPIN");
-      const winNum = w != null ? w : winnerRef.current;
-      if (winNum != null) {
-        setResultJoker(jokerImageFor(joker, winNum));
-        if (onComplete) onComplete(winNum);
+      setWinner(finalWinner);
+      setResultJoker(jokerImageFor(jokerRef.current, finalWinner));
+
+      // onComplete is ONLY called after the wheel has reached complete rest
+      if (onCompleteRef.current) {
+        onCompleteRef.current(finalWinner);
       }
     },
-    [joker, onComplete, stop],
+    [stop],
   );
 
-  const handleTransitionEnd = useCallback(() => {
-    if (!spinningRef.current) return;
-    completeSpin(winnerRef.current);
-  }, [completeSpin]);
-
   // ── Wheel spin starts IMMEDIATELY at :00 boundary ──────────────────
-  // The wheel never waits for network responses. It starts rotating right away
-  // at 00.000s, guaranteeing it finishes and stops by 54s.
+  // Starts rotating right away at 00s without waiting on network.
+  // Smoothly decelerates onto targetWinner when result arrives,
+  // stopping unconditionally at 54s countdown.
   useEffect(() => {
     if (!initializedRef.current) return;
     if (spunTriggerRef.current === spinTrigger) return;
     spunTriggerRef.current = spinTrigger;
 
-    spinStartTimeRef.current = performance.now();
     spinningRef.current = true;
     setSpinning(true);
     setResultJoker(null);
     play("SPIN", { loop: true });
 
-    if (targetWinner != null) {
-      const w = targetWinner;
-      setWinner(w);
-      winnerRef.current = w;
-      const finalRot = calculateFinalRotation(rotationRef.current, w, 5);
-      targetRotationRef.current = finalRot;
-      setTransitionMs(SPIN_DURATION_MS);
-      setRotationTracked(finalRot);
-    } else {
-      // If result is still in flight, start fast rotation immediately
-      const initialSpin = rotationRef.current + 360 * 6;
-      targetRotationRef.current = initialSpin;
-      setTransitionMs(SPIN_DURATION_MS);
-      setRotationTracked(initialSpin);
+    const startTime = performance.now();
+    let lastTime = startTime;
+    let currentAngle = rotationRef.current;
+
+    winnerResolvedRef.current = null;
+    decelStartTimeRef.current = null;
+    decelDurationRef.current = null;
+    decelStartAngleRef.current = currentAngle;
+    decelFinalAngleRef.current = 0;
+
+    // If targetWinner was already available at the moment spin triggered:
+    if (targetWinnerRef.current != null) {
+      const w = targetWinnerRef.current;
+      winnerResolvedRef.current = w;
+      decelStartTimeRef.current = startTime;
+      decelDurationRef.current = TOTAL_SPIN_DURATION_MS;
+      decelStartAngleRef.current = currentAngle;
+      const minSpins = Math.max(2, Math.round(TOTAL_SPIN_DURATION_MS / 1200));
+      decelFinalAngleRef.current = calculateFinalRotation(
+        currentAngle,
+        w,
+        minSpins,
+      );
     }
-  }, [spinTrigger, targetWinner, setRotationTracked, play]);
 
-  // ── When targetWinner arrives while already spinning ───────────────
-  // If the result arrived shortly after :00, adjust the landing angle seamlessly
-  // across the remaining duration so it still lands exactly on target by 54s.
-  useEffect(() => {
-    if (targetWinner == null || !spinningRef.current) return;
-    if (winnerRef.current === targetWinner && targetRotationRef.current !== 0) {
-      return;
-    }
+    const animate = (now) => {
+      if (!spinningRef.current) return;
 
-    const w = targetWinner;
-    setWinner(w);
-    winnerRef.current = w;
+      const dt = Math.min(100, Math.max(1, now - lastTime));
+      lastTime = now;
+      const elapsed = now - startTime;
 
-    const elapsed =
-      performance.now() - (spinStartTimeRef.current || performance.now());
-    const remainingMs = Math.max(1200, SPIN_DURATION_MS - elapsed);
-    const minSpins = Math.max(2, Math.round(remainingMs / 1000));
-    const finalRot = calculateFinalRotation(rotationRef.current, w, minSpins);
-    targetRotationRef.current = finalRot;
-    setTransitionMs(remainingMs);
-    setRotationTracked(finalRot);
-  }, [targetWinner, setRotationTracked]);
+      // Check if targetWinner has arrived from the API
+      if (winnerResolvedRef.current === null) {
+        const w = targetWinnerRef.current;
+        if (w != null) {
+          winnerResolvedRef.current = w;
+          decelStartTimeRef.current = now;
+          decelDurationRef.current = Math.max(
+            800,
+            TOTAL_SPIN_DURATION_MS - elapsed,
+          );
+          decelStartAngleRef.current = currentAngle;
+          const minSpins = Math.max(
+            1,
+            Math.round(decelDurationRef.current / 1200),
+          );
+          decelFinalAngleRef.current = calculateFinalRotation(
+            currentAngle,
+            w,
+            minSpins,
+          );
+        } else if (elapsed >= TOTAL_SPIN_DURATION_MS - 600) {
+          // Late fallback if API takes > 4.8s
+          const fallbackW = 0;
+          winnerResolvedRef.current = fallbackW;
+          decelStartTimeRef.current = now;
+          decelDurationRef.current = Math.max(
+            400,
+            TOTAL_SPIN_DURATION_MS - elapsed,
+          );
+          decelStartAngleRef.current = currentAngle;
+          decelFinalAngleRef.current = calculateFinalRotation(
+            currentAngle,
+            fallbackW,
+            1,
+          );
+        }
+      }
 
-  // ── Watchdog Safeguard: Wheel MUST stop by 54s ─────────────────────
-  // "wheel kabhi bhi 00 se start honga and 54 per stop ho jayenga iske bad nhi ghumnge any how"
-  useEffect(() => {
-    const s = istSeconds();
-    const remaining = secondsToNextMinute(s);
-    if (remaining <= 54 && remaining > 10 && spinningRef.current) {
-      completeSpin(winnerRef.current);
-    }
-  });
+      if (winnerResolvedRef.current === null) {
+        // Accelerate and cruise phase
+        const accel = Math.min(1, elapsed / ACCEL_TIME_MS);
+        const speed = MAX_SPEED * accel;
+        currentAngle += speed * dt;
+      } else {
+        // Deceleration phase: smooth cubic ease-out to target sector
+        const decelElapsed = now - decelStartTimeRef.current;
+        const u = Math.min(1, decelElapsed / decelDurationRef.current);
+        const easeOut = 1 - Math.pow(1 - u, 3);
+        currentAngle =
+          decelStartAngleRef.current +
+          (decelFinalAngleRef.current - decelStartAngleRef.current) * easeOut;
+
+        if (u >= 1 || elapsed >= TOTAL_SPIN_DURATION_MS) {
+          currentAngle = decelFinalAngleRef.current;
+          rotationRef.current = currentAngle;
+          if (wheelImgRef.current) {
+            wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
+          }
+          finishSpin(winnerResolvedRef.current);
+          return;
+        }
+      }
+
+      rotationRef.current = currentAngle;
+      if (wheelImgRef.current) {
+        wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
+      }
+
+      rafIdRef.current = requestAnimationFrame(animate);
+    };
+
+    rafIdRef.current = requestAnimationFrame(animate);
+
+    // Watchdog safety timeout: wheel MUST stop at 54s ("54 per stop ho jayenga iske bad nhi ghumnge any how")
+    safetyTimeoutRef.current = setTimeout(() => {
+      if (spinningRef.current) {
+        finishSpin(winnerResolvedRef.current);
+      }
+    }, TOTAL_SPIN_DURATION_MS + 200);
+
+    return () => {
+      if (rafIdRef.current != null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      if (safetyTimeoutRef.current != null) {
+        clearTimeout(safetyTimeoutRef.current);
+        safetyTimeoutRef.current = null;
+      }
+    };
+  }, [spinTrigger, finishSpin, play]);
 
   // Background-tab recovery
   useEffect(() => {
     const onVisibilityChange = () => {
       if (document.visibilityState !== "visible") return;
       if (!spinningRef.current) return;
-      if (secondsToNextMinute(istSeconds()) > 54) return;
-      completeSpin(targetWinner ?? winnerRef.current);
+      finishSpin(targetWinnerRef.current ?? winnerResolvedRef.current);
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () =>
       document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, [completeSpin, targetWinner]);
+  }, [finishSpin]);
 
   useEffect(
     () => () => {
       stop("SPIN");
+      if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
+      if (safetyTimeoutRef.current != null)
+        clearTimeout(safetyTimeoutRef.current);
     },
     [stop],
   );
@@ -224,19 +341,16 @@ const WheelDisplay = ({
     >
       <div className="relative w-full h-full">
         <img
+          ref={wheelImgRef}
           decoding="async"
           src={wheelImg}
           alt="wheel"
           className="w-full h-auto"
           style={{
             transform: `rotate(${rotation}deg)`,
-            transition: spinning
-              ? `transform ${transitionMs}ms ${SPIN_EASING}`
-              : "none",
             transformOrigin: "center center",
             willChange: "transform",
           }}
-          onTransitionEnd={handleTransitionEnd}
         />
 
         {showGif && (
