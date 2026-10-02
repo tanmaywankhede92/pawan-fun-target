@@ -8,23 +8,31 @@ const POS = {
 
 const UsernameInput = ({ value, onChange, onKeyDown }) => {
   return (
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      onKeyDown={onKeyDown}
-      autoComplete="username"
-      className="absolute bg-transparent outline-none text-black caret-black cursor-text p-0 px-2 m-0 ft-login-field ft-login-pos justify-center text-center font-bold"
+    <div
+      className="absolute ft-login-pos"
       style={{
         left: POS.left,
         top: POS.top,
         width: POS.width,
         height: POS.height,
-        fontSize: POS.fontSize,
-        lineHeight: 1,
-        boxSizing: "border-box",
       }}
-    />
+    >
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={onKeyDown}
+        autoComplete="off"
+        className="absolute inset-0 border-none outline-none text-black caret-black cursor-text p-0 px-2 m-0 ft-login-field justify-center text-center font-bold"
+        style={{
+          width: "100%",
+          height: "100%",
+          fontSize: POS.fontSize,
+          lineHeight: 1,
+          boxSizing: "border-box",
+        }}
+      />
+    </div>
   );
 };
 

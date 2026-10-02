@@ -6,14 +6,17 @@ import { recordApiResponse } from '@utils/apiLog';
 const AuthContext = createContext(null);
 
 // ============================================================
-// REAL API AUTH (backend: https://api.funtarget.us/api)
-// Login returns { user } — NO token/cookie, so we persist the
-// user object in localStorage as the session.
+// Session-scoped auth:
+// We use sessionStorage so that when the app is completely closed
+// (swiped away from Recent Apps / tab closed), the session is
+// automatically destroyed. On next open, user MUST log in again.
 // ============================================================
 
 const getStoredUser = () => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.USER);
+    // Purge any lingering legacy localStorage item from older builds
+    localStorage.removeItem(STORAGE_KEYS.USER);
+    const raw = sessionStorage.getItem(STORAGE_KEYS.USER);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -25,7 +28,6 @@ const initialState = {
   isAuthenticated: !!getStoredUser(),
   isLoading: false,
 };
-// ============================================================
 
 const authReducer = (state, action) => {
   switch (action.type) {
@@ -65,7 +67,7 @@ export const AuthProvider = ({ children }) => {
       if (!user) {
         throw new Error('Login failed');
       }
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+      sessionStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
       dispatch({ type: 'AUTH_SUCCESS', payload: { user } });
       return { redirect: '/pre', user };
     } catch (err) {
@@ -80,8 +82,6 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const logout = useCallback(async () => {
-    // Tell the backend the user is leaving (body: { username }), then clear
-    // the local session regardless of the network result.
     const username = userRef.current?.username;
     if (username) {
       try {
@@ -94,18 +94,16 @@ export const AuthProvider = ({ children }) => {
         });
       }
     }
+    sessionStorage.removeItem(STORAGE_KEYS.USER);
     localStorage.removeItem(STORAGE_KEYS.USER);
     dispatch({ type: 'LOGOUT' });
   }, []);
 
   const setAuth = useCallback((user) => {
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    sessionStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
     dispatch({ type: 'AUTH_SUCCESS', payload: { user } });
   }, []);
 
-  // Fetch the latest balance from the backend and sync it into the
-  // stored user object. Stable identity (no state.user dep) so callers
-  // never re-run effects; only dispatches when balance actually changed.
   const refreshBalance = useCallback(async () => {
     const username = userRef.current?.username;
     if (!username) return null;
@@ -115,7 +113,7 @@ export const AuthProvider = ({ children }) => {
       const current = userRef.current;
       if (newBalance != null && current && newBalance !== current.balance) {
         const updated = { ...current, balance: newBalance };
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updated));
+        sessionStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updated));
         dispatch({ type: 'AUTH_SUCCESS', payload: { user: updated } });
       }
       return newBalance;
@@ -126,6 +124,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const handleForceLogout = () => {
+      sessionStorage.removeItem(STORAGE_KEYS.USER);
       localStorage.removeItem(STORAGE_KEYS.USER);
       dispatch({ type: 'LOGOUT' });
     };

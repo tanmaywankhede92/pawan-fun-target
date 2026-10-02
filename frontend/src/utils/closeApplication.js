@@ -162,6 +162,10 @@ const closeNativeBridge = () =>
 // the current runtime. Returns CLOSE_RESULT.CLOSED when a close was
 // initiated, otherwise CLOSE_RESULT.UNSUPPORTED.
 export const closeApplication = () => {
+  try {
+    sessionStorage.clear();
+    localStorage.removeItem("user");
+  } catch {}
   if (!w()) return CLOSE_RESULT.UNSUPPORTED;
 
   // 1) Desktop/mobile wrapper or embedded WebView.
