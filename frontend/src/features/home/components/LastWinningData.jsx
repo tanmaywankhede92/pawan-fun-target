@@ -1,15 +1,15 @@
-const POS = {
-  right: "3.8%",
-  width: "17.5%",
-  height: "20%",
-  top: "26.5%",
-  fontSize: "clamp(6px, 1.5vw, 24px)",
-  fontWeight: 700,
-  fontFamily: '"Bodoni Moda", serif',
-};
-
 import { useState, useEffect } from "react";
 import { resultService } from "@services/result.service";
+
+const POS = {
+  right: "3.5%",
+  width: "17.8%",
+  height: "7.8%",
+  top: "32.2%",
+  fontSize: "clamp(12px, 2.1vw, 25px)",
+  fontWeight: 900,
+  fontFamily: '"Bodoni Moda", serif',
+};
 
 const LastWinningData = ({ refreshTrigger = 0 }) => {
   const [data, setData] = useState([]);
@@ -32,7 +32,7 @@ const LastWinningData = ({ refreshTrigger = 0 }) => {
 
   return (
     <div
-      className="absolute flex items-center pointer-events-none ft-last-wins"
+      className="absolute flex items-center justify-between pointer-events-none ft-last-wins z-10"
       style={{
         right: POS.right,
         top: POS.top,
@@ -42,16 +42,20 @@ const LastWinningData = ({ refreshTrigger = 0 }) => {
         fontWeight: POS.fontWeight,
         fontFamily: POS.fontFamily,
         flexDirection: "row-reverse",
+        padding: "0 0.35vw",
       }}
     >
       {data.map((num, i) => (
         <div
           key={i}
-          className="text-gray-700 text-center leading-none ft-last-wins-item"
+          className="text-center font-bold leading-none ft-last-wins-item"
           style={{
             flex: "1 1 0%",
             minWidth: 0,
             fontSize: POS.fontSize,
+            fontFamily: POS.fontFamily,
+            color: "#1b0e00",
+            textShadow: "0 0 0.5px #1b0e00",
           }}
         >
           {num}

@@ -3,9 +3,49 @@
 @tailwind utilities;
 
 @font-face {
+  font-family: 'Bodoni Moda';
+  src: url('../assets/font/bodoni/BodoniModa-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bodoni Moda';
+  src: url('../assets/font/bodoni/BodoniModa-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bodoni Moda';
+  src: url('../assets/font/bodoni/BodoniModa-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bodoni Moda';
+  src: url('../assets/font/bodoni/BodoniModa-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'Digital-7';
   src: url('../assets/font/digital-7/digital-7.ttf') format('truetype');
   font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Digital-7';
+  src: url('../assets/font/digital-7/digital-7.ttf') format('truetype');
+  font-weight: bold;
   font-style: normal;
   font-display: swap;
 }
@@ -123,19 +163,18 @@
     font-size: clamp(9px, 2.6vh, 11.5px) !important;
   }
 
-  /* Show all last-10 numbers (wrap into rows) */
+  /* Show all last-10 numbers in a single horizontal row */
   .ft-last-wins {
-    flex-wrap: wrap !important;
-    align-content: center !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
     justify-content: space-between !important;
-    gap: 1px 3px !important;
-    overflow-x: visible !important;
+    overflow: visible !important;
   }
 
   .ft-last-wins-item {
-    font-size: clamp(9px, 1.4vw, 12px) !important;
+    font-size: clamp(8px, 1.25vw, 17px) !important;
     padding: 0 !important;
-    line-height: 1.5 !important;
+    line-height: 1 !important;
   }
 }
 

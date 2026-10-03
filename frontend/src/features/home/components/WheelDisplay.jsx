@@ -9,22 +9,23 @@ import drum from "@assets/images/gifs/joker4.webp";
 import pointerGif from "@assets/images/gifs/DG.webp";
 
 const POS = {
-  left: "49%",
-  top: "39%",
-  width: "min(clamp(256px, 56%, 580px),78vh)",
+  left: "50%",
+  top: "35.0%",
+  width: "min(46vw, 74vh)",
+  height: "min(46vw, 74vh)",
 };
 
 const OVERLAY_POS = {
   left: "50%",
   top: "50%",
-  width: "35%",
+  width: "41%",
   height: "auto",
 };
 
 const POINTER_POS = {
   left: "50%",
-  top: "3%",
-  width: "10%",
+  top: "1.8%",
+  width: "11%",
   height: "auto",
 };
 
@@ -333,7 +334,9 @@ const WheelDisplay = ({
         left: POS.left,
         top: POS.top,
         width: POS.width,
+        height: POS.height,
         maxWidth: "100%",
+        maxHeight: "100%",
         transform: "translate(-50%, -50%)",
         aspectRatio: "1 / 1",
         overflow: "visible",
@@ -345,10 +348,10 @@ const WheelDisplay = ({
           decoding="async"
           src={wheelImg}
           alt="wheel"
-          className="w-full h-auto"
+          className="w-full h-full object-contain"
           style={{
             transform: `rotate(${rotation}deg)`,
-            transformOrigin: "center center",
+            transformOrigin: "50% 50%",
             willChange: "transform",
           }}
         />
@@ -363,7 +366,9 @@ const WheelDisplay = ({
               left: OVERLAY_POS.left,
               top: OVERLAY_POS.top,
               width: OVERLAY_POS.width,
+              height: OVERLAY_POS.width,
               transform: "translate(-50%, -50%)",
+              objectFit: "contain",
             }}
           />
         )}
@@ -378,8 +383,9 @@ const WheelDisplay = ({
               left: OVERLAY_POS.left,
               top: OVERLAY_POS.top,
               width: OVERLAY_POS.width,
-              height: OVERLAY_POS.height,
+              height: OVERLAY_POS.width,
               transform: "translate(-50%, -50%)",
+              objectFit: "contain",
             }}
           />
         )}
@@ -393,9 +399,9 @@ const WheelDisplay = ({
             left: POINTER_POS.left,
             top: POINTER_POS.top,
             width: POINTER_POS.width,
-            height: POINTER_POS.height,
+            height: POINTER_POS.width,
             transform: "translate(-50%, -50%)",
-            filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))",
+            filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.4))",
           }}
         />
       </div>

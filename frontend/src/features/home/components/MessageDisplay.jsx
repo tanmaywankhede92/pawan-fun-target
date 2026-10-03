@@ -1,15 +1,15 @@
 const POS = {
   left: "50%",
-  bottom: "0%",
-  width: "70%",
-  height: "5%",
-  fontSize: "clamp(6px, 1.5vw, 20px)",
+  bottom: "0.6%",
+  width: "68%",
+  height: "5.0%",
+  fontSize: "clamp(8px, 1.4vw, 20px)",
 };
 
 const MessageDisplay = ({ message = "" }) => {
   return (
     <div
-      className="absolute pointer-events-none flex items-center justify-center text-center text-black"
+      className="absolute pointer-events-none flex items-center justify-center text-center text-black z-20"
       style={{
         left: POS.left,
         bottom: POS.bottom,
@@ -21,7 +21,6 @@ const MessageDisplay = ({ message = "" }) => {
         fontWeight: 700,
         whiteSpace: "nowrap",
         overflow: "visible",
-        borderRadius: "10px",
       }}
     >
       {message}

@@ -2,11 +2,11 @@ import useAnimatedNumber from "@hooks/useAnimatedNumber";
 import { SOUNDS } from "@constants/sounds";
 
 const POS = {
-  right: "1%",
-  top: "10%",
-  width: "25%",
-  height: "8%",
-  fontSize: "clamp(6px, 1.4vw, 26px)",
+  right: "3.5%",
+  top: "9.5%",
+  width: "17.8%",
+  height: "8.0%",
+  fontSize: "clamp(16px, 2.7vw, 34px)",
 };
 
 // Winner amount rolls number by number. It counts up when a win appears and
@@ -18,7 +18,7 @@ const WinnerDisplay = ({ winner, winAmount }) => {
   );
   return (
     <div
-      className="absolute pointer-events-none text-gray-900 flex items-center text-center justify-center"
+      className="absolute pointer-events-none flex items-center justify-center text-center z-10"
       style={{
         right: POS.right,
         top: POS.top,
@@ -26,12 +26,14 @@ const WinnerDisplay = ({ winner, winAmount }) => {
         height: POS.height,
         fontSize: POS.fontSize,
         fontFamily: '"Bodoni Moda", serif',
-        fontWeight: 700,
+        fontWeight: 900,
+        color: "#1b0e00",
+        textShadow: "0 0 0.5px #1b0e00",
         whiteSpace: "nowrap",
         overflow: "visible",
       }}
     >
-      {` ${display}`}
+      {display}
     </div>
   );
 };

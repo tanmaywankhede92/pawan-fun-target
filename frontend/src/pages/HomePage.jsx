@@ -473,7 +473,7 @@ const HomePage = () => {
     if (takePending) return;
     if (time <= 10 && time > 0) {
       manualMsg.current = false;
-      setGameMessage("Bet Time over");
+      setGameMessage("Bet Time Over.");
     } else if (wheelSpinning) {
       manualMsg.current = false;
       setGameMessage("FOR AMUSEMENT ONLY NO CASH VALUE");

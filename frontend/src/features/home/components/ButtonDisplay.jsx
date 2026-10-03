@@ -17,7 +17,7 @@ const BUTTONS = [
     base: cancelBtn,
     glow: cancelBetGlow,
     zoom: 1.2,
-    box: { left: "20%", bottom: "21%", width: "11%", height: "6%" },
+    box: { left: "20%", bottom: "21%", width: "12%", height: "6%" },
   },
   {
     id: "takeBet",
@@ -30,12 +30,12 @@ const BUTTONS = [
   },
   {
     id: "preview",
-    name: "Prev",
+    name: "Bet Ok",
     sound: "CLICK",
     base: previewBtn,
     glow: previewGlow,
     zoom: 1.2,
-    box: { left: "85%", bottom: "21%", width: "16%", height: "6%" },
+    box: { left: "85%", bottom: "21%", width: "15%", height: "6%" },
   },
   {
     id: "exit",
@@ -109,7 +109,7 @@ const ButtonDisplay = ({
             ? !takeLock
             : disabled || takeLock || isCancelSpecificLocked(btn);
         const isHovered = !btnLocked && hovered === btn.id;
-        const name = isPreview(btn) ? (hasBets ? "Bet Ok" : "Prev Bet") : btn.name;
+        const name = isPreview(btn) ? "Bet Ok" : btn.name;
         // Cancel All + Cancel Specific blink while bets are pending (not yet
         // accepted). Cancel Specific stops blinking once its one use is done.
         const blink =

@@ -1,21 +1,22 @@
 const POS = {
-  right: "91%",
-  top: "93.5%",
-  width: "12%",
-  height: "7%",
-  fontSize: "clamp(6px, 1.3vw, 22px)",
+  left: "1.2%",
+  top: "94.2%",
+  width: "8.5%",
+  height: "4.8%",
+  fontSize: "clamp(8px, 1.4vw, 20px)",
 };
 
 const TotalBetDisplay = ({ total = 0 }) => {
   return (
     <div
-      className="absolute pointer-events-none flex items-center justify-center text-white font-bold z-10"
+      className="absolute pointer-events-none flex items-center justify-center text-white font-bold z-20"
       style={{
-        right: POS.right,
+        left: POS.left,
         top: POS.top,
         width: POS.width,
         height: POS.height,
         fontSize: POS.fontSize,
+        fontFamily: '"Times New Roman", serif',
         whiteSpace: "nowrap",
         overflow: "visible",
       }}

@@ -1,30 +1,33 @@
 const POS = {
-  left: "9%",
+  left: "3.0%",
   top: "32.5%",
-  width: "15%",
-  height: "8%",
-  fontSize: "clamp(6px, 1.4vw, 30px)",
+  width: "18.0%",
+  height: "8.0%",
+  fontSize: "clamp(18px, 2.9vw, 38px)",
 };
 
 const TimerDisplay = ({ time }) => {
   return (
     <div
-      className="absolute pointer-events-none text-gray-900 flex items-center text-center z-10"
+      className="absolute pointer-events-none flex items-center justify-center text-center z-10"
       style={{
         left: POS.left,
         top: POS.top,
         width: POS.width,
         height: POS.height,
         fontSize: POS.fontSize,
-        fontFamily: "'Digit-Tech-7', 'Digital-7', Arial, sans-serif",
+        fontFamily: "'Digital-7', sans-serif",
+        color: "#1b0e00",
         fontWeight: "bold",
+        WebkitTextStroke: "0.4px #1b0e00",
+        textShadow: "0 0 0.5px #1b0e00",
         whiteSpace: "nowrap",
         overflow: "visible",
       }}
     >
-      {`0`}
-      <span style={{ fontFamily: "'Digital-7', Arial, sans-serif" }}>:</span>
-      {String(time).padStart(2, "0")}
+      <span>0</span>
+      <span style={{ margin: "0 0.18em" }}>:</span>
+      <span>{time}</span>
     </div>
   );
 };
