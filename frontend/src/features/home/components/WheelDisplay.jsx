@@ -10,9 +10,9 @@ import pointerGif from "@assets/images/gifs/DG.webp";
 
 const POS = {
   left: "50%",
-  top: "35.0%",
-  width: "min(46vw, 74vh)",
-  height: "min(46vw, 74vh)",
+  top: "39.0%",
+  width: "min(52vw, 72vh)",
+  height: "min(52vw, 72vh)",
 };
 
 const OVERLAY_POS = {
@@ -24,7 +24,7 @@ const OVERLAY_POS = {
 
 const POINTER_POS = {
   left: "50%",
-  top: "1.8%",
+  top: "2.0%",
   width: "11%",
   height: "auto",
 };
@@ -115,7 +115,7 @@ const WheelDisplay = ({
     setWinner(targetWinner);
     setResultJoker(jokerImageFor(joker, targetWinner));
     if (wheelImgRef.current) {
-      wheelImgRef.current.style.transform = `rotate(${initialAngle}deg)`;
+      wheelImgRef.current.style.transform = `rotate(${initialAngle}deg) translateZ(0)`;
     }
   }, [targetWinner, joker]);
 
@@ -149,7 +149,7 @@ const WheelDisplay = ({
       rotationRef.current = finalAngle;
       setRotation(finalAngle);
       if (wheelImgRef.current) {
-        wheelImgRef.current.style.transform = `rotate(${finalAngle}deg)`;
+        wheelImgRef.current.style.transform = `rotate(${finalAngle}deg) translateZ(0)`;
       }
 
       setSpinning(false);
@@ -267,7 +267,7 @@ const WheelDisplay = ({
           currentAngle = decelFinalAngleRef.current;
           rotationRef.current = currentAngle;
           if (wheelImgRef.current) {
-            wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
+            wheelImgRef.current.style.transform = `rotate(${currentAngle}deg) translateZ(0)`;
           }
           finishSpin(winnerResolvedRef.current);
           return;
@@ -276,7 +276,7 @@ const WheelDisplay = ({
 
       rotationRef.current = currentAngle;
       if (wheelImgRef.current) {
-        wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
+        wheelImgRef.current.style.transform = `rotate(${currentAngle}deg) translateZ(0)`;
       }
 
       rafIdRef.current = requestAnimationFrame(animate);
@@ -340,6 +340,7 @@ const WheelDisplay = ({
         transform: "translate(-50%, -50%)",
         aspectRatio: "1 / 1",
         overflow: "visible",
+        clipPath: "inset(0 0 5% 0)",
       }}
     >
       <div className="relative w-full h-full">
@@ -350,9 +351,11 @@ const WheelDisplay = ({
           alt="wheel"
           className="w-full h-full object-contain"
           style={{
-            transform: `rotate(${rotation}deg)`,
+            transform: `rotate(${rotation}deg) translateZ(0)`,
             transformOrigin: "50% 50%",
             willChange: "transform",
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
           }}
         />
 

@@ -173,9 +173,16 @@ const ButtonDisplay = ({
               />
             )}
             <span
-              className="relative z-10 w-full text-center text-white font-normal text-[clamp(6px,1.3vw,18px)] leading-none"
+              className="relative z-10 w-full text-center text-white font-bold leading-none select-none px-1"
               style={{
-                fontFamily: '"Century", serif',
+                fontFamily: '"Century Gothic", sans-serif',
+                fontWeight: 700,
+                fontSize:
+                  btn.id === "cancelSpecific"
+                    ? "clamp(6px, 1.1vw, 15px)"
+                    : "clamp(7px, 1.35vw, 18px)",
+                letterSpacing: "0.01em",
+                textShadow: "0 1px 2px rgba(0, 0, 0, 0.65)",
                 transform: "translateY(-10%)",
               }}
             >
