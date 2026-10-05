@@ -1,11 +1,43 @@
 import { useEffect, useState, useRef } from "react";
 
+const isTvDevice = () => {
+  // 1. Direct native Android bridge check (from MainActivity.java)
+  try {
+    if (window.Android && typeof window.Android.isAndroidTV === "function") {
+      return Boolean(window.Android.isAndroidTV());
+    }
+  } catch {
+    // ignored
+  }
+
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
+
+  // 2. Desktop check: Windows, Mac, Linux (non-Android) -> NEVER show virtual cursor!
+  const isDesktop =
+    /Windows NT|Macintosh|Mac OS X/i.test(ua) ||
+    (/Linux/i.test(ua) && !/Android/i.test(ua));
+  if (isDesktop) return false;
+
+  // 3. Mobile phone check: Mobile phones with touch -> NEVER show virtual cursor!
+  const isMobilePhone = /Mobile|iPhone|iPod|Android.*Mobile/i.test(ua);
+  if (isMobilePhone) return false;
+
+  // 4. TV User-Agent signatures (Android TV, Google TV, Fire TV, Mi TV, Sony Bravia, etc.)
+  const isTV =
+    /Android/i.test(ua) &&
+    (/TV|GoogleTV|AndroidTV|SmartTV|BRAVIA|AFT|MiTV|NetCast|Tizen|WebOS/i.test(ua) ||
+      !/Mobile/i.test(ua));
+
+  return Boolean(isTV);
+};
+
 /**
- * VirtualCursor provides a smooth, visible mouse pointer for Android TV
- * and devices where the operating system does not render a hardware mouse cursor.
- * It tracks standard pointer/mouse movements and renders an arcade-style pointer.
+ * VirtualCursor provides a smooth, visible mouse pointer ONLY for Android TV
+ * where the operating system does not render a hardware mouse cursor.
+ * On Desktop and Mobile Phones, this component is completely inactive.
  */
 const VirtualCursor = () => {
+  const [isTv, setIsTv] = useState(() => isTvDevice());
   const [pos, setPos] = useState({ x: -100, y: -100 });
   const [visible, setVisible] = useState(false);
   const [isDown, setIsDown] = useState(false);
@@ -13,6 +45,14 @@ const VirtualCursor = () => {
   const timeoutRef = useRef(null);
 
   useEffect(() => {
+    // Re-check once Capacitor Android bridge initialises
+    if (!isTv && isTvDevice()) {
+      setIsTv(true);
+    }
+  }, [isTv]);
+
+  useEffect(() => {
+    if (!isTv) return;
     const handleMove = (e) => {
       // Ignore pure touch events on phones/tablets
       if (e.pointerType === "touch") {
@@ -87,9 +127,9 @@ const VirtualCursor = () => {
       window.removeEventListener("keydown", handleKey);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, []);
+  }, [isTv]);
 
-  if (!visible) return null;
+  if (!isTv || !visible) return null;
 
   return (
     <div

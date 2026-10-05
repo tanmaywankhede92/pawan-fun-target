@@ -142,15 +142,20 @@ public class MainActivity extends BridgeActivity {
                     });
                 }
 
-                // Fallback for the session guard hook: when the app goes to
-                // background, call the JS logout function.
+                // Detect if the running device is an Android TV / Google TV
                 @android.webkit.JavascriptInterface
-                public void lockApp() {
-                    runOnUiThread(() -> {
-                        webView.evaluateJavascript(
-                            "if(window.__appLock) window.__appLock()", null
-                        );
-                    });
+                public boolean isAndroidTV() {
+                    try {
+                        android.app.UiModeManager uiModeManager = (android.app.UiModeManager) getSystemService(UI_MODE_SERVICE);
+                        if (uiModeManager != null && uiModeManager.getCurrentModeType() == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION) {
+                            return true;
+                        }
+                        android.content.pm.PackageManager pm = getPackageManager();
+                        return pm.hasSystemFeature(android.content.pm.PackageManager.FEATURE_LEANBACK)
+                            || pm.hasSystemFeature("android.hardware.type.television");
+                    } catch (Exception e) {
+                        return false;
+                    }
                 }
             },
             "Android"
