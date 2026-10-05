@@ -118,10 +118,17 @@ public class MainActivity extends BridgeActivity {
 
         webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
 
-        // Android TV remote control / D-pad focus support
+        // Android TV remote control & USB/Wireless mouse support
         webView.setFocusable(true);
         webView.setFocusableInTouchMode(true);
         webView.requestFocus();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            try {
+                webView.setPointerIcon(android.view.PointerIcon.getSystemIcon(this, android.view.PointerIcon.TYPE_DEFAULT));
+            } catch (Exception ignored) {
+            }
+        }
 
         // JS bridge: window.Android.closeApp() — called by closeApplication.js
         // for a clean exit via finishAndRemoveTask().
@@ -163,6 +170,33 @@ public class MainActivity extends BridgeActivity {
             webView.requestFocus();
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(android.view.MotionEvent ev) {
+        WebView webView = getBridge().getWebView();
+        if (webView != null && !webView.hasFocus()) {
+            webView.requestFocus();
+        }
+        return super.dispatchTouchEvent(ev);
+    }
+
+    @Override
+    public boolean dispatchGenericMotionEvent(android.view.MotionEvent ev) {
+        WebView webView = getBridge().getWebView();
+        if (webView != null) {
+            if (!webView.hasFocus()) {
+                webView.requestFocus();
+            }
+            if ((ev.getSource() & android.view.InputDevice.SOURCE_CLASS_POINTER) != 0 ||
+                (ev.getSource() & android.view.InputDevice.SOURCE_MOUSE) != 0) {
+                try {
+                    webView.onGenericMotionEvent(ev);
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        return super.dispatchGenericMotionEvent(ev);
     }
 
     @Override

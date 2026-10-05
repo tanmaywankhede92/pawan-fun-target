@@ -164,6 +164,9 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
               onPointerUp={stopHold}
               onPointerLeave={stopHold}
               onPointerCancel={stopHold}
+              onClick={() => {
+                if (!holdTimer.current) doBet(num);
+              }}
             >
               {(isHovered || focusedNum === num || bet > 0 || isWinner) && img && (
                 <img
