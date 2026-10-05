@@ -7,7 +7,7 @@ const POS = {
   top: "9.5%",
   width: "18.0%",
   height: "8.0%",
-  fontSize: "clamp(16px, 2.7vw, 34px)",
+  fontSize: "clamp(12px, min(1.85vw, 3.8vh), 28px)",
 };
 
 const ScoreDisplay = ({ score = 0 }) => {
@@ -17,7 +17,7 @@ const ScoreDisplay = ({ score = 0 }) => {
   });
   return (
     <div
-      className="absolute pointer-events-none flex items-center justify-center text-center z-10"
+      className="absolute pointer-events-none flex items-center justify-center text-center z-10 ft-score-text"
       style={{
         left: POS.left,
         top: POS.top,
@@ -26,6 +26,7 @@ const ScoreDisplay = ({ score = 0 }) => {
         fontSize: POS.fontSize,
         fontFamily: '"Bodoni Moda", serif',
         fontWeight: 900,
+        lineHeight: 1,
         color: "#1b0e00",
         letterSpacing: "0.02em",
         textShadow: "0 0 0.5px #1b0e00",

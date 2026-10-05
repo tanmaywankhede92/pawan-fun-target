@@ -3,13 +3,13 @@ const POS = {
   top: "32.5%",
   width: "18.0%",
   height: "8.0%",
-  fontSize: "clamp(18px, 2.9vw, 38px)",
+  fontSize: "clamp(13px, min(2.0vw, 4.0vh), 28px)",
 };
 
 const TimerDisplay = ({ time }) => {
   return (
     <div
-      className="absolute pointer-events-none flex items-center justify-center text-center z-10"
+      className="absolute pointer-events-none flex items-center justify-center text-center z-10 ft-timer-text"
       style={{
         left: POS.left,
         top: POS.top,
@@ -19,6 +19,7 @@ const TimerDisplay = ({ time }) => {
         fontFamily: "'Digital-7', sans-serif",
         color: "#1b0e00",
         fontWeight: "bold",
+        lineHeight: 1,
         WebkitTextStroke: "0.4px #1b0e00",
         textShadow: "0 0 0.5px #1b0e00",
         whiteSpace: "nowrap",

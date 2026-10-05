@@ -17,7 +17,7 @@ const BUTTONS = [
     base: cancelBtn,
     glow: cancelBetGlow,
     zoom: 1.2,
-    box: { left: "20%", bottom: "21%", width: "12%", height: "6%" },
+    box: { left: "20%", bottom: "20%", width: "12%", height: "5%" },
   },
   {
     id: "takeBet",
@@ -26,7 +26,7 @@ const BUTTONS = [
     base: takeBtn,
     glow: takeBetGlow,
     zoom: 1.2,
-    box: { right: "85.9%", bottom: "21.5%", width: "14%", height: "5.5%" },
+    box: { right: "85.9%", bottom: "21.5%", width: "14%", height: "5%" },
   },
   {
     id: "preview",
@@ -35,7 +35,7 @@ const BUTTONS = [
     base: previewBtn,
     glow: previewGlow,
     zoom: 1.2,
-    box: { left: "85%", bottom: "21%", width: "15%", height: "6%" },
+    box: { left: "85%", bottom: "21%", width: "15%", height: "5%" },
   },
   {
     id: "exit",
@@ -53,7 +53,7 @@ const BUTTONS = [
     base: cancelBtn,
     glow: cancelBetGlow,
     zoom: 1.2,
-    box: { left: "66%", bottom: "21%", width: "15.5%", height: "6%" },
+    box: { left: "66%", bottom: "20%", width: "15.5%", height: "5%" },
   },
 ];
 
@@ -173,7 +173,7 @@ const ButtonDisplay = ({
               />
             )}
             <span
-              className="relative z-10 w-full text-center text-white font-bold text-[clamp(6px,1.3vw,18px)] leading-none"
+              className="relative z-10 w-full text-center text-white font-normal text-[clamp(6px,1.3vw,18px)] leading-none"
               style={{
                 fontFamily: '"Century", serif',
                 transform: "translateY(-10%)",

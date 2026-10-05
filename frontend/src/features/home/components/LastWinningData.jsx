@@ -6,7 +6,7 @@ const POS = {
   width: "17.8%",
   height: "7.8%",
   top: "32.2%",
-  fontSize: "clamp(12px, 2.1vw, 25px)",
+  fontSize: "clamp(9px, min(1.2vw, 2.5vh), 18px)",
   fontWeight: 900,
   fontFamily: '"Bodoni Moda", serif',
 };
@@ -42,7 +42,7 @@ const LastWinningData = ({ refreshTrigger = 0 }) => {
         fontWeight: POS.fontWeight,
         fontFamily: POS.fontFamily,
         flexDirection: "row-reverse",
-        padding: "0 0.35vw",
+        padding: "0 0.6vw",
       }}
     >
       {data.map((num, i) => (
