@@ -141,6 +141,22 @@ const ButtonDisplay = ({
               if (!btnLocked) setHovered(btn.id);
             }}
             onMouseLeave={() => setHovered(null)}
+            onFocus={() => {
+              if (!btnLocked) setHovered(btn.id);
+            }}
+            onBlur={() => setHovered(null)}
+            onKeyDown={(e) => {
+              if (
+                e.key === "Enter" ||
+                e.key === "Select" ||
+                e.key === "Ok" ||
+                e.keyCode === 13 ||
+                e.keyCode === 23
+              ) {
+                e.preventDefault();
+                handleClick(btn);
+              }
+            }}
             onClick={() => handleClick(btn)}
           >
             {btn.base && (

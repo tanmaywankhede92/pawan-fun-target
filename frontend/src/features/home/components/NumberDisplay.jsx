@@ -145,7 +145,14 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
               onFocus={() => setFocusedNum(num)}
               onBlur={() => setFocusedNum(null)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.repeat) {
+                if (
+                  (e.key === "Enter" ||
+                    e.key === "Select" ||
+                    e.key === "Ok" ||
+                    e.keyCode === 13 ||
+                    e.keyCode === 23) &&
+                  !e.repeat
+                ) {
                   e.preventDefault();
                   doBet(num);
                 }

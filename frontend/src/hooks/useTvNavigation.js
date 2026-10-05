@@ -7,6 +7,7 @@ const FOCUSABLE = [
   "textarea:not([disabled])",
   "a[href]",
   "[tabindex]:not([tabindex='-1'])",
+  "[role='button']:not([aria-disabled='true'])",
 ].join(",");
 
 const isVisible = (el) => {
@@ -21,6 +22,7 @@ const isVisible = (el) => {
 const listCandidates = () =>
   Array.from(document.querySelectorAll(FOCUSABLE)).filter((el) => {
     if (el.getAttribute("aria-disabled") === "true") return false;
+    if (el.disabled) return false;
     return isVisible(el);
   });
 
@@ -29,11 +31,27 @@ const centerOf = (el) => {
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
 };
 
-const DIRECTIONS = {
-  ArrowUp: { x: 0, y: -1 },
-  ArrowDown: { x: 0, y: 1 },
-  ArrowLeft: { x: -1, y: 0 },
-  ArrowRight: { x: 1, y: 0 },
+const getDirection = (e) => {
+  const k = e.key;
+  const c = e.keyCode;
+  if (k === "ArrowUp" || k === "Up" || c === 19 || c === 38) return { x: 0, y: -1 };
+  if (k === "ArrowDown" || k === "Down" || c === 20 || c === 40) return { x: 0, y: 1 };
+  if (k === "ArrowLeft" || k === "Left" || c === 21 || c === 37) return { x: -1, y: 0 };
+  if (k === "ArrowRight" || k === "Right" || c === 22 || c === 39) return { x: 1, y: 0 };
+  return null;
+};
+
+const isSelectKey = (e) => {
+  const k = e.key;
+  const c = e.keyCode;
+  return (
+    k === "Enter" ||
+    k === "Select" ||
+    k === "Ok" ||
+    k === "Accept" ||
+    c === 13 ||
+    c === 23 // Android KEYCODE_DPAD_CENTER
+  );
 };
 
 const findNext = (current, dir) => {
@@ -64,15 +82,17 @@ const findNext = (current, dir) => {
 const activate = (el) => {
   if (!el || el === document.body || el === document.documentElement) return;
   const tag = el.tagName;
-  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-  if (
-    tag === "BUTTON" ||
-    tag === "A" ||
-    (tag === "INPUT" && ["button", "submit"].includes(el.type))
-  ) {
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+    el.focus();
     return;
   }
-  el.click();
+  // Click works for buttons, links, and divs with role='button'
+  try {
+    el.click();
+  } catch {
+    // fallback if native click fails
+    el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+  }
 };
 
 const isTypingTarget = (target) =>
@@ -85,12 +105,26 @@ const isTypingTarget = (target) =>
 const useTvNavigation = () => {
   useEffect(() => {
     const onKeyDown = (e) => {
-      const dir = DIRECTIONS[e.key];
+      const dir = getDirection(e);
 
       if (!dir) {
-        if (e.key === "Enter") {
+        if (isSelectKey(e)) {
           const el = document.activeElement;
-          if (el && el.matches && el.matches(FOCUSABLE)) activate(el);
+          if (el && el !== document.body && el.matches && el.matches(FOCUSABLE)) {
+            e.preventDefault();
+            activate(el);
+          } else {
+            // Nothing focused: find default TV element or first candidate
+            const defaultEl =
+              document.querySelector("[data-tv-default]") ||
+              document.querySelector(".funtarget-game") ||
+              listCandidates()[0];
+            if (defaultEl) {
+              e.preventDefault();
+              defaultEl.focus({ preventScroll: true });
+              activate(defaultEl);
+            }
+          }
         }
         return;
       }
@@ -104,12 +138,26 @@ const useTvNavigation = () => {
         active && active !== document.body && active.matches?.(FOCUSABLE)
           ? active
           : null;
-      const next = findNext(current, dir);
-      if (next) next.focus({ preventScroll: true });
+
+      let next = findNext(current, dir);
+      if (!next && !current) {
+        // First navigation from nothing: pick default element
+        next =
+          document.querySelector("[data-tv-default]") ||
+          document.querySelector(".funtarget-game") ||
+          listCandidates()[0];
+      }
+
+      if (next) {
+        next.focus({ preventScroll: true });
+      }
     };
 
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
   }, []);
 };
 

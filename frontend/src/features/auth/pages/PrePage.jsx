@@ -4,7 +4,7 @@ import ftLogo from "@assets/images/background/Icon.webp";
 import { useAuth } from "@hooks/useAuth";
 import { useSound } from "@hooks/useSound";
 import { authService } from "@services/auth.service";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import useGameSessionGuard from "@hooks/useGameSessionGuard";
 
 import wheelImg from "@assets/images/wheel/wheel.webp";
@@ -24,8 +24,20 @@ const PrePage = () => {
   const { play, stop, stopBgm } = useSound();
   const [gameActive, setGameActive] = useState(false);
   const [saving, setSaving] = useState(false);
+  const gameRef = useRef(null);
 
   useGameSessionGuard(logout, navigate);
+
+  // Auto-focus "FunTarget game" so on Android TV users can press OK to enter immediately
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (gameRef.current) {
+        gameRef.current.focus();
+        setGameActive(true);
+      }
+    }, 150);
+    return () => clearTimeout(t);
+  }, []);
 
   const handleOk = () => {
     play("CLICK");
@@ -179,6 +191,11 @@ const PrePage = () => {
 
       {/* FunTarget game list box -> click enters the game */}
       <div
+        ref={gameRef}
+        tabIndex={0}
+        role="button"
+        data-tv-default="true"
+        aria-label="Enter FunTarget Game"
         className="absolute cursor-pointer transition-all duration-150 funtarget-game"
         style={{
           display: "inline-flex",
@@ -204,16 +221,31 @@ const PrePage = () => {
 
           backgroundColor: gameActive ? "#fff" : "transparent",
           border: gameActive ? "1px solid #fff" : "1px solid transparent",
+          outline: "none",
 
           textShadow: "0 0 3px #fff, 0 0 6px #fff, 1px 1px 2px #000",
 
           // Mobile-friendly positioning
           right: "auto",
         }}
+        onFocus={() => setGameActive(true)}
+        onBlur={() => setGameActive(false)}
         onMouseEnter={() => setGameActive(true)}
         onMouseLeave={() => setGameActive(false)}
         onPointerDown={() => setGameActive(true)}
         onPointerUp={() => setGameActive(false)}
+        onKeyDown={(e) => {
+          if (
+            e.key === "Enter" ||
+            e.key === "Select" ||
+            e.key === "Ok" ||
+            e.keyCode === 13 ||
+            e.keyCode === 23
+          ) {
+            e.preventDefault();
+            handleOk();
+          }
+        }}
         onClick={handleOk}
       >
         <img

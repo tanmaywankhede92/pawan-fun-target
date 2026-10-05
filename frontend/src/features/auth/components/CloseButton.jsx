@@ -19,6 +19,18 @@ const CloseButton = ({ onClick }) => {
         bg-black/30 text-white/80 hover:text-white hover:bg-black/50
         transition-colors duration-150
       "
+      onKeyDown={(e) => {
+        if (
+          e.key === "Enter" ||
+          e.key === "Select" ||
+          e.key === "Ok" ||
+          e.keyCode === 13 ||
+          e.keyCode === 23
+        ) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       style={{
         right: POS.right,
         top: POS.top,

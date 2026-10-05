@@ -11,7 +11,7 @@ import p5glow from "@assets/images/panels/5glow.webp";
 import p10glow from "@assets/images/panels/10glow.webp";
 import p50glow from "@assets/images/panels/50glow.webp";
 import p100glow from "@assets/images/panels/100Glow.webp";
-import { Fragment, memo } from "react";
+import { Fragment, memo, useState } from "react";
 import { useSound } from "@hooks/useSound";
 
 const IMAGES = {
@@ -46,6 +46,7 @@ const PANEL_CONFIG = {
 
 const PanelDisplay = ({ selectedValue, onSelect, disabled = false }) => {
   const { play } = useSound();
+  const [focused, setFocused] = useState(null);
 
   const handleSelect = (value) => {
     if (disabled) return;
@@ -61,6 +62,7 @@ const PanelDisplay = ({ selectedValue, onSelect, disabled = false }) => {
         const img = IMAGES[value];
 
         const isSelected = selectedValue === value;
+        const isFocused = focused === value;
         const glowImg = GLOW_IMAGES[value];
 
         return (
@@ -81,6 +83,20 @@ const PanelDisplay = ({ selectedValue, onSelect, disabled = false }) => {
                 ...(isSelected && !glowImg
                   ? { filter: "drop-shadow(0 0 6px rgba(255, 215, 0, 0.9))" }
                   : {}),
+              }}
+              onFocus={() => setFocused(value)}
+              onBlur={() => setFocused(null)}
+              onKeyDown={(e) => {
+                if (
+                  e.key === "Enter" ||
+                  e.key === "Select" ||
+                  e.key === "Ok" ||
+                  e.keyCode === 13 ||
+                  e.keyCode === 23
+                ) {
+                  e.preventDefault();
+                  handleSelect(value);
+                }
               }}
               onClick={() => handleSelect(value)}
             >

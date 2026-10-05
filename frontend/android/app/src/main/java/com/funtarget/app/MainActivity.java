@@ -118,6 +118,11 @@ public class MainActivity extends BridgeActivity {
 
         webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
 
+        // Android TV remote control / D-pad focus support
+        webView.setFocusable(true);
+        webView.setFocusableInTouchMode(true);
+        webView.requestFocus();
+
         // JS bridge: window.Android.closeApp() — called by closeApplication.js
         // for a clean exit via finishAndRemoveTask().
         webView.addJavascriptInterface(
@@ -152,10 +157,23 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
+    public boolean dispatchKeyEvent(android.view.KeyEvent event) {
+        WebView webView = getBridge().getWebView();
+        if (webView != null && !webView.hasFocus()) {
+            webView.requestFocus();
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
+    @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
             hideSystemUI();
+            WebView webView = getBridge().getWebView();
+            if (webView != null) {
+                webView.requestFocus();
+            }
         }
     }
 
@@ -163,6 +181,10 @@ public class MainActivity extends BridgeActivity {
     public void onResume() {
         super.onResume();
         hideSystemUI();
+        WebView webView = getBridge().getWebView();
+        if (webView != null) {
+            webView.requestFocus();
+        }
     }
 
     @Override

@@ -18,6 +18,18 @@ const EnterButton = ({ onClick, loading }) => {
         min-h-[40px] min-w-[80px] hover:text-white hover:bg-black/50
         transition-colors duration-150 
       "
+      onKeyDown={(e) => {
+        if (
+          e.key === "Enter" ||
+          e.key === "Select" ||
+          e.key === "Ok" ||
+          e.keyCode === 13 ||
+          e.keyCode === 23
+        ) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       style={{
         left: POS.left,
         top: POS.top,

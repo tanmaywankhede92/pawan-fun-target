@@ -273,3 +273,9 @@
     height: clamp(6px, 1.9vw, 12px) !important;
   }
 }
+
+button:focus,
+div:focus,
+[tabindex]:focus {
+  outline: none !important;
+}
