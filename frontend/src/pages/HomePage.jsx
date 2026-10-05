@@ -846,6 +846,7 @@ const HomePage = () => {
         takeGlow={takePending}
         takeLock={takePending}
         submitted={submitted}
+        resultRevealed={resultRevealed}
         cancelSpecificLocked={cancelSpecificUsed}
       />
       <MessageDisplay message={gameMessage} />

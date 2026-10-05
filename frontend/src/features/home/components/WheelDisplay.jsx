@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import { useSound } from "@hooks/useSound";
 import wheelImg from "@assets/images/wheel/wheel.webp";
 import wheelGif from "@assets/images/gifs/joker_gif1_slow.webp";
@@ -70,7 +70,6 @@ const WheelDisplay = ({
   joker,
   onComplete,
 }) => {
-  const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState(null);
   const [resultJoker, setResultJoker] = useState(() =>
@@ -111,7 +110,6 @@ const WheelDisplay = ({
     initializedRef.current = true;
     const initialAngle = targetAngle(targetWinner);
     rotationRef.current = initialAngle;
-    setRotation(initialAngle);
     setWinner(targetWinner);
     setResultJoker(jokerImageFor(joker, targetWinner));
     if (wheelImgRef.current) {
@@ -147,7 +145,6 @@ const WheelDisplay = ({
         calculateFinalRotation(rotationRef.current, finalWinner, 1);
 
       rotationRef.current = finalAngle;
-      setRotation(finalAngle);
       if (wheelImgRef.current) {
         wheelImgRef.current.style.transform = `rotate(${finalAngle}deg) translateZ(0)`;
       }
@@ -327,6 +324,20 @@ const WheelDisplay = ({
 
   const showGif = spinning;
 
+  // ── Glitch prevention ──────────────────────────────────────────────
+  // The rAF loop writes directly to wheelImgRef.current.style.transform
+  // at 60 fps. If React re-renders for ANY reason (timer tick, state change
+  // in parent, setSpinning, etc.) it would overwrite the transform with the
+  // stale `rotation` state value → visible snap/jump.
+  // useLayoutEffect (no deps = runs after EVERY render, synchronously before
+  // the browser paints) corrects the transform back to rotationRef.current
+  // so the browser never sees the wrong value.
+  useLayoutEffect(() => {
+    if (wheelImgRef.current) {
+      wheelImgRef.current.style.transform = `rotate(${rotationRef.current}deg) translateZ(0)`;
+    }
+  });
+
   return (
     <div
       className="absolute pointer-events-none z-2"
@@ -351,7 +362,6 @@ const WheelDisplay = ({
           alt="wheel"
           className="w-full h-full object-contain"
           style={{
-            transform: `rotate(${rotation}deg) translateZ(0)`,
             transformOrigin: "50% 50%",
             willChange: "transform",
             backfaceVisibility: "hidden",
