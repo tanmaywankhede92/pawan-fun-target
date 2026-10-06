@@ -147,13 +147,15 @@ const ButtonDisplay = ({
             onBlur={() => setHovered(null)}
             onKeyDown={(e) => {
               if (
-                e.key === "Enter" ||
-                e.key === "Select" ||
-                e.key === "Ok" ||
-                e.keyCode === 13 ||
-                e.keyCode === 23
+                (e.key === "Enter" ||
+                  e.key === "Select" ||
+                  e.key === "Ok" ||
+                  e.keyCode === 13 ||
+                  e.keyCode === 23) &&
+                !e.repeat
               ) {
                 e.preventDefault();
+                e.stopPropagation();
                 handleClick(btn);
               }
             }}

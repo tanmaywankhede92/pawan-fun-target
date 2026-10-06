@@ -85,6 +85,9 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
   const [focusedNum, setFocusedNum] = useState(null);
   const { play } = useSound();
   const holdTimer = useRef(null);
+  const holdInitialTimer = useRef(null);
+  const pointerHandledRef = useRef(false);
+  const clearPointerHandledTimeout = useRef(null);
 
   const doBet = (num) => {
     if (disabled) return;
@@ -92,22 +95,42 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
     onBet(num);
   };
 
-  // Press & hold keeps adding the same bet repeatedly; releasing or
-  // leaving the number stops the repeat.
+  // Press & hold: places 1 bet immediately, and if held for >= 400ms, repeats every 180ms
   const startHold = (num) => {
+    stopHold();
+    pointerHandledRef.current = true;
     doBet(num);
-    if (holdTimer.current) clearInterval(holdTimer.current);
-    holdTimer.current = setInterval(() => doBet(num), 180);
+    holdInitialTimer.current = setTimeout(() => {
+      holdTimer.current = setInterval(() => {
+        doBet(num);
+      }, 180);
+    }, 400);
   };
 
   const stopHold = () => {
+    if (holdInitialTimer.current) {
+      clearTimeout(holdInitialTimer.current);
+      holdInitialTimer.current = null;
+    }
     if (holdTimer.current) {
       clearInterval(holdTimer.current);
       holdTimer.current = null;
     }
+    if (clearPointerHandledTimeout.current) {
+      clearTimeout(clearPointerHandledTimeout.current);
+    }
+    clearPointerHandledTimeout.current = setTimeout(() => {
+      pointerHandledRef.current = false;
+    }, 250);
   };
 
-  useEffect(() => () => stopHold(), []);
+  useEffect(() => {
+    return () => {
+      if (holdInitialTimer.current) clearTimeout(holdInitialTimer.current);
+      if (holdTimer.current) clearInterval(holdTimer.current);
+      if (clearPointerHandledTimeout.current) clearTimeout(clearPointerHandledTimeout.current);
+    };
+  }, []);
 
   return (
     <>
@@ -154,18 +177,26 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
                   !e.repeat
                 ) {
                   e.preventDefault();
+                  e.stopPropagation();
                   doBet(num);
                 }
               }}
               onPointerDown={(e) => {
-                e.preventDefault();
+                if (e.button !== undefined && e.button !== 0) return;
                 startHold(num);
               }}
               onPointerUp={stopHold}
               onPointerLeave={stopHold}
               onPointerCancel={stopHold}
               onClick={() => {
-                if (!holdTimer.current) doBet(num);
+                if (pointerHandledRef.current) {
+                  pointerHandledRef.current = false;
+                  if (clearPointerHandledTimeout.current) {
+                    clearTimeout(clearPointerHandledTimeout.current);
+                  }
+                  return;
+                }
+                doBet(num);
               }}
             >
               {(isHovered || focusedNum === num || bet > 0 || isWinner) && img && (
