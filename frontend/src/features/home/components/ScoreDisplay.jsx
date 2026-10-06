@@ -4,10 +4,10 @@ import { SOUNDS } from "@constants/sounds";
 
 const POS = {
   left: "3.0%",
-  top: "9.5%",
+  top: "10%",
   width: "18.0%",
   height: "8.0%",
-  fontSize: "clamp(12px, min(1.85vw, 3.8vh), 28px)",
+  fontSize: "clamp(12px, min(1.80vw, 3.8vh), 28px)",
 };
 
 const ScoreDisplay = ({ score = 0 }) => {
@@ -25,7 +25,7 @@ const ScoreDisplay = ({ score = 0 }) => {
         height: POS.height,
         fontSize: POS.fontSize,
         fontFamily: '"Bodoni Moda", serif',
-        fontWeight: 900,
+        fontWeight: 800,
         lineHeight: 1,
         color: "#1b0e00",
         letterSpacing: "0.02em",

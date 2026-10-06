@@ -3,7 +3,7 @@ import { SOUNDS } from "@constants/sounds";
 
 const POS = {
   right: "3.5%",
-  top: "9.5%",
+  top: "10%",
   width: "17.8%",
   height: "8.0%",
   fontSize: "clamp(12px, min(1.85vw, 3.8vh), 28px)",

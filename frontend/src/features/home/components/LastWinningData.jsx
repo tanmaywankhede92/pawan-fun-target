@@ -3,9 +3,9 @@ import { resultService } from "@services/result.service";
 
 const POS = {
   right: "3.5%",
-  width: "17.8%",
+  width: "18.8%",
   height: "7.8%",
-  top: "32.2%",
+  top: "32.5%",
   fontSize: "clamp(9px, min(1.2vw, 2.5vh), 18px)",
   fontWeight: 900,
   fontFamily: '"Bodoni Moda", serif',
@@ -48,7 +48,7 @@ const LastWinningData = ({ refreshTrigger = 0 }) => {
       {data.map((num, i) => (
         <div
           key={i}
-          className="text-center font-bold leading-none ft-last-wins-item"
+          className="text-center font-bold leading-none tracking-[.25em] ft-last-wins-item"
           style={{
             flex: "1 1 0%",
             minWidth: 0,

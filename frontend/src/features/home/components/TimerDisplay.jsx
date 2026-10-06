@@ -3,7 +3,7 @@ const POS = {
   top: "32.5%",
   width: "18.0%",
   height: "8.0%",
-  fontSize: "clamp(13px, min(2.0vw, 4.0vh), 28px)",
+  fontSize: "clamp(13px, min(2.0vw, 4.5vh), 30px)",
 };
 
 const TimerDisplay = ({ time }) => {
@@ -27,8 +27,8 @@ const TimerDisplay = ({ time }) => {
       }}
     >
       <span>0</span>
-      <span style={{ margin: "0 0.18em" }}>:</span>
-      <span>{time}</span>
+      <span style={{ margin: "0 0.22em" }}>:</span>
+      <span>{time ?? 0}</span>
     </div>
   );
 };
