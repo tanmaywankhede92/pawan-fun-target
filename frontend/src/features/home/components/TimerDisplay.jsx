@@ -9,7 +9,7 @@ const POS = {
 const TimerDisplay = ({ time }) => {
   return (
     <div
-      className="absolute pointer-events-none flex items-center justify-center text-center z-10 ft-timer-text"
+      className="absolute pointer-events-none flex items-center justify-center text-center z-10 ft-timer-text tracking-[.13em] "
       style={{
         left: POS.left,
         top: POS.top,
