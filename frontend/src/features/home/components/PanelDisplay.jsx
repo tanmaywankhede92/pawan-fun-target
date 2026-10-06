@@ -26,22 +26,22 @@ const IMAGES = {
 };
 
 const GLOW_IMAGES = {
-  1: p1glow,
-  5: p5glow,
-  10: p10glow,
-  50: p50glow,
-  100: p100glow,
+  // 1: p1glow,
+  // 5: p5glow,
+  // 10: p10glow,
+  // 50: p50glow,
+  // 100: p100glow,
 };
 
 const PANEL_CONFIG = {
-  1: { box: { right: "94.9%", top: "48.2%", width: "4.5%", height: "4%" } },
-  5: { box: { right: "89%", top: "48.5%", width: "5%", height: "4%" } },
-  10: { box: { right: "83.5%", top: "48.5%", width: "5%", height: "4%" } },
-  50: { box: { right: "78%", top: "48.5%", width: "4.9%", height: "4%" } },
-  100: { box: { right: "17.3%", top: "48.2%", width: "4.8%", height: "4%" } },
-  500: { box: { right: "10.2%", top: "47.4%", width: "8%", height: "6.3%" } },
-  1000: { box: { right: "5%", top: "47.2%", width: "7%", height: "6.3%" } },
-  5000: { box: { left: "93%", top: "47.2%", width: "8%", height: "6.3%" } },
+  1: { box: { right: "95%", top: "48.5%", width: "4.2%", height: "3.5%" } },
+  5: { box: { right: "89.4%", top: "48.5%", width: "4.4%", height: "3.5%" } },
+  10: { box: { right: "83.8%", top: "48.5%", width: "4.4%", height: "3.5%" } },
+  50: { box: { right: "78.2%", top: "48.5%", width: "4.4%", height: "3.5%" } },
+  100: { box: { right: "17.4%", top: "48.4%", width: "4.4%", height: "3.5%" } },
+  500: { box: { right: "11.7%", top: "48.1%", width: "4.8%", height: "4%" } },
+  1000: { box: { right: "6.2%", top: "48.4%", width: "4.6%", height: "3.5%" } },
+  5000: { box: { left: "94.7%", top: "48.6%", width: "4.6%", height: "3.4%" } },
 };
 
 const PanelDisplay = ({ selectedValue, onSelect, disabled = false }) => {
