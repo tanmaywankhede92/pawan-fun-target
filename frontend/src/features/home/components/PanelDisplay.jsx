@@ -47,6 +47,7 @@ const PANEL_CONFIG = {
 const PanelDisplay = ({ selectedValue, onSelect, disabled = false }) => {
   const { play } = useSound();
   const [focused, setFocused] = useState(null);
+  const [hovered, setHovered] = useState(null);
 
   const handleSelect = (value) => {
     if (disabled) return;
@@ -63,7 +64,14 @@ const PanelDisplay = ({ selectedValue, onSelect, disabled = false }) => {
 
         const isSelected = selectedValue === value;
         const isFocused = focused === value;
+        const isHovered = hovered === value;
         const glowImg = GLOW_IMAGES[value];
+
+        const ringFilter = isSelected
+          ? "drop-shadow(0 0 1px #ffffff) drop-shadow(0 0 2.5px #fff97a) drop-shadow(0 0 4.5px rgba(255, 245, 100, 0.9))"
+          : isHovered || isFocused
+          ? "drop-shadow(0 0 1px rgba(255, 255, 255, 0.85)) drop-shadow(0 0 2px #fff97a) drop-shadow(0 0 3.5px rgba(255, 245, 100, 0.75))"
+          : "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35))";
 
         return (
           <Fragment key={value}>
@@ -71,8 +79,8 @@ const PanelDisplay = ({ selectedValue, onSelect, disabled = false }) => {
               tabIndex={disabled ? -1 : 0}
               role="button"
               aria-disabled={disabled}
-              className={`absolute overflow-hidden cursor-pointer z-20 select-none transition-transform duration-100 ${
-                isSelected ? "scale-105" : "hover:scale-105"
+              className={`absolute overflow-visible cursor-pointer z-20 select-none transition-all duration-150 ${
+                isSelected ? "scale-110" : isHovered || isFocused ? "scale-105" : "hover:scale-105"
               }`}
               style={{
                 left: box.left,
@@ -80,10 +88,10 @@ const PanelDisplay = ({ selectedValue, onSelect, disabled = false }) => {
                 top: box.top,
                 width: box.width,
                 height: box.height,
-                ...(isSelected && !glowImg
-                  ? { filter: "drop-shadow(0 0 6px rgba(255, 215, 0, 0.9))" }
-                  : {}),
+                filter: ringFilter,
               }}
+              onMouseEnter={() => setHovered(value)}
+              onMouseLeave={() => setHovered(null)}
               onFocus={() => setFocused(value)}
               onBlur={() => setFocused(null)}
               onKeyDown={(e) => {
