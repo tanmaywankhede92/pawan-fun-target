@@ -6,7 +6,7 @@ const POS = {
   width: "18.8%",
   height: "7.8%",
   top: "32.5%",
-  fontSize: "clamp(9px, min(1.2vw, 2.5vh), 18px)",
+  fontSize: "clamp(12px, min(1.5vw, 3.5vh), 20px)",
   fontWeight: 900,
   fontFamily: '"Bodoni Moda", serif',
 };
