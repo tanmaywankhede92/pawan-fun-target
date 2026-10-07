@@ -6,7 +6,7 @@ const POS = {
   fontSize: "clamp(11px, 3.2vh, 18px)",
 };
 
-const UsernameInput = ({ value, onChange, onKeyDown }) => {
+const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
   return (
     <div
       className="absolute ft-login-pos"
@@ -22,6 +22,8 @@ const UsernameInput = ({ value, onChange, onKeyDown }) => {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
+        onFocus={onFocus}
+        onBlur={onBlur}
         autoComplete="off"
         className="absolute inset-0 border-none outline-none text-black caret-black cursor-text p-0 px-2 m-0 ft-login-field justify-center text-center font-bold"
         style={{

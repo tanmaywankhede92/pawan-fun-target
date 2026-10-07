@@ -38,10 +38,12 @@ const isTvDevice = () => {
  */
 const VirtualCursor = () => {
   const [isTv, setIsTv] = useState(() => isTvDevice());
-  const [pos, setPos] = useState({ x: -100, y: -100 });
   const [visible, setVisible] = useState(false);
-  const [isDown, setIsDown] = useState(false);
   const [isPointer, setIsPointer] = useState(false);
+  const cursorRef = useRef(null);
+  const posRef = useRef({ x: -100, y: -100 });
+  const isDownRef = useRef(false);
+  const isPointerRef = useRef(false);
   const timeoutRef = useRef(null);
 
   useEffect(() => {
@@ -53,6 +55,15 @@ const VirtualCursor = () => {
 
   useEffect(() => {
     if (!isTv) return;
+
+    const updateCursorDom = () => {
+      if (cursorRef.current) {
+        const { x, y } = posRef.current;
+        const scale = isDownRef.current ? 0.85 : 1;
+        cursorRef.current.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+      }
+    };
+
     const handleMove = (e) => {
       // Ignore pure touch events on phones/tablets
       if (e.pointerType === "touch") {
@@ -60,17 +71,21 @@ const VirtualCursor = () => {
         return;
       }
 
-      setPos({ x: e.clientX, y: e.clientY });
+      posRef.current = { x: e.clientX, y: e.clientY };
+      updateCursorDom();
       setVisible(true);
 
-      // Check if hovering over a clickable element
+      // Check if hovering over a clickable element using e.target (no expensive elementFromPoint)
       try {
-        const target = document.elementFromPoint(e.clientX, e.clientY);
+        const target = e.target;
         if (target) {
-          const isClickable = target.closest(
+          const isClickable = !!target.closest?.(
             "button, a, [role='button'], [tabindex], input, select, textarea, .cursor-pointer"
           );
-          setIsPointer(!!isClickable);
+          if (isClickable !== isPointerRef.current) {
+            isPointerRef.current = isClickable;
+            setIsPointer(isClickable);
+          }
         }
       } catch {
         // ignored
@@ -85,12 +100,14 @@ const VirtualCursor = () => {
 
     const handleDown = (e) => {
       if (e.pointerType === "touch") return;
-      setIsDown(true);
+      isDownRef.current = true;
+      updateCursorDom();
       setVisible(true);
     };
 
     const handleUp = () => {
-      setIsDown(false);
+      isDownRef.current = false;
+      updateCursorDom();
     };
 
     const handleKey = (e) => {
@@ -133,15 +150,16 @@ const VirtualCursor = () => {
 
   return (
     <div
+      ref={cursorRef}
       style={{
         position: "fixed",
-        left: `${pos.x}px`,
-        top: `${pos.y}px`,
-        transform: isDown ? "scale(0.85)" : "scale(1)",
+        left: 0,
+        top: 0,
+        transform: `translate3d(${posRef.current.x}px, ${posRef.current.y}px, 0)`,
         transformOrigin: "top left",
         pointerEvents: "none",
         zIndex: 9999999,
-        transition: "transform 0.06s ease",
+        willChange: "transform",
         filter: "drop-shadow(1px 2px 4px rgba(0,0,0,0.7))",
       }}
     >

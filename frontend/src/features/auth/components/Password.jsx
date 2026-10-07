@@ -40,7 +40,7 @@ const EyeOffIcon = () => (
   </svg>
 );
 
-const PasswordInput = ({ value, onChange, onKeyDown }) => {
+const PasswordInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
   const [showPassword, setShowPassword] = useState(false);
   const { play } = useSound();
 
@@ -59,6 +59,8 @@ const PasswordInput = ({ value, onChange, onKeyDown }) => {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
+        onFocus={onFocus}
+        onBlur={onBlur}
         autoComplete="current-password"
         className="absolute inset-0 border-none outline-none text-black caret-black cursor-text p-0 px-2 m-0 ft-login-field justify-center text-center font-bold"
         style={{

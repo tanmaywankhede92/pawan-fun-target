@@ -88,6 +88,7 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
   const holdInitialTimer = useRef(null);
   const pointerHandledRef = useRef(false);
   const clearPointerHandledTimeout = useRef(null);
+  const lastPointerBetTime = useRef(0);
 
   const doBet = (num) => {
     if (disabled) return;
@@ -99,9 +100,11 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
   const startHold = (num) => {
     stopHold();
     pointerHandledRef.current = true;
+    lastPointerBetTime.current = Date.now();
     doBet(num);
     holdInitialTimer.current = setTimeout(() => {
       holdTimer.current = setInterval(() => {
+        lastPointerBetTime.current = Date.now();
         doBet(num);
       }, 180);
     }, 400);
@@ -116,12 +119,13 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
       clearInterval(holdTimer.current);
       holdTimer.current = null;
     }
+    lastPointerBetTime.current = Date.now();
     if (clearPointerHandledTimeout.current) {
       clearTimeout(clearPointerHandledTimeout.current);
     }
     clearPointerHandledTimeout.current = setTimeout(() => {
       pointerHandledRef.current = false;
-    }, 250);
+    }, 600);
   };
 
   useEffect(() => {
@@ -189,7 +193,10 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
               onPointerLeave={stopHold}
               onPointerCancel={stopHold}
               onClick={() => {
-                if (pointerHandledRef.current) {
+                if (
+                  pointerHandledRef.current ||
+                  Date.now() - lastPointerBetTime.current < 600
+                ) {
                   pointerHandledRef.current = false;
                   if (clearPointerHandledTimeout.current) {
                     clearTimeout(clearPointerHandledTimeout.current);
