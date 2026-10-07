@@ -140,6 +140,37 @@ const HomePage = () => {
     let mounted = true;
 
     const restore = async () => {
+      const snap = loadPendingBet(username);
+      const sameDraw = snap?.drawTime === ist12hStr(1) && snap?.amt > 0;
+
+      // Case 1: Returning to the CURRENT ongoing draw before it has resolved.
+      // Do NOT check or reveal winAmount yet — wait for the wheel spin at :00!
+      if (sameDraw) {
+        if (!mounted) return;
+        setBets(snap.bets);
+        betOrder.current = [...(snap.betOrder || [])];
+        setCancelSpecificUsed(false);
+        if (snap.submitted) {
+          // Accepted before exit — keep the score flat and settle this round normally.
+          setSubmitted(true);
+          setBetApplied(true);
+          manualMsg.current = true;
+          setGameMessage("Your Bet has been Accepted. Waiting for Result.");
+        } else {
+          // Numbers chosen but never accepted — restore them so the user can accept or cancel.
+          setSubmitted(false);
+          setBetApplied(false);
+          const restoredTotal = Object.values(snap.bets).reduce(
+            (s, v) => s + v,
+            0,
+          );
+          setScoreBalance(Math.max(0, (user?.balance || 0) - restoredTotal));
+        }
+        return;
+      }
+
+      // Case 2: Draw already completed while the user was away in PreScreen.
+      // Check if there are uncollected winnings from the completed draw.
       let pendingWin = null;
       try {
         const { data } = await recordService.winAmount({ username });
@@ -150,17 +181,13 @@ const HomePage = () => {
       }
 
       if (!mounted) return;
-      const snap = loadPendingBet(username);
-      const sameDraw = snap?.drawTime === ist12hStr(1) && snap?.amt > 0;
 
       if (pendingWin) {
         setWinInfo(pendingWin);
         setWon(true);
         setResultRevealed(true);
         setSubmitted(true);
-        // The win belongs to the draw that just finished: show the ticket
-        // (and its total) next to the Take button.
-        if (snap && !sameDraw) {
+        if (snap) {
           setBets(snap.bets);
           betOrder.current = [...(snap.betOrder || [])];
           setCancelSpecificUsed(false);
@@ -170,31 +197,6 @@ const HomePage = () => {
         setGameMessage(
           "Congratulations!!! You Win. Please Take the Winning Points.",
         );
-        return;
-      }
-
-      if (sameDraw) {
-        setBets(snap.bets);
-        betOrder.current = [...(snap.betOrder || [])];
-        setCancelSpecificUsed(false);
-        if (snap.submitted) {
-          // Accepted before exit — the backend balance already includes the
-          // deduction; keep the score flat and settle this round normally.
-          setSubmitted(true);
-          setBetApplied(true);
-          manualMsg.current = true;
-          setGameMessage("Your Bet has been Accepted. Waiting for Result.");
-        } else {
-          // Numbers chosen but never accepted — restore them so the user can
-          // accept or cancel before the round locks (≤10s).
-          setSubmitted(false);
-          setBetApplied(false);
-          const restoredTotal = Object.values(snap.bets).reduce(
-            (s, v) => s + v,
-            0,
-          );
-          setScoreBalance(Math.max(0, (user?.balance || 0) - restoredTotal));
-        }
       }
     };
 

@@ -18,7 +18,7 @@ const POS = {
 const OVERLAY_POS = {
   left: "50%",
   top: "50%",
-  width: "41%",
+  width: "32.5%",
   height: "auto",
 };
 
