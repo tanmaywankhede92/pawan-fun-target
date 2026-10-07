@@ -7,7 +7,7 @@ const POS = {
   top: "10%",
   width: "18.0%",
   height: "8.0%",
-  fontSize: "clamp(8px, min(1.25vw, 2.5vh), 19px)",
+  fontSize: "clamp(8px, min(1.5vw, 2.5vh), 24px)",
 };
 
 const ScoreDisplay = ({ score = 0 }) => {
