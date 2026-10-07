@@ -86,12 +86,18 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
   const { play } = useSound();
   const holdTimer = useRef(null);
   const holdInitialTimer = useRef(null);
-  const pointerHandledRef = useRef(false);
-  const clearPointerHandledTimeout = useRef(null);
-  const lastPointerBetTime = useRef(0);
+  const lastBetTimeRef = useRef({});
 
-  const doBet = (num) => {
+  const doBet = (num, isHoldRepeat = false) => {
     if (disabled) return;
+    const now = Date.now();
+    const last = lastBetTimeRef.current[num] || 0;
+    // Debounce guard: Ignore any duplicate bet trigger on the same number within 400ms
+    // unless it is the continuous press-and-hold interval timer
+    if (!isHoldRepeat && now - last < 400) {
+      return;
+    }
+    lastBetTimeRef.current[num] = now;
     play("BET");
     onBet(num);
   };
@@ -99,13 +105,10 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
   // Press & hold: places 1 bet immediately, and if held for >= 400ms, repeats every 180ms
   const startHold = (num) => {
     stopHold();
-    pointerHandledRef.current = true;
-    lastPointerBetTime.current = Date.now();
-    doBet(num);
+    doBet(num, false);
     holdInitialTimer.current = setTimeout(() => {
       holdTimer.current = setInterval(() => {
-        lastPointerBetTime.current = Date.now();
-        doBet(num);
+        doBet(num, true);
       }, 180);
     }, 400);
   };
@@ -119,20 +122,12 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
       clearInterval(holdTimer.current);
       holdTimer.current = null;
     }
-    lastPointerBetTime.current = Date.now();
-    if (clearPointerHandledTimeout.current) {
-      clearTimeout(clearPointerHandledTimeout.current);
-    }
-    clearPointerHandledTimeout.current = setTimeout(() => {
-      pointerHandledRef.current = false;
-    }, 600);
   };
 
   useEffect(() => {
     return () => {
       if (holdInitialTimer.current) clearTimeout(holdInitialTimer.current);
       if (holdTimer.current) clearInterval(holdTimer.current);
-      if (clearPointerHandledTimeout.current) clearTimeout(clearPointerHandledTimeout.current);
     };
   }, []);
 
@@ -193,17 +188,7 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
               onPointerLeave={stopHold}
               onPointerCancel={stopHold}
               onClick={() => {
-                if (
-                  pointerHandledRef.current ||
-                  Date.now() - lastPointerBetTime.current < 600
-                ) {
-                  pointerHandledRef.current = false;
-                  if (clearPointerHandledTimeout.current) {
-                    clearTimeout(clearPointerHandledTimeout.current);
-                  }
-                  return;
-                }
-                doBet(num);
+                doBet(num, false);
               }}
             >
               {(isHovered || focusedNum === num || bet > 0 || isWinner) && img && (

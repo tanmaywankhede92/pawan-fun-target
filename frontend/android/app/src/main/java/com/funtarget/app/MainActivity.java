@@ -189,17 +189,8 @@ public class MainActivity extends BridgeActivity {
     @Override
     public boolean dispatchGenericMotionEvent(android.view.MotionEvent ev) {
         WebView webView = getBridge().getWebView();
-        if (webView != null) {
-            if (!webView.hasFocus()) {
-                webView.requestFocus();
-            }
-            if ((ev.getSource() & android.view.InputDevice.SOURCE_CLASS_POINTER) != 0 ||
-                (ev.getSource() & android.view.InputDevice.SOURCE_MOUSE) != 0) {
-                try {
-                    webView.onGenericMotionEvent(ev);
-                } catch (Exception ignored) {
-                }
-            }
+        if (webView != null && !webView.hasFocus()) {
+            webView.requestFocus();
         }
         return super.dispatchGenericMotionEvent(ev);
     }
