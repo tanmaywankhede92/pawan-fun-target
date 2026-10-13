@@ -23,7 +23,7 @@ jobs:
 
     env:
       VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'http://localhost:5000/api' }}
-      KEYSTORE_PATH: ${{ github.workspace }}/android/release-keystore.jks
+      KEYSTORE_PATH: ${{ github.workspace }}/frontend/android/release-keystore.jks
       KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
       KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
       KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
@@ -65,15 +65,22 @@ jobs:
             echo "No KEYSTORE_BASE64 secret found; skipping keystore decode."
           fi
 
-      - name: Build Android release APK
+      - name: Build Android APK
         working-directory: frontend/android
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleRelease --no-daemon
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            ./gradlew assembleRelease --no-daemon
+          else
+            echo "No keystore secret found. Building debug APK instead."
+            ./gradlew assembleDebug --no-daemon
+          fi
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: androidetv-apk
-          path: frontend/android/app/build/outputs/apk/release/*.apk
+          path: |
+            frontend/android/app/build/outputs/apk/debug/*.apk
+            frontend/android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
