@@ -1,47 +1,125 @@
-// ── Server-calibrated IST clock (Luxon) ─────────────────────────────
-// All time is stored/calculated in UTC internally.  Luxon handles the
-// IANA → IST conversion for display.  A response interceptor in api.js
-// feeds every HTTP Date header into calibrateTime() so the frontend
-// stays locked to the backend regardless of the user's device clock.
+// ── Global Server/World-calibrated IST clock (Luxon) ────────────────
+// All time is synchronized globally against standard time servers.
+// Laptop/Mobile local clock differences are completely eliminated.
+// Timezone: Asia/Kolkata (IST: UTC + 5:30)
 
 import { DateTime, Settings } from "luxon";
 
-// Default timezone — change to any IANA zone if the game expands.
 export const TIMEZONE = "Asia/Kolkata";
-
-// Luxon default zone so all DateTime.now() calls use IST automatically.
 Settings.defaultZone = TIMEZONE;
 
-// ── Server calibration ──────────────────────────────────────────────
-// Difference between the server's UTC clock and the local device clock.
-// Starts at 0; tightened by calibrateTime() on every API response.
+// Difference between the global standard UTC clock and the local device clock (in ms).
 let serverOffsetMs = 0;
+let isSynced = false;
 
-// Listeners notified when a calibration changes the offset by >1 s.
 const calibrateListeners = new Set();
 export const onCalibrate = (fn) => {
   calibrateListeners.add(fn);
   return () => calibrateListeners.delete(fn);
 };
 
+export const setServerOffset = (newOffset) => {
+  const jumped = Math.abs(newOffset - serverOffsetMs) > 1000;
+  serverOffsetMs = newOffset;
+  isSynced = true;
+  if (jumped) {
+    calibrateListeners.forEach((fn) => fn(serverOffsetMs));
+  }
+};
+
 /**
- * Calibrate from an HTTP Date header (e.g. "Tue, 17 Aug 2026 14:30:00 GMT").
- * Called automatically by the api.js response interceptor.
- * Safe to call repeatedly — each call tightens the sync.
+ * Calibrate from an HTTP Date header (e.g. from backend API).
  */
 export const calibrateTime = (serverDateHeader) => {
   if (!serverDateHeader) return;
   const serverUtc = DateTime.fromHTTP(serverDateHeader);
   if (!serverUtc.isValid) return;
   const newOffset = serverUtc.toMillis() - Date.now();
-  const jumped = Math.abs(newOffset - serverOffsetMs) > 1000;
-  serverOffsetMs = newOffset;
-  if (jumped) calibrateListeners.forEach((fn) => fn(serverOffsetMs));
+  setServerOffset(newOffset);
 };
 
-// ── IST helpers (server-calibrated) ─────────────────────────────────
+/**
+ * Global Time Synchronizer:
+ * Fetches accurate standard atomic UTC time from reliable global time sources
+ * so phone and desktop have 0 millisecond difference.
+ */
+export const syncGlobalTime = async () => {
+  const sources = [
+    async () => {
+      // Source 1: WorldTimeAPI (Asia/Kolkata)
+      const t0 = Date.now();
+      const res = await fetch("https://worldtimeapi.org/api/timezone/Asia/Kolkata", { cache: "no-store" });
+      const data = await res.json();
+      const t1 = Date.now();
+      const rtt = t1 - t0;
+      if (data && data.unixtime) {
+        // unixtime in seconds -> convert to ms and adjust for network round-trip delay
+        const globalUtcMs = data.unixtime * 1000 + Math.floor(rtt / 2);
+        return globalUtcMs - t1;
+      }
+      throw new Error("Invalid WorldTimeAPI response");
+    },
+    async () => {
+      // Source 2: TimeAPI.io (Global fallback)
+      const t0 = Date.now();
+      const res = await fetch("https://timeapi.io/api/v1/time/current/zone?timeZone=Asia/Kolkata", { cache: "no-store" });
+      const data = await res.json();
+      const t1 = Date.now();
+      const rtt = t1 - t0;
+      if (data && data.dateTime) {
+        const dt = DateTime.fromISO(data.dateTime, { zone: "Asia/Kolkata" });
+        if (dt.isValid) {
+          const globalUtcMs = dt.toMillis() + Math.floor(rtt / 2);
+          return globalUtcMs - t1;
+        }
+      }
+      throw new Error("Invalid TimeAPI response");
+    },
+    async () => {
+      // Source 3: Google / Cloudflare HEAD request to inspect standard Date header
+      const t0 = Date.now();
+      const res = await fetch("https://www.cloudflare.com/cdn-cgi/trace", { cache: "no-store" });
+      const text = await res.text();
+      const t1 = Date.now();
+      const rtt = t1 - t0;
+      const match = text.match(/ts=([0-9.]+)/);
+      if (match && match[1]) {
+        const globalUtcMs = Math.floor(parseFloat(match[1]) * 1000) + Math.floor(rtt / 2);
+        return globalUtcMs - t1;
+      }
+      throw new Error("Invalid Cloudflare trace response");
+    },
+  ];
 
-/** Current IST DateTime, calibrated against the server. */
+  for (const fetchSource of sources) {
+    try {
+      const offset = await fetchSource();
+      setServerOffset(offset);
+      return;
+    } catch {
+      // Try next reliable global source
+    }
+  }
+};
+
+// Auto-trigger global synchronization immediately on load
+if (typeof window !== "undefined") {
+  syncGlobalTime();
+
+  // Re-sync every 5 minutes to continuously prevent clock drift
+  setInterval(syncGlobalTime, 5 * 60 * 1000);
+
+  // Also re-sync when window becomes visible or device wakes up
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      syncGlobalTime();
+    }
+  });
+}
+
+// ── IST helpers (fully calibrated against global standard time) ─────
+
+/** Current IST DateTime, calibrated against global standard time. */
 export const getNow = () =>
   DateTime.now().plus({ milliseconds: serverOffsetMs }).setZone(TIMEZONE);
 

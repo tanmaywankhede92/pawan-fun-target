@@ -46,9 +46,18 @@ const FullscreenHandler = () => {
 
     lockLandscape();
 
-    const onGesture = () => {
+    const onGesture = (e) => {
       everActed.current = true;
-      if (!isFullscreen()) requestFs();
+      if (!isFullscreen()) {
+        requestFs();
+        lockLandscape();
+        // If not fullscreen yet, block the click action from triggering bets/buttons
+        // until the screen goes fullscreen first
+        if (e && (e.type === "pointerdown" || e.type === "touchstart" || e.type === "click")) {
+          e.stopPropagation?.();
+        }
+        return;
+      }
       lockLandscape();
     };
 
@@ -58,8 +67,9 @@ const FullscreenHandler = () => {
       lockLandscape();
     };
 
-    window.addEventListener("pointerdown", onGesture);
-    window.addEventListener("touchstart", onGesture);
+    window.addEventListener("pointerdown", onGesture, { capture: true });
+    window.addEventListener("touchstart", onGesture, { capture: true });
+    window.addEventListener("click", onGesture, { capture: true });
     window.addEventListener("keydown", onGesture);
     document.addEventListener("fullscreenchange", onFsChange);
     document.addEventListener("webkitfullscreenchange", onFsChange);
@@ -74,8 +84,9 @@ const FullscreenHandler = () => {
     window.addEventListener("orientationchange", onOrientationChange);
 
     return () => {
-      window.removeEventListener("pointerdown", onGesture);
-      window.removeEventListener("touchstart", onGesture);
+      window.removeEventListener("pointerdown", onGesture, { capture: true });
+      window.removeEventListener("touchstart", onGesture, { capture: true });
+      window.removeEventListener("click", onGesture, { capture: true });
       window.removeEventListener("keydown", onGesture);
       document.removeEventListener("fullscreenchange", onFsChange);
       document.removeEventListener("webkitfullscreenchange", onFsChange);

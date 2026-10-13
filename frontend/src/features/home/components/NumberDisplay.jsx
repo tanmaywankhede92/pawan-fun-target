@@ -90,6 +90,10 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
 
   const doBet = (num, isHoldRepeat = false) => {
     if (disabled) return;
+    if ((bets?.[num] || 0) >= 5000) {
+      stopHold();
+      return;
+    }
     const now = Date.now();
     const last = lastBetTimeRef.current[num] || 0;
     // Debounce guard: Ignore any duplicate bet trigger on the same number within 400ms
@@ -105,9 +109,14 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
   // Press & hold: places 1 bet immediately, and if held for >= 400ms, repeats every 180ms
   const startHold = (num) => {
     stopHold();
+    if ((bets?.[num] || 0) >= 5000) return;
     doBet(num, false);
     holdInitialTimer.current = setTimeout(() => {
       holdTimer.current = setInterval(() => {
+        if ((bets?.[num] || 0) >= 5000) {
+          stopHold();
+          return;
+        }
         doBet(num, true);
       }, 180);
     }, 400);
@@ -180,15 +189,43 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
                   doBet(num);
                 }
               }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                startHold(num);
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                stopHold();
+              }}
+              onTouchCancel={(e) => {
+                e.preventDefault();
+                stopHold();
+              }}
               onPointerDown={(e) => {
+                if (e.pointerType === "touch") return; // Handled by onTouchStart to avoid duplication
                 if (e.button !== undefined && e.button !== 0) return;
                 startHold(num);
               }}
-              onPointerUp={stopHold}
-              onPointerLeave={stopHold}
-              onPointerCancel={stopHold}
-              onClick={() => {
-                doBet(num, false);
+              onPointerUp={(e) => {
+                if (e.pointerType === "touch") return;
+                stopHold();
+              }}
+              onPointerLeave={(e) => {
+                if (e.pointerType === "touch") return;
+                stopHold();
+              }}
+              onPointerCancel={(e) => {
+                if (e.pointerType === "touch") return;
+                stopHold();
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+              }}
+              style={{
+                touchAction: "none",
+                WebkitTouchCallout: "none",
+                WebkitUserSelect: "none",
+                userSelect: "none",
               }}
             >
               {(isHovered || focusedNum === num || bet > 0 || isWinner) && img && (
@@ -196,7 +233,9 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
                   decoding="async"
                   src={img}
                   alt={`number-${num}`}
-                  className={`absolute inset-0 w-full h-full object-fill pointer-events-auto ${
+                  draggable={false}
+                  onContextMenu={(e) => e.preventDefault()}
+                  className={`absolute inset-0 w-full h-full object-fill pointer-events-none select-none ${
                     isWinner ? "ft-blink" : ""
                   }`}
                 />

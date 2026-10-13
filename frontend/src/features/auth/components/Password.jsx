@@ -62,7 +62,7 @@ const PasswordInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
         onFocus={onFocus}
         onBlur={onBlur}
         autoComplete="current-password"
-        className="absolute inset-0 border-none outline-none text-black caret-black cursor-text p-0 px-2 m-0 ft-login-field justify-center text-center font-bold"
+        className="absolute inset-0 border-none outline-none text-black caret-black cursor-text p-0 px-3 m-0 ft-login-field font-bold text-left"
         style={{
           width: "100%",
           height: "100%",

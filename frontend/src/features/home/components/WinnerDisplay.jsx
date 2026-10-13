@@ -1,12 +1,13 @@
 import useAnimatedNumber from "@hooks/useAnimatedNumber";
 import { SOUNDS } from "@constants/sounds";
+import { DISPLAY_FONT } from "@constants/displayFont";
 
 const POS = {
   right: "3.5%",
   top: "10%",
   width: "17.8%",
   height: "8.0%",
-  fontSize: "clamp(8px, min(1.5vw, 2.5vh), 22px)",
+  fontSize: "clamp(10px, min(1.8vw, 3.2vh), 28px)",
 };
 
 // Winner amount rolls number by number. It counts up when a win appears and
@@ -25,7 +26,9 @@ const WinnerDisplay = ({ winner, winAmount }) => {
         width: POS.width,
         height: POS.height,
         fontSize: POS.fontSize,
-        fontFamily: '"Bodoni Moda", serif',
+        fontFamily: DISPLAY_FONT,
+        fontVariantNumeric: "lining-nums tabular-nums",
+        fontFeatureSettings: '"lnum" 1, "tnum" 1',
         fontWeight: 900,
         lineHeight: 1,
         color: "#1b0e00",

@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import prevBg from "@assets/images/background/PrevBG.webp";
-import ftLogo from "@assets/images/background/Icon.webp";
 import { useAuth } from "@hooks/useAuth";
 import { useSound } from "@hooks/useSound";
 import { authService } from "@services/auth.service";
@@ -15,33 +14,91 @@ import bonus from "@assets/images/gifs/joker3.webp";
 import drum from "@assets/images/gifs/joker4.webp";
 import pointerGif from "@assets/images/gifs/DG.webp";
 
+// Game list thumbnails
+import iconFunTarget from "@assets/gamelist/Icon.webp";
+import imgTripleFun from "@assets/gamelist/TripleFun.jpeg";
+import img7up7Down from "@assets/gamelist/7up7Down.jpeg";
+import imgBingo from "@assets/gamelist/Bingo.jpeg";
+import imgChampionPoker from "@assets/gamelist/ChampionPoker.jpeg";
+import imgChecker from "@assets/gamelist/Checker.jpeg";
+import imgFeverJokerBonus from "@assets/gamelist/FeverJokerBonus.jpeg";
+import imgFunAndarBahar from "@assets/gamelist/FunAndarBahar.jpeg";
+import imgFunAviator from "@assets/gamelist/FunAviator.jpeg";
+import imgFunRoulette from "@assets/gamelist/FunRoulette.jpeg";
+import imgGiantJackpot from "@assets/gamelist/GiantJackpot.jpeg";
+import imgJokerBonus from "@assets/gamelist/JokerBonus.jpeg";
+import imgKeno from "@assets/gamelist/Keno.jpeg";
+import imgLucky8Line from "@assets/gamelist/Lucky8Line.jpeg";
+import imgNohold from "@assets/gamelist/Nohold.jpeg";
+import imgSuperGoldenWheel from "@assets/gamelist/SuperGoldenWheel.jpeg";
+
+const GAME_LIST = [
+  { id: "funaviator", name: "Fun Aviator", shortName: "Fun Aviator", icon: imgFunAviator, playable: false },
+  { id: "7up7down", name: "7Up7Down", shortName: "7Up7Down", icon: img7up7Down, playable: false },
+  { id: "funandarbahar", name: "Fun Andar Bahar", shortName: "Fun AB", icon: imgFunAndarBahar, playable: false },
+  { id: "triplefun", name: "Triple Fun", shortName: "Triple Fun", icon: imgTripleFun, playable: false },
+  { id: "funroulette", name: "Fun Roulette", shortName: "Roulette", icon: imgFunRoulette, playable: false },
+  { id: "funtarget", name: "Fun Target", shortName: "Fun Target", icon: iconFunTarget, playable: true },
+  { id: "bingo", name: "Bingo", shortName: "Bingo", icon: imgBingo, playable: false },
+  { id: "checker", name: "Checker", shortName: "Checker", icon: imgChecker, playable: false },
+  { id: "feverjokerbonus", name: "Fever Joker Bonus", shortName: "Fever Joker", icon: imgFeverJokerBonus, playable: false },
+  { id: "supergoldenwheel", name: "Super Golden Wheel", shortName: "Golden Wheel", icon: imgSuperGoldenWheel, playable: false },
+  { id: "giantjackpot", name: "Giant Jackpot", shortName: "Jackpot", icon: imgGiantJackpot, playable: false },
+  { id: "keno", name: "Keno", shortName: "Keno", icon: imgKeno, playable: false },
+  { id: "nohold", name: "Nohold", shortName: "Nohold", icon: imgNohold, playable: false },
+  { id: "jokerbonus", name: "Joker Bonus", shortName: "Joker Bonus", icon: imgJokerBonus, playable: false },
+  { id: "lucky8line", name: "Lucky 8 Line", shortName: "Lucky 8 Line", icon: imgLucky8Line, playable: false },
+  { id: "championpoker", name: "Champion Poker", shortName: "Poker", icon: imgChampionPoker, playable: false },
+];
+
 // Post-login lobby: shows PrevBG full-screen with the user's ID + balance
-// (from the login data), a FunTarget game list that enters the game on
+// (from the login data), a scrollable game list that enters the game on
 // click, and a logout button.
 const PrePage = () => {
   const navigate = useNavigate();
   const { user, logout, setAuth, refreshBalance } = useAuth();
   const { play, stop, stopBgm } = useSound();
-  const [gameActive, setGameActive] = useState(false);
+  const [selectedGameId, setSelectedGameId] = useState("funtarget");
+  const [hoveredGameId, setHoveredGameId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [noticeMessage, setNoticeMessage] = useState(null);
   const gameRef = useRef(null);
+  const noticeTimerRef = useRef(null);
 
   useGameSessionGuard(logout, navigate);
+
+  const showNotice = (msg) => {
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    setNoticeMessage(msg);
+    noticeTimerRef.current = setTimeout(() => {
+      setNoticeMessage(null);
+    }, 2000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    };
+  }, []);
 
   // Auto-focus "FunTarget game" so on Android TV users can press OK to enter immediately
   useEffect(() => {
     const t = setTimeout(() => {
       if (gameRef.current) {
-        gameRef.current.focus();
-        setGameActive(true);
+        gameRef.current.focus({ preventScroll: true });
+        setSelectedGameId("funtarget");
       }
     }, 150);
     return () => clearTimeout(t);
   }, []);
 
-  const handleOk = () => {
+  const handleGameSelect = (game) => {
     play("CLICK");
-    navigate("/game");
+    if (game.playable) {
+      navigate("/game");
+    } else {
+      showNotice(`${game.name} `);
+    }
   };
 
   const handleLogout = async () => {
@@ -189,86 +246,90 @@ const PrePage = () => {
         {saving ? "..." : ""}
       </button>
 
-      {/* FunTarget game list box -> click enters the game */}
-      <div
-        ref={gameRef}
-        tabIndex={0}
-        role="button"
-        data-tv-default="true"
-        aria-label="Enter FunTarget Game"
-        className="absolute cursor-pointer transition-all duration-150 funtarget-game"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "flex-start",
-          gap: "10px",
-
-          // Desktop
-          left: "82%",
-          top: "8%",
-
-          // IMPORTANT: content ke according width
-          width: "14%",
-          minWidth: "0",
-
-          padding: "5px 10px",
-          boxSizing: "border-box",
-
-          color: "#fff",
-          fontSize: "clamp(10px, 1vw, 18px)",
-          fontFamily: '"Times New Roman", serif',
-          whiteSpace: "nowrap",
-
-          backgroundColor: gameActive ? "#fff" : "transparent",
-          border: gameActive ? "1px solid #fff" : "1px solid transparent",
-          outline: "none",
-
-          textShadow: "0 0 3px #fff, 0 0 6px #fff, 1px 1px 2px #000",
-
-          // Mobile-friendly positioning
-          right: "auto",
-        }}
-        onFocus={() => setGameActive(true)}
-        onBlur={() => setGameActive(false)}
-        onMouseEnter={() => setGameActive(true)}
-        onMouseLeave={() => setGameActive(false)}
-        onPointerDown={() => setGameActive(true)}
-        onPointerUp={() => setGameActive(false)}
-        onKeyDown={(e) => {
-          if (
-            e.key === "Enter" ||
-            e.key === "Select" ||
-            e.key === "Ok" ||
-            e.keyCode === 13 ||
-            e.keyCode === 23
-          ) {
-            e.preventDefault();
-            handleOk();
-          }
-        }}
-        onClick={handleOk}
-      >
-        <img
-          decoding="async"
-          src={ftLogo}
-          alt="FunTarget"
-          className="pointer-events-none"
-          style={{
-            width: "28px",
-            height: "15px",
-            objectFit: "contain",
-            flexShrink: 0,
-          }}
-        />
-
+      {/* Notice Banner (for coming soon games) */}
+      {/* {noticeMessage && (
         <div
           style={{
-            whiteSpace: "nowrap",
-            color: gameActive ? "#000" : "#fff",
+            position: "fixed",
+            top: "12%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            backgroundColor: "rgba(10, 10, 10, 0.92)",
+            border: "2px solid #ffd700",
+            color: "#ffd700",
+            padding: "8px 22px",
+            borderRadius: "8px",
+            fontSize: "clamp(13px, 1.2vw, 19px)",
+            fontFamily: '"Times New Roman", serif',
+            fontWeight: "bold",
+            boxShadow: "0 4px 18px rgba(0,0,0,0.85), 0 0 10px rgba(255,215,0,0.5)",
+            zIndex: 9999,
+            pointerEvents: "none",
+            letterSpacing: "0.5px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
           }}
         >
-          FunTarget game
+          <span>⏳</span>
+          <span>{noticeMessage}</span>
         </div>
+      )} */}
+
+      {/* Scrollable Game List inside wooden ladder frame */}
+      <div
+        className="prepage-games-container"
+        role="region"
+        aria-label="Games List"
+      >
+        {GAME_LIST.map((game, idx) => {
+          const isSelected = selectedGameId === game.id;
+          const isHovered = hoveredGameId === game.id;
+          const isActive = isSelected || isHovered;
+
+          return (
+            <div
+              key={game.id}
+              ref={idx === 0 ? gameRef : null}
+              tabIndex={0}
+              role="button"
+              data-tv-default={idx === 0 ? "true" : undefined}
+              aria-label={game.name}
+              className={`prepage-game-item  ${isActive ? "active" : ""}`}
+              onFocus={(e) => {
+                setSelectedGameId(game.id);
+                e.currentTarget.scrollIntoView({
+                  block: "nearest",
+                  behavior: "smooth",
+                });
+              }}
+              onMouseEnter={() => setHoveredGameId(game.id)}
+              onMouseLeave={() => setHoveredGameId(null)}
+              onClick={() => handleGameSelect(game)}
+              onKeyDown={(e) => {
+                if (
+                  e.key === "Enter" ||
+                  e.key === "Select" ||
+                  e.key === "Ok" ||
+                  e.keyCode === 13 ||
+                  e.keyCode === 23
+                ) {
+                  e.preventDefault();
+                  handleGameSelect(game);
+                }
+              }}
+            >
+              <img
+                decoding="async"
+                src={game.icon}
+                alt={game.name}
+                className="pointer-events-none"
+              />
+              <span className="prepage-name-desktop">{game.name}</span>
+              <span className="prepage-name-mobile">{game.shortName || game.name}</span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Logout button -> calls logout API + clears session */}

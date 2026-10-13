@@ -35,6 +35,54 @@
 }
 
 @font-face {
+  font-family: 'Playfair Display';
+  src: url('../assets/font/playfair/PlayfairDisplay-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Playfair Display';
+  src: url('../assets/font/playfair/PlayfairDisplay-Black.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Playfair Display';
+  src: url('../assets/font/playfair/PlayfairDisplay-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Cinzel';
+  src: url('../assets/font/cinzel/Cinzel-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Cinzel';
+  src: url('../assets/font/cinzel/Cinzel-Black.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Cinzel';
+  src: url('../assets/font/cinzel/Cinzel-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'Digital-7';
   src: url('../assets/font/digital-7/digital-7.ttf') format('truetype');
   font-weight: normal;
@@ -208,74 +256,157 @@
   }
 }
 
-/* Desktop */
-.funtarget-game {
-  left: 82%;
-  top: 8%;
+/* Scrollable Game List inside wooden ladder frame */
+.prepage-games-container {
+  position: absolute;
+  left: 81.8%;
+  top: 7.4%;
+  width: 14.2%;
+  height: 41%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5px;
+  padding: 3px 4px 3px 3px;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 215, 0, 0.45) transparent;
+  z-index: 10;
 }
 
-/* Tablet */
-@media (max-width: 768px) {
-  .funtarget-game {
-    left: auto !important;
-    right: 5% !important;
-    top: 8% !important;
-    width: auto !important;
-    min-width: 0 !important;
-    font-size: 14px !important;
+.prepage-games-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.prepage-games-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.prepage-games-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.4);
+  border-radius: 4px;
+}
+
+.prepage-games-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.8);
+}
+
+.prepage-game-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  width: 100%;
+  min-height: 0;
+  padding: 2px 4px;
+  box-sizing: border-box;
+  border-radius: 3px;
+  font-family: Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: clamp(10px, 0.9vw, 14.5px);
+  font-weight: 700;
+  white-space: nowrap;
+  outline: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: #ffffff;
+  background-color: transparent;
+  border: 1px solid transparent;
+  /* Crisp readable text with NO white glow */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.95), 0 0 1px #000;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.prepage-game-item img {
+  width: clamp(34px, 3vw, 48px);
+  height: clamp(18px, 1.7vw, 26px);
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1.5px solid #ffffff;
+  border-radius: 2px;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.prepage-game-item span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+.prepage-name-desktop {
+  display: block;
+}
+
+.prepage-name-mobile {
+  display: none;
+}
+
+/* Adjust Games container on mobile screens so it stays inside wooden frame without going down */
+@media (max-width: 900px), (max-height: 600px) {
+  .prepage-name-desktop {
+    display: none !important;
+  }
+
+  .prepage-name-mobile {
+    display: block !important;
+  }
+
+  .prepage-games-container {
+    left: 82.2% !important;
+    top: 6.8% !important;
+    width: 14.5% !important;
+    height: 41.5% !important;
+    gap: 1.5px !important;
+    padding: 2px 2px 2px 2px !important;
+  }
+
+  .prepage-game-item {
+    gap: 4px !important;
+    padding: 1.5px 2px !important;
+    font-size: clamp(9px, 2.2vh, 12px) !important;
+  }
+
+  .prepage-game-item img {
+    width: clamp(24px, 5.5vh, 36px) !important;
+    height: clamp(14px, 3.2vh, 20px) !important;
+    border-width: 1px !important;
   }
 }
 
-/* Mobile */
-@media (max-width: 480px) {
-  .funtarget-game {
-    left: auto !important;
-    right: 12% !important;
-    top: 7% !important;
-    width: auto !important;
-    min-width: 0 !important;
-    font-size: clamp(7px, 1.9vw, 10px) !important;
-    padding: 1px 5px !important;
-    gap: 3px !important;
-  }
-
-  .funtarget-game img {
-    width: clamp(14px, 3.8vw, 24px) !important;
-    height: clamp(8px, 2vw, 13px) !important;
-  }
+.prepage-game-item.active {
+  background-color: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.45);
 }
 
-/* Small phones (iPhone SE / older Androids ~320-390px wide) */
-@media (max-width: 390px) {
-  .funtarget-game {
-    font-size: clamp(5.5px, 1.9vw, 8px) !important;
-    padding: 1px 4px !important;
-    gap: 2px !important;
-  }
-
-  .funtarget-game img {
-    width: clamp(9px, 3.4vw, 20px) !important;
-    height: clamp(6px, 1.8vw, 11px) !important;
-  }
+.prepage-game-item.active img {
+  border-color: #ffd700;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
 }
 
-/* Mobile landscape — short landscape touch screens */
-@media (orientation: landscape) and (max-width: 1024px) and (max-height: 520px) and (hover: none) and (pointer: coarse) {
-  .funtarget-game {
-    right: 3% !important;
-    font-size: clamp(5.5px, 1.7vw, 9px) !important;
-    padding: 1px 5px !important;
-    gap: 3px !important;
-  }
-
-  .funtarget-game img {
-    width: clamp(12px, 3.5vw, 22px) !important;
-    height: clamp(6px, 1.9vw, 12px) !important;
-  }
+.prepage-game-item:not(.active) {
+  background-color: transparent;
 }
 
 button:focus,
 div:focus,
 [tabindex]:focus {
   outline: none !important;
+}
+
+/* Prevent long-press context menu / "copy image" popup on mobile browsers */
+img,
+button,
+[role="button"] {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-user-drag: none !important;
+  user-drag: none !important;
 }

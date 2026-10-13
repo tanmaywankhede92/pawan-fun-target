@@ -1,8 +1,32 @@
 import api from './api';
+import config from '@config';
 
 export const authService = {
   login: (credentials) => api.post('/auth/login', credentials),
   getBalance: (username) => api.post('/auth/balance', { username }),
   setBalanceReceived: (data) => api.post('/auth/balance_received', data),
-  logout: (username) => api.post('/auth/logout', { username }),
+  logout: (username) => {
+    // 1. If tab is closing or hidden, use keepalive fetch so browser doesn't drop the packet
+    const url = `${config.apiBaseUrl}/auth/logout`;
+    const payload = JSON.stringify({ username });
+
+    if (typeof fetch !== 'undefined') {
+      return fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: payload,
+        keepalive: true,
+      }).then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        return { data, status: res.status };
+      }).catch(() => {
+        return api.post('/auth/logout', { username });
+      });
+    }
+
+    return api.post('/auth/logout', { username });
+  },
 };
+

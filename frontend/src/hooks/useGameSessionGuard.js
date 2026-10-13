@@ -39,9 +39,13 @@ const useGameSessionGuard = (logout, navigate) => {
     window.__appLock = handleLogout;
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handleLogout);
+    window.addEventListener("beforeunload", handleLogout);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handleLogout);
+      window.removeEventListener("beforeunload", handleLogout);
       delete window.__appLock;
     };
   }, [logout, navigate]);

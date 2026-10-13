@@ -1,13 +1,14 @@
 
 import useAnimatedNumber from "@hooks/useAnimatedNumber";
 import { SOUNDS } from "@constants/sounds";
+import { DISPLAY_FONT } from "@constants/displayFont";
 
 const POS = {
   left: "3.0%",
   top: "10%",
   width: "18.0%",
   height: "8.0%",
-  fontSize: "clamp(8px, min(1.5vw, 2.5vh), 24px)",
+  fontSize: "clamp(10px, min(1.8vw, 3.2vh), 28px)",
 };
 
 const ScoreDisplay = ({ score = 0 }) => {
@@ -24,7 +25,9 @@ const ScoreDisplay = ({ score = 0 }) => {
         width: POS.width,
         height: POS.height,
         fontSize: POS.fontSize,
-        fontFamily: '"Bodoni Moda", serif',
+        fontFamily: DISPLAY_FONT,
+        fontVariantNumeric: "lining-nums tabular-nums",
+        fontFeatureSettings: '"lnum" 1, "tnum" 1',
         fontWeight: 800,
         lineHeight: 1,
         color: "#1b0e00",

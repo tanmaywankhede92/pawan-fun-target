@@ -10,16 +10,16 @@ import pointerGif from "@assets/images/gifs/DG.webp";
 
 const POS = {
   left: "50%",
-  top: "39.0%",
-  width: "min(52vw, 72vh)",
-  height: "min(52vw, 72vh)",
+  top: "37%",
+  width: "min(46vw, 66vh)",
+  aspectRatio: "1 / 1",
 };
 
 const OVERLAY_POS = {
   left: "50%",
   top: "50%",
-  width: "32.5%",
-  height: "auto",
+  width: "33.3%",
+  height: "33.3%",
 };
 
 const POINTER_POS = {
@@ -39,8 +39,8 @@ const jokerImageFor = (joker, winner) => {
 const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
 
-// Spin takes 5.4 seconds total: starts immediately at 00s, stops smoothly at 54s countdown
-const TOTAL_SPIN_DURATION_MS = 5400;
+// Spin takes exactly 6.0 seconds total: starts immediately at :00, stops smoothly at 54s countdown
+const TOTAL_SPIN_DURATION_MS = 6000;
 const MAX_SPEED = 0.9; // deg/ms = 900 deg/sec = 2.5 rev/sec
 const ACCEL_TIME_MS = 600;
 
@@ -113,7 +113,7 @@ const WheelDisplay = ({
     setWinner(targetWinner);
     setResultJoker(jokerImageFor(joker, targetWinner));
     if (wheelImgRef.current) {
-      wheelImgRef.current.style.transform = `rotate(${initialAngle}deg) translateZ(0)`;
+      wheelImgRef.current.style.transform = `rotate(${initialAngle}deg)`;
     }
   }, [targetWinner, joker]);
 
@@ -146,7 +146,7 @@ const WheelDisplay = ({
 
       rotationRef.current = finalAngle;
       if (wheelImgRef.current) {
-        wheelImgRef.current.style.transform = `rotate(${finalAngle}deg) translateZ(0)`;
+        wheelImgRef.current.style.transform = `rotate(${finalAngle}deg)`;
       }
 
       setSpinning(false);
@@ -167,9 +167,9 @@ const WheelDisplay = ({
   // Smoothly decelerates onto targetWinner when result arrives,
   // stopping unconditionally at 54s countdown.
   useEffect(() => {
-    if (!initializedRef.current) return;
     if (spunTriggerRef.current === spinTrigger) return;
     spunTriggerRef.current = spinTrigger;
+    initializedRef.current = true;
 
     spinningRef.current = true;
     setSpinning(true);
@@ -254,17 +254,18 @@ const WheelDisplay = ({
       } else {
         // Deceleration phase: smooth cubic ease-out to target sector
         const decelElapsed = now - decelStartTimeRef.current;
-        const u = Math.min(1, decelElapsed / decelDurationRef.current);
+        const u = Math.min(1, Math.max(0, decelElapsed / decelDurationRef.current));
         const easeOut = 1 - Math.pow(1 - u, 3);
         currentAngle =
           decelStartAngleRef.current +
           (decelFinalAngleRef.current - decelStartAngleRef.current) * easeOut;
 
-        if (u >= 1 || elapsed >= TOTAL_SPIN_DURATION_MS) {
+        // Both wheel and center GIF must finish at the EXACT same instant (at TOTAL_SPIN_DURATION_MS)
+        if (elapsed >= TOTAL_SPIN_DURATION_MS || (u >= 1 && elapsed >= TOTAL_SPIN_DURATION_MS - 50)) {
           currentAngle = decelFinalAngleRef.current;
           rotationRef.current = currentAngle;
           if (wheelImgRef.current) {
-            wheelImgRef.current.style.transform = `rotate(${currentAngle}deg) translateZ(0)`;
+            wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
           }
           finishSpin(winnerResolvedRef.current);
           return;
@@ -273,7 +274,7 @@ const WheelDisplay = ({
 
       rotationRef.current = currentAngle;
       if (wheelImgRef.current) {
-        wheelImgRef.current.style.transform = `rotate(${currentAngle}deg) translateZ(0)`;
+        wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
       }
 
       rafIdRef.current = requestAnimationFrame(animate);
@@ -334,24 +335,23 @@ const WheelDisplay = ({
   // so the browser never sees the wrong value.
   useLayoutEffect(() => {
     if (wheelImgRef.current) {
-      wheelImgRef.current.style.transform = `rotate(${rotationRef.current}deg) translateZ(0)`;
+      wheelImgRef.current.style.transform = `rotate(${rotationRef.current}deg)`;
     }
   });
 
   return (
     <div
-      className="absolute pointer-events-none z-2"
+      className="absolute pointer-events-none select-none ft-responsive-wheel"
       style={{
         left: POS.left,
         top: POS.top,
         width: POS.width,
-        height: POS.height,
         maxWidth: "100%",
         maxHeight: "100%",
-        transform: "translate(-50%, -50%)",
         aspectRatio: "1 / 1",
         overflow: "visible",
-        clipPath: "inset(0 0 5% 0)",
+        zIndex: 2,
+        isolation: "isolate",
       }}
     >
       <div className="relative w-full h-full">
@@ -360,33 +360,38 @@ const WheelDisplay = ({
           decoding="async"
           src={wheelImg}
           alt="wheel"
-          className="w-full h-full object-contain"
+          className="w-full h-full block select-none pointer-events-none"
           style={{
             transformOrigin: "50% 50%",
+            objectFit: "contain",
             willChange: "transform",
+            transformStyle: "flat",
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
           }}
         />
 
-        {showGif && (
-          <img
-            decoding="async"
-            src={wheelGif}
-            alt="wheel gif"
-            className="absolute pointer-events-none z-10"
-            style={{
-              left: OVERLAY_POS.left,
-              top: OVERLAY_POS.top,
-              width: OVERLAY_POS.width,
-              height: OVERLAY_POS.width,
-              transform: "translate(-50%, -50%)",
-              objectFit: "contain",
-            }}
-          />
-        )}
+        {/* Center spinning ball/wheel: pre-decoded in DOM for instant 0ms synchronized start */}
+        <img
+          decoding="async"
+          src={wheelGif}
+          alt="wheel gif"
+          className="absolute pointer-events-none z-10"
+          style={{
+            left: OVERLAY_POS.left,
+            top: OVERLAY_POS.top,
+            width: OVERLAY_POS.width,
+            height: OVERLAY_POS.height,
+            transform: "translate(-50%, -50%)",
+            objectFit: "contain",
+            opacity: showGif ? 1 : 0,
+            visibility: showGif ? "visible" : "hidden",
+            pointerEvents: "none",
+          }}
+        />
 
-        {!showGif && resultJoker && (
+        {/* Center winning result: reveals the exact instant the spin stops */}
+        {resultJoker && (
           <img
             decoding="async"
             src={resultJoker}
@@ -396,9 +401,12 @@ const WheelDisplay = ({
               left: OVERLAY_POS.left,
               top: OVERLAY_POS.top,
               width: OVERLAY_POS.width,
-              height: OVERLAY_POS.width,
+              height: OVERLAY_POS.height,
               transform: "translate(-50%, -50%)",
               objectFit: "contain",
+              opacity: !showGif ? 1 : 0,
+              visibility: !showGif ? "visible" : "hidden",
+              pointerEvents: "none",
             }}
           />
         )}
@@ -418,6 +426,29 @@ const WheelDisplay = ({
           }}
         />
       </div>
+
+      <style>{`
+        /* Rectangular screens (laptops / wide mobiles): wider prominent oval (UNTOUCHED) */
+        .ft-responsive-wheel {
+          transform: translate(-50%, -50%) scaleX(1.30);
+        }
+
+        /* Square screens (ratio <= 1.4, like tablets / 4:3 displays):
+           Increased size to look bigger and prominent */
+        @media (max-aspect-ratio: 14/10) {
+          .ft-responsive-wheel {
+            transform: translate(-50%, -50%) scaleX(1.10);
+            width: min(45vw, 65vh) !important;
+          }
+        }
+
+        @media (max-aspect-ratio: 12/10) {
+          .ft-responsive-wheel {
+            transform: translate(-50%, -50%) scaleX(1.06);
+            width: min(48vw, 62vh) !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

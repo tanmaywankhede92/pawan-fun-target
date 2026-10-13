@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "@hooks/useAuth";
+import { authService } from "@services/auth.service";
 import GameBackground from "../components/GameBackground";
 import LoginOverlay from "../components/LoginOverlay";
 import UsernameInput from "../components/UsernameInput";
@@ -59,15 +60,23 @@ const LoginPage = () => {
   }, [isTv]);
 
   const handleEnter = useCallback(async () => {
-    if (!username.trim() || !password) return;
+    const trimmedUser = username.trim();
+    if (!trimmedUser || !password) return;
     if (loading) return;
     play("CLICK");
     setLoading(true);
     try {
-      const result = await login({ username: username.trim(), password, device_uuid: deviceUuid });
+      const result = await login({ username: trimmedUser, password, device_uuid: deviceUuid });
       navigate(result.redirect || "/pre", { replace: true });
     } catch (err) {
-      toast.error(err?.message || "Invalid username or password");
+      const errMsg = err?.message || "Invalid username or password";
+
+      // If user is already logged in on another device, warn and do NOT bypass/enter
+      if (typeof errMsg === "string" && errMsg.toLowerCase().includes("already logged in")) {
+        toast.warn(errMsg || "User is already logged in on another device!");
+      } else {
+        toast.error(errMsg);
+      }
       setPassword("");
     } finally {
       setLoading(false);

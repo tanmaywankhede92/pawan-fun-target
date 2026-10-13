@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import { resultService } from "@services/result.service";
+import { DISPLAY_FONT } from "@constants/displayFont";
 
 const POS = {
   right: "3.2%",
   width: "18.8%",
   height: "7.8%",
   top: "32.5%",
-  fontSize: "clamp(12px, min(1.25vw, 3.5vh), 20px)",
+  fontSize: "clamp(14px, min(1.6vw, 4.0vh), 26px)",
   fontWeight: 900,
-  fontFamily: '"Bodoni Moda", serif',
+  fontFamily: DISPLAY_FONT,
 };
 
 const LastWinningData = ({ refreshTrigger = 0 }) => {
@@ -41,6 +42,8 @@ const LastWinningData = ({ refreshTrigger = 0 }) => {
         fontSize: POS.fontSize,
         fontWeight: POS.fontWeight,
         fontFamily: POS.fontFamily,
+        fontVariantNumeric: "lining-nums tabular-nums",
+        fontFeatureSettings: '"lnum" 1, "tnum" 1',
         flexDirection: "row-reverse",
         padding: "0 0.6vw",
       }}
@@ -48,12 +51,14 @@ const LastWinningData = ({ refreshTrigger = 0 }) => {
       {data.map((num, i) => (
         <div
           key={i}
-          className="text-center font-bold leading-none tracking-[.35em] ft-last-wins-item"
+          className="flex items-center justify-center text-center font-bold leading-none ft-last-wins-item"
           style={{
             flex: "1 1 0%",
             minWidth: 0,
             fontSize: POS.fontSize,
             fontFamily: POS.fontFamily,
+            fontVariantNumeric: "lining-nums tabular-nums",
+            fontFeatureSettings: '"lnum" 1, "tnum" 1',
             color: "#1b0e00",
             textShadow: "0 0 0.5px #1b0e00",
           }}
