@@ -1,8 +1,33 @@
 import api from './api';
 import config from '@config';
+import { deviceUuid } from '@utils/deviceUuid';
+
+const getDeviceType = () => {
+  try {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+    if (typeof window !== 'undefined' && window.Android && typeof window.Android.isAndroidTV === 'function') {
+      return 'TV';
+    }
+    if (/Android|iPhone|iPad|Mobile/i.test(ua)) return 'M';
+    return 'W';
+  } catch {
+    return 'W';
+  }
+};
+
+const normalizeLoginPayload = (credentials = {}) => {
+  const normalized = { ...credentials };
+  const resolvedDeviceUuid = credentials.deviceUuid || credentials.device_uuid || deviceUuid;
+
+  normalized.device = credentials.device || getDeviceType();
+  normalized.deviceUuid = resolvedDeviceUuid;
+  normalized.device_uuid = credentials.device_uuid || credentials.deviceUuid || resolvedDeviceUuid;
+
+  return normalized;
+};
 
 export const authService = {
-  login: (credentials) => api.post('/auth/login', credentials),
+  login: (credentials) => api.post('/auth/login', normalizeLoginPayload(credentials)),
   getBalance: (username) => api.post('/auth/balance', { username }),
   setBalanceReceived: (data) => api.post('/auth/balance_received', data),
   logout: (username) => {

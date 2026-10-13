@@ -18,10 +18,10 @@ export const DISPLAY_FONTS = {
 
 // ============================================================================
 // ACTIVE DEFAULT FONT:
-// Change between "clear" (New font with clear 4) and "original" (Bodoni Moda)
-// anytime according to your need!
-// ============================================================================
-export const DEFAULT_FONT_KEY = "clear";
+// Keep the original legacy display font for the score, winner, and rolling
+// leaderboard text to match the older game appearance.
+// ==========================================================================
+export const DEFAULT_FONT_KEY = "original";
 
 export const getDisplayFont = () => {
   if (typeof window !== "undefined") {
