@@ -135,6 +135,23 @@
     -moz-osx-font-smoothing: grayscale;
     background-color: #0c1520;
   }
+
+  body.low-spec-device {
+    -webkit-font-smoothing: auto;
+    text-rendering: optimizeSpeed;
+  }
+
+  body.low-spec-device *,
+  body.low-spec-device *::before,
+  body.low-spec-device *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+  }
 }
 
 @layer components {

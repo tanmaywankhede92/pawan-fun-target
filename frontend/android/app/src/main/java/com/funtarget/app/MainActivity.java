@@ -116,7 +116,14 @@ public class MainActivity extends BridgeActivity {
         // Black background — prevents white flash before web content loads.
         webView.setBackgroundColor(0xFF000000);
 
-        webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
+        // Low-end Android TV hardware often struggles with WebView hardware
+        // acceleration, which can produce blank/blue screens. Force software
+        // rendering for this app to keep the login and game UI stable.
+        try {
+            webView.setLayerType(WebView.LAYER_TYPE_SOFTWARE, null);
+        } catch (Exception ignored) {
+            webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
+        }
 
         // Android TV remote control & USB/Wireless mouse support
         webView.setFocusable(true);
