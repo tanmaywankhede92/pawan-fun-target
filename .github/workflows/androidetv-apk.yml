@@ -56,10 +56,14 @@ jobs:
           cache: gradle
 
       - name: Decode release keystore
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
         shell: bash
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > "$KEYSTORE_PATH"
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > "$KEYSTORE_PATH"
+            echo "Keystore decoded successfully."
+          else
+            echo "No KEYSTORE_BASE64 secret found; skipping keystore decode."
+          fi
 
       - name: Build Android release APK
         working-directory: frontend/android
