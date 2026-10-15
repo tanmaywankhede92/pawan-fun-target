@@ -410,11 +410,11 @@
 }
 
 /* ============================================================
-   PrePage Interactive Buttons (Receive & Point Transfer Glows)
+   PrePage Interactive Buttons (Receive & Reject Glows)
    ============================================================ */
-.prepage-receive-btn {
+.prepage-receive-btn,
+.prepage-reject-btn {
   background: transparent;
-  border: 1.5px solid transparent;
   border-radius: 8px;
   outline: none !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -422,23 +422,26 @@
 }
 
 .prepage-receive-btn:hover,
-.prepage-receive-btn:focus-visible {
+.prepage-receive-btn:focus-visible,
+.prepage-reject-btn:hover,
+.prepage-reject-btn:focus-visible {
   background: radial-gradient(ellipse at center, rgba(255, 220, 60, 0.4) 0%, rgba(255, 160, 0, 0.2) 65%, transparent 85%);
-  border-color: rgba(255, 225, 100, 0.75);
   box-shadow: 0 0 16px rgba(255, 215, 0, 0.85), inset 0 0 10px rgba(255, 240, 120, 0.6);
   filter: brightness(1.2);
 }
 
 .prepage-receive-btn:active,
-.prepage-receive-btn.glowing {
+.prepage-receive-btn.glowing,
+.prepage-reject-btn:active,
+.prepage-reject-btn.glowing {
   background: radial-gradient(ellipse at center, rgba(255, 235, 90, 0.75) 0%, rgba(255, 170, 0, 0.45) 60%, transparent 85%);
-  border-color: rgba(255, 255, 200, 0.95);
   box-shadow: 0 0 25px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 150, 0, 0.8), inset 0 0 12px rgba(255, 255, 220, 0.85);
   transform: scale(0.97);
   filter: brightness(1.35);
 }
 
-.prepage-receive-btn.saving {
+.prepage-receive-btn.saving,
+.prepage-reject-btn.rejecting {
   animation: receiveSavingPulse 1s ease-in-out infinite alternate;
 }
 
@@ -447,50 +450,10 @@
     box-shadow: 0 0 10px rgba(255, 215, 0, 0.5), inset 0 0 6px rgba(255, 230, 100, 0.4);
     border-color: rgba(255, 215, 0, 0.5);
   }
+
   100% {
     box-shadow: 0 0 24px rgba(255, 215, 0, 0.9), inset 0 0 12px rgba(255, 240, 120, 0.7);
     border-color: rgba(255, 255, 180, 0.9);
-  }
-}
-
-.prepage-reject-btn {
-  background: transparent;
-  border: 1.5px solid transparent;
-  border-radius: 8px;
-  outline: none !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-sizing: border-box;
-}
-
-.prepage-reject-btn:hover,
-.prepage-reject-btn:focus-visible {
-  background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0.4) 0%, rgba(185, 28, 28, 0.2) 65%, transparent 85%);
-  border-color: rgba(248, 113, 113, 0.75);
-  box-shadow: 0 0 16px rgba(239, 68, 68, 0.85), inset 0 0 10px rgba(252, 165, 165, 0.6);
-  filter: brightness(1.2);
-}
-
-.prepage-reject-btn:active,
-.prepage-reject-btn.glowing {
-  background: radial-gradient(ellipse at center, rgba(248, 113, 113, 0.75) 0%, rgba(220, 38, 38, 0.45) 60%, transparent 85%);
-  border-color: rgba(254, 202, 202, 0.95);
-  box-shadow: 0 0 25px rgba(239, 68, 68, 1), 0 0 40px rgba(220, 38, 38, 0.8), inset 0 0 12px rgba(254, 226, 226, 0.85);
-  transform: scale(0.97);
-  filter: brightness(1.35);
-}
-
-.prepage-reject-btn.rejecting {
-  animation: rejectSavingPulse 1s ease-in-out infinite alternate;
-}
-
-@keyframes rejectSavingPulse {
-  0% {
-    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5), inset 0 0 6px rgba(248, 113, 113, 0.4);
-    border-color: rgba(239, 68, 68, 0.5);
-  }
-  100% {
-    box-shadow: 0 0 24px rgba(239, 68, 68, 0.9), inset 0 0 12px rgba(252, 165, 165, 0.7);
-    border-color: rgba(254, 202, 202, 0.9);
   }
 }
 
@@ -598,8 +561,13 @@ input[type="number"] {
 }
 
 @keyframes ptSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 button:focus,

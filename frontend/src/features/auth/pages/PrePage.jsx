@@ -248,9 +248,9 @@ const PrePage = () => {
         className="absolute"
         style={{
           ...boxStyle,
-          left: "6.5%",
-          top: "64.5%",
-          width: "16%",
+          left: "4.5%",
+          top: "65.5%",
+          width: "14%",
           height: "6%",
         }}
       >
@@ -265,11 +265,11 @@ const PrePage = () => {
         onClick={handleReceive}
         aria-label="Receive points"
         style={{
-          ...boxStyle,
-          left: "24.2%",
-          top: "56.5%",
-          width: "7.8%",
-          height: "6.5%",
+
+          left: "24.5%",
+          top: "58%",
+          width: "7.5%",
+          height: "5.5%",
           zIndex: 20,
         }}
       >
@@ -284,10 +284,10 @@ const PrePage = () => {
         aria-label="Reject points"
         style={{
           ...boxStyle,
-          left: "38.5%",
-          top: "56.5%",
+          left: "38%",
+          top: "58%",
           width: "7.5%",
-          height: "6.5%",
+          height: "5.5%",
           zIndex: 20,
         }}
       >
@@ -301,10 +301,10 @@ const PrePage = () => {
         aria-label="Open point transfer"
         onClick={handleOpenTransfer}
         style={{
-          left: "40.5%",
-          top: "13%",
-          width: "21%",
-          height: "31%",
+          left: "43.5%",
+          top: "17.5%",
+          width: "14%",
+          height: "20%",
           zIndex: 20,
         }}
       />
