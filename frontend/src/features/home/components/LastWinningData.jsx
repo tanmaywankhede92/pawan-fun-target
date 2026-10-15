@@ -45,7 +45,7 @@ const LastWinningData = ({ refreshTrigger = 0 }) => {
         fontVariantNumeric: "lining-nums tabular-nums",
         fontFeatureSettings: '"lnum" 1, "tnum" 1',
         flexDirection: "row-reverse",
-        padding: "0 0.6vw",
+        padding: "0 1.2vw",
       }}
     >
       {data.map((num, i) => (

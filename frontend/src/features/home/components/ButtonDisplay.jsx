@@ -16,8 +16,8 @@ const BUTTONS = [
     sound: "CANCEL",
     base: cancelBtn,
     glow: cancelBetGlow,
-    zoom: 1.2,
-    box: { left: "20%", bottom: "20%", width: "12%", height: "5%" },
+    zoom: 1.05,
+    box: { left: "20.2%", bottom: "20.5%", width: "12%", height: "5%" },
   },
   {
     id: "takeBet",
@@ -25,8 +25,8 @@ const BUTTONS = [
     sound: "TAKE",
     base: takeBtn,
     glow: takeBetGlow,
-    zoom: 1.2,
-    box: { right: "85.9%", bottom: "21.5%", width: "14%", height: "5%" },
+    zoom: 1.05,
+    box: { left: "0.8%", bottom: "21.2%", width: "13.6%", height: "5%" },
   },
   {
     id: "preview",
@@ -34,8 +34,8 @@ const BUTTONS = [
     sound: "CLICK",
     base: previewBtn,
     glow: previewGlow,
-    zoom: 1.2,
-    box: { left: "85%", bottom: "21%", width: "15%", height: "5%" },
+    zoom: 1.05,
+    box: { left: "85.6%", bottom: "21.2%", width: "13.6%", height: "5%" },
   },
   {
     id: "exit",
@@ -43,8 +43,8 @@ const BUTTONS = [
     sound: "CLICK",
     base: exitBtn,
     glow: exitGlow,
-    zoom: 1.2,
-    box: { left: "91%", top: "95%", width: "9%", height: "5%" },
+    zoom: 1.05,
+    box: { left: "91%", top: "94.5%", width: "8.5%", height: "5%" },
   },
   {
     id: "cancelSpecific",
@@ -52,8 +52,8 @@ const BUTTONS = [
     sound: "CANCEL",
     base: cancelBtn,
     glow: cancelBetGlow,
-    zoom: 1.2,
-    box: { left: "66%", bottom: "20%", width: "15.5%", height: "5%" },
+    zoom: 1.05,
+    box: { left: "65.5%", bottom: "20.5%", width: "17.5%", height: "5%" },
   },
 ];
 
@@ -202,11 +202,12 @@ const ButtonDisplay = ({
                 fontWeight: 700,
                 fontSize:
                   btn.id === "cancelSpecific"
-                    ? "clamp(6px, 1.1vw, 15px)"
-                    : "clamp(7px, 1.35vw, 18px)",
+                    ? "clamp(6px, 0.85vw, 13px)"
+                    : "clamp(7px, 1.25vw, 16px)",
                 letterSpacing: "0.01em",
                 textShadow: "0 1px 2px rgba(0, 0, 0, 0.65)",
                 transform: "translateY(-10%)",
+                whiteSpace: "nowrap",
               }}
             >
               {name}

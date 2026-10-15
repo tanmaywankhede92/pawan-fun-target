@@ -162,10 +162,13 @@ const PrePage = () => {
         className="absolute"
         style={{
           ...boxStyle,
-          left: "8%",
+          justifyContent: "flex-start",
+          textAlign: "left",
+          left: "15.5%",
           top: "0.5%",
-          width: "20%",
-          height: "7%",
+          width: "12.5%",
+          height: "6%",
+          paddingLeft: "4px",
         }}
       >
         {user?.username || ""}
@@ -176,10 +179,13 @@ const PrePage = () => {
         className="absolute"
         style={{
           ...boxStyle,
-          left: "32%",
+          justifyContent: "flex-start",
+          textAlign: "left",
+          left: "38.5%",
           top: "0.5%",
-          width: "20%",
-          height: "7%",
+          width: "12.5%",
+          height: "6%",
+          paddingLeft: "4px",
         }}
       >
         {Math.max(0, user?.balance || 0)}
@@ -190,10 +196,10 @@ const PrePage = () => {
         className="absolute"
         style={{
           ...boxStyle,
-          left: "2%",
-          top: "65%",
-          width: "20%",
-          height: "7%",
+          left: "6.5%",
+          top: "64.5%",
+          width: "16%",
+          height: "6%",
         }}
       >
         {user?.balance_received ?? "0.00"}
@@ -207,10 +213,15 @@ const PrePage = () => {
         onClick={handleReceive}
         style={{
           ...boxStyle,
-          left: "18%",
-          top: "57%",
-          width: "20%",
-          height: "7%",
+          left: "24.5%",
+          top: "56.5%",
+          width: "7.5%",
+          height: "6.5%",
+          background: "transparent",
+          backgroundColor: "transparent",
+          border: "none",
+          outline: "none",
+          boxShadow: "none",
         }}
       >
         {saving ? "..." : ""}
@@ -311,9 +322,11 @@ const PrePage = () => {
           top: "94.5%",
           width: "6.6%",
           height: "4.5%",
-          // background: "rgba(0,0,0,0.45)",
-          // border: "1px solid rgba(255,255,255,0.8)",
-          // borderRadius: "6px",
+          background: "transparent",
+          backgroundColor: "transparent",
+          border: "none",
+          outline: "none",
+          boxShadow: "none",
         }}
         onClick={handleLogout}
       ></button>

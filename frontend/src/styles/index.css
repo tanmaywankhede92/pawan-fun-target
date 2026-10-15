@@ -228,8 +228,8 @@
   }
 }
 
-/* Mobile landscape only — short landscape touch screens */
-@media (orientation: landscape) and (max-height: 600px) {
+/* Mobile landscape only — short landscape phone touch screens */
+@media (orientation: landscape) and (max-height: 480px) and (max-width: 900px) {
 
   /* Keep login input text inside its box on small screens — based on height (vh), not width (vw) */
   .ft-login-field {
@@ -363,8 +363,8 @@
   display: none;
 }
 
-/* Adjust Games container on mobile screens so it stays inside wooden frame without going down */
-@media (max-width: 900px), (max-height: 600px) {
+/* Adjust Games container on small mobile screens so it stays inside wooden frame without going down */
+@media (max-width: 900px) and (max-height: 480px) {
   .prepage-name-desktop {
     display: none !important;
   }
@@ -396,8 +396,8 @@
 }
 
 .prepage-game-item.active {
-  background-color: rgba(255, 255, 255, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  background-color: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.65);
 }
 
 .prepage-game-item.active img {

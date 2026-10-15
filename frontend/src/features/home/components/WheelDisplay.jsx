@@ -428,23 +428,21 @@ const WheelDisplay = ({
       </div>
 
       <style>{`
-        /* Rectangular screens (laptops / wide mobiles): wider prominent oval (UNTOUCHED) */
+        /* Perfectly circular wheel matching arcade Fun Target design */
         .ft-responsive-wheel {
-          transform: translate(-50%, -50%) scaleX(1.30);
+          transform: translate(-50%, -50%);
         }
 
-        /* Square screens (ratio <= 1.4, like tablets / 4:3 displays):
-           Increased size to look bigger and prominent */
         @media (max-aspect-ratio: 14/10) {
           .ft-responsive-wheel {
-            transform: translate(-50%, -50%) scaleX(1.10);
+            transform: translate(-50%, -50%);
             width: min(45vw, 65vh) !important;
           }
         }
 
         @media (max-aspect-ratio: 12/10) {
           .ft-responsive-wheel {
-            transform: translate(-50%, -50%) scaleX(1.06);
+            transform: translate(-50%, -50%);
             width: min(48vw, 62vh) !important;
           }
         }
