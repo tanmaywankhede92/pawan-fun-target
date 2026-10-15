@@ -14,6 +14,8 @@ import bonus from "@assets/images/gifs/joker3.webp";
 import drum from "@assets/images/gifs/joker4.webp";
 import pointerGif from "@assets/images/gifs/DG.webp";
 
+import PointTransferModal from "../components/PointTransferModal";
+
 // Game list thumbnails
 import iconFunTarget from "@assets/gamelist/Icon.webp";
 
@@ -32,6 +34,9 @@ const PrePage = () => {
   const [hoveredGameId, setHoveredGameId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [noticeMessage, setNoticeMessage] = useState(null);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [receiveGlow, setReceiveGlow] = useState(false);
+  const [transferGlow, setTransferGlow] = useState(false);
   const gameRef = useRef(null);
   const noticeTimerRef = useRef(null);
 
@@ -81,10 +86,13 @@ const PrePage = () => {
   // As soon as it succeeds, the displayed balance is refreshed so the
   // credited amount shows up immediately.
   const handleReceive = async () => {
+    play("CLICK");
+    setReceiveGlow(true);
+    setTimeout(() => setReceiveGlow(false), 450);
+
     const username = user?.username;
     const amount = user?.balance_received;
-    if (!username || amount == null) return;
-    play("CLICK");
+    if (!username || amount == null || Number(amount) <= 0) return;
     setSaving(true);
     try {
       await authService.setBalanceReceived({
@@ -93,11 +101,27 @@ const PrePage = () => {
       });
       setAuth({ ...user, balance_received: "0.00" });
       await refreshBalance();
+      play("TAKE");
     } catch {
       // leave everything as-is so the user can retry
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleOpenTransfer = () => {
+    play("CLICK");
+    setTransferGlow(true);
+    setTimeout(() => setTransferGlow(false), 450);
+    setTransferOpen(true);
+  };
+
+  const handleTransferSuccess = async (data) => {
+    const remaining = data?.data?.remaining_balance;
+    if (remaining != null && !isNaN(Number(remaining))) {
+      setAuth({ ...user, balance: Number(remaining) });
+    }
+    await refreshBalance();
   };
 
   // Preload game images in background so /game loads instantly on click.
@@ -208,24 +232,43 @@ const PrePage = () => {
       {/* Receive button: posts the login API's balance_received to the
           backend, then refreshes the displayed balance. */}
       <button
-        className="absolute cursor-pointer"
+        className={`absolute cursor-pointer prepage-receive-btn ${receiveGlow ? "glowing" : ""} ${saving ? "saving" : ""}`}
         disabled={saving}
         onClick={handleReceive}
+        aria-label="Receive points"
         style={{
           ...boxStyle,
-          left: "24.5%",
+          left: "24.2%",
           top: "56.5%",
-          width: "7.5%",
+          width: "7.8%",
           height: "6.5%",
-          background: "transparent",
-          backgroundColor: "transparent",
-          border: "none",
-          outline: "none",
-          boxShadow: "none",
+          zIndex: 20,
         }}
       >
         {saving ? "..." : ""}
       </button>
+
+      {/* Transparent hit area over the Point Transfer shield in PrevBG with magical fiery glow. */}
+      <button
+        type="button"
+        className={`absolute cursor-pointer prepage-transfer-shield-btn ${transferGlow ? "glowing" : ""}`}
+        aria-label="Open point transfer"
+        onClick={handleOpenTransfer}
+        style={{
+          left: "40.5%",
+          top: "13%",
+          width: "21%",
+          height: "31%",
+          zIndex: 20,
+        }}
+      />
+
+      <PointTransferModal
+        open={transferOpen}
+        onClose={() => setTransferOpen(false)}
+        user={user}
+        onTransferSuccess={handleTransferSuccess}
+      />
 
       {/* Notice Banner (for coming soon games) */}
       {/* {noticeMessage && (

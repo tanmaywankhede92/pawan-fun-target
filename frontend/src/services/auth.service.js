@@ -30,6 +30,7 @@ export const authService = {
   login: (credentials) => api.post('/auth/login', normalizeLoginPayload(credentials)),
   getBalance: (username) => api.post('/auth/balance', { username }),
   setBalanceReceived: (data) => api.post('/auth/balance_received', data),
+  transferBalance: (payload) => api.post('/auth/user_balance_transfer', payload),
   logout: (username) => {
     // 1. If tab is closing or hidden, use keepalive fetch so browser doesn't drop the packet
     const url = `${config.apiBaseUrl}/auth/logout`;
