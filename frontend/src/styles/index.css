@@ -453,6 +453,47 @@
   }
 }
 
+.prepage-reject-btn {
+  background: transparent;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  outline: none !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.prepage-reject-btn:hover,
+.prepage-reject-btn:focus-visible {
+  background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0.4) 0%, rgba(185, 28, 28, 0.2) 65%, transparent 85%);
+  border-color: rgba(248, 113, 113, 0.75);
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.85), inset 0 0 10px rgba(252, 165, 165, 0.6);
+  filter: brightness(1.2);
+}
+
+.prepage-reject-btn:active,
+.prepage-reject-btn.glowing {
+  background: radial-gradient(ellipse at center, rgba(248, 113, 113, 0.75) 0%, rgba(220, 38, 38, 0.45) 60%, transparent 85%);
+  border-color: rgba(254, 202, 202, 0.95);
+  box-shadow: 0 0 25px rgba(239, 68, 68, 1), 0 0 40px rgba(220, 38, 38, 0.8), inset 0 0 12px rgba(254, 226, 226, 0.85);
+  transform: scale(0.97);
+  filter: brightness(1.35);
+}
+
+.prepage-reject-btn.rejecting {
+  animation: rejectSavingPulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes rejectSavingPulse {
+  0% {
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5), inset 0 0 6px rgba(248, 113, 113, 0.4);
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 24px rgba(239, 68, 68, 0.9), inset 0 0 12px rgba(252, 165, 165, 0.7);
+    border-color: rgba(254, 202, 202, 0.9);
+  }
+}
+
 .prepage-transfer-shield-btn {
   background: transparent;
   border: 2px solid transparent;

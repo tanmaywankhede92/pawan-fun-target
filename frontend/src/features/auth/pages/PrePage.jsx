@@ -33,9 +33,11 @@ const PrePage = () => {
   const [selectedGameId, setSelectedGameId] = useState("funtarget");
   const [hoveredGameId, setHoveredGameId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
   const [noticeMessage, setNoticeMessage] = useState(null);
   const [transferOpen, setTransferOpen] = useState(false);
   const [receiveGlow, setReceiveGlow] = useState(false);
+  const [rejectGlow, setRejectGlow] = useState(false);
   const [transferGlow, setTransferGlow] = useState(false);
   const gameRef = useRef(null);
   const noticeTimerRef = useRef(null);
@@ -106,6 +108,32 @@ const PrePage = () => {
       // leave everything as-is so the user can retry
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Posts to balance_reject to reject/refund any pending received balance back to sponsor/agent.
+  const handleReject = async () => {
+    play("CLICK");
+    setRejectGlow(true);
+    setTimeout(() => setRejectGlow(false), 450);
+
+    const username = user?.username;
+    const amount = user?.balance_received;
+    if (!username || amount == null || Number(amount) <= 0) return;
+    setRejecting(true);
+    try {
+      const res = await authService.rejectBalance(username);
+      const remaining = res?.data?.data?.remaining_balance_received ?? "0.00";
+      setAuth({
+        ...user,
+        balance_received: typeof remaining === "number" ? remaining.toFixed(2) : remaining,
+      });
+      await refreshBalance();
+      play("CANCEL");
+    } catch {
+      // leave everything as-is so the user can retry
+    } finally {
+      setRejecting(false);
     }
   };
 
@@ -246,6 +274,24 @@ const PrePage = () => {
         }}
       >
         {saving ? "..." : ""}
+      </button>
+
+      {/* Reject button: calls balance_reject API to reject/refund pending received points */}
+      <button
+        className={`absolute cursor-pointer prepage-reject-btn ${rejectGlow ? "glowing" : ""} ${rejecting ? "rejecting" : ""}`}
+        disabled={rejecting}
+        onClick={handleReject}
+        aria-label="Reject points"
+        style={{
+          ...boxStyle,
+          left: "38.5%",
+          top: "56.5%",
+          width: "7.5%",
+          height: "6.5%",
+          zIndex: 20,
+        }}
+      >
+        {rejecting ? "..." : ""}
       </button>
 
       {/* Transparent hit area over the Point Transfer shield in PrevBG with magical fiery glow. */}
