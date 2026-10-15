@@ -28,8 +28,12 @@ public class MainActivity extends BridgeActivity {
         // Full-screen immersive: hide status bar + navigation bar.
         hideSystemUI();
 
-        // Keep screen on while the game is running.
+        // Keep screen on and force hardware acceleration on window
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().setFlags(
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+        );
 
         // After Capacitor bridge initialises, configure the WebView and inject
         // the native → JS bridge that closeApplication.js and the session
@@ -122,13 +126,11 @@ public class MainActivity extends BridgeActivity {
         // Black background prevents white flash while the app boots on weak TV hardware.
         webView.setBackgroundColor(0xFF000000);
 
-        // Low-end Android TV hardware often struggles with WebView hardware
-        // acceleration, which can produce blank/blue screens. Force software
-        // rendering for this app to keep the login and game UI stable.
+        // Enable hardware-accelerated rendering for smooth 60 FPS gameplay on Android TV & mobile.
+        // View.LAYER_TYPE_NONE allows Chromium to use the native GPU-backed hardware layer.
         try {
-            webView.setLayerType(WebView.LAYER_TYPE_SOFTWARE, null);
+            webView.setLayerType(View.LAYER_TYPE_NONE, null);
         } catch (Exception ignored) {
-            webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
         }
 
         // Android TV remote control & USB/Wireless mouse support

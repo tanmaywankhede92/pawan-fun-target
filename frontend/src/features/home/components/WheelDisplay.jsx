@@ -12,6 +12,7 @@ const POS = {
   left: "50%",
   top: "37%",
   width: "min(46vw, 66vh)",
+  height: "min(46vw, 66vh)",
   aspectRatio: "1 / 1",
 };
 
@@ -265,7 +266,7 @@ const WheelDisplay = ({
           currentAngle = decelFinalAngleRef.current;
           rotationRef.current = currentAngle;
           if (wheelImgRef.current) {
-            wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
+            wheelImgRef.current.style.transform = `translate3d(0, 0, 0) rotate(${currentAngle}deg)`;
           }
           finishSpin(winnerResolvedRef.current);
           return;
@@ -274,7 +275,7 @@ const WheelDisplay = ({
 
       rotationRef.current = currentAngle;
       if (wheelImgRef.current) {
-        wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
+        wheelImgRef.current.style.transform = `translate3d(0, 0, 0) rotate(${currentAngle}deg)`;
       }
 
       rafIdRef.current = requestAnimationFrame(animate);
@@ -365,9 +366,10 @@ const WheelDisplay = ({
             transformOrigin: "50% 50%",
             objectFit: "contain",
             willChange: "transform",
-            transformStyle: "flat",
+            transform: "translate3d(0, 0, 0)",
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
+            imageRendering: "-webkit-optimize-contrast",
           }}
         />
 
@@ -431,12 +433,15 @@ const WheelDisplay = ({
         /* Perfectly circular wheel matching arcade Fun Target design */
         .ft-responsive-wheel {
           transform: translate(-50%, -50%);
+          width: min(46vw, 66vh);
+          height: min(46vw, 66vh);
         }
 
         @media (max-aspect-ratio: 14/10) {
           .ft-responsive-wheel {
             transform: translate(-50%, -50%);
             width: min(45vw, 65vh) !important;
+            height: min(45vw, 65vh) !important;
           }
         }
 
@@ -444,6 +449,7 @@ const WheelDisplay = ({
           .ft-responsive-wheel {
             transform: translate(-50%, -50%);
             width: min(48vw, 62vh) !important;
+            height: min(48vw, 62vh) !important;
           }
         }
       `}</style>

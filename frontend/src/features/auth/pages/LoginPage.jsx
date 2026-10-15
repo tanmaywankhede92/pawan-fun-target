@@ -31,7 +31,6 @@ const LoginPage = () => {
       const result = await login({
         username: trimmedUser,
         password,
-        device: "W",
         deviceUuid: deviceUuid,
         device_uuid: deviceUuid,
       });

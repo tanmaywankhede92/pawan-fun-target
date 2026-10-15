@@ -17,9 +17,13 @@ const PointTransferModal = ({
   const [responseType, setResponseType] = useState("idle"); // 'idle' | 'success' | 'error' | 'loading'
 
   const accountInputRef = useRef(null);
+  const pinInputRef = useRef(null);
+  const amountInputRef = useRef(null);
+  const transferBtnRef = useRef(null);
+  const closeBtnRef = useRef(null);
   const { play } = useSound();
 
-  // Reset fields when opening modal
+  // Reset fields and focus first input when opening modal
   useEffect(() => {
     if (open) {
       setAccount("");
@@ -152,12 +156,13 @@ const PointTransferModal = ({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "min(72vw, calc(65vh * 928 / 531), 580px)",
+          height: "min(65vh, calc(72vw * 531 / 928), 332px)",
           aspectRatio: "928 / 531",
           backgroundImage: `url(${modalBg})`,
           backgroundSize: "100% 100%",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
-          filter: "drop-shadow(0 12px 28px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 16px rgba(255, 60, 20, 0.35))",
+          boxShadow: "0 12px 32px rgba(0, 0, 0, 0.9), 0 0 16px rgba(255, 60, 20, 0.4)",
         }}
       >
         <form onSubmit={handleSubmit} className="w-full h-full relative">
@@ -174,6 +179,12 @@ const PointTransferModal = ({
               setAccount(e.target.value);
               if (responseType === "error") setResponseMsg("");
             }}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowDown" || e.key === "Enter" || e.keyCode === 13 || e.keyCode === 23) {
+                e.preventDefault();
+                pinInputRef.current?.focus();
+              }
+            }}
             placeholder="GK"
             className="point-transfer-input"
             style={{
@@ -187,6 +198,7 @@ const PointTransferModal = ({
 
           {/* PIN input */}
           <input
+            ref={pinInputRef}
             type="password"
             id="transfer-pin"
             name="pin"
@@ -196,6 +208,15 @@ const PointTransferModal = ({
             onChange={(e) => {
               setPin(e.target.value);
               if (responseType === "error") setResponseMsg("");
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                accountInputRef.current?.focus();
+              } else if (e.key === "ArrowDown" || e.key === "Enter" || e.keyCode === 13 || e.keyCode === 23) {
+                e.preventDefault();
+                amountInputRef.current?.focus();
+              }
             }}
             placeholder="••••"
             className="point-transfer-input"
@@ -210,6 +231,7 @@ const PointTransferModal = ({
 
           {/* AMOUNT input */}
           <input
+            ref={amountInputRef}
             type="number"
             id="transfer-amount"
             name="amount"
@@ -220,6 +242,15 @@ const PointTransferModal = ({
             onChange={(e) => {
               setAmount(e.target.value);
               if (responseType === "error") setResponseMsg("");
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                pinInputRef.current?.focus();
+              } else if (e.key === "ArrowDown" || e.key === "Enter" || e.keyCode === 13 || e.keyCode === 23) {
+                e.preventDefault();
+                transferBtnRef.current?.focus();
+              }
             }}
             placeholder="0"
             className="point-transfer-input"
@@ -234,10 +265,24 @@ const PointTransferModal = ({
 
           {/* TRANSFER button */}
           <button
+            ref={transferBtnRef}
             type="submit"
             disabled={loading}
+            tabIndex={0}
             aria-label="Transfer points"
             className="point-transfer-btn"
+            onKeyDown={(e) => {
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                amountInputRef.current?.focus();
+              } else if (e.key === "ArrowRight") {
+                e.preventDefault();
+                closeBtnRef.current?.focus();
+              } else if (e.key === "Enter" || e.key === "Select" || e.key === "Ok" || e.keyCode === 13 || e.keyCode === 23) {
+                e.preventDefault();
+                handleSubmit();
+              }
+            }}
             style={{
               position: "absolute",
               left: "16.9%",
@@ -253,10 +298,24 @@ const PointTransferModal = ({
 
           {/* CLOSE button */}
           <button
+            ref={closeBtnRef}
             type="button"
             disabled={loading}
+            tabIndex={0}
             aria-label="Close transfer modal"
             onClick={handleClose}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                amountInputRef.current?.focus();
+              } else if (e.key === "ArrowLeft") {
+                e.preventDefault();
+                transferBtnRef.current?.focus();
+              } else if (e.key === "Enter" || e.key === "Select" || e.key === "Ok" || e.keyCode === 13 || e.keyCode === 23) {
+                e.preventDefault();
+                handleClose();
+              }
+            }}
             className="point-transfer-btn"
             style={{
               position: "absolute",

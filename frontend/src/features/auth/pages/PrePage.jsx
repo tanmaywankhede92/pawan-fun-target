@@ -40,6 +40,10 @@ const PrePage = () => {
   const [rejectGlow, setRejectGlow] = useState(false);
   const [transferGlow, setTransferGlow] = useState(false);
   const gameRef = useRef(null);
+  const receiveRef = useRef(null);
+  const rejectRef = useRef(null);
+  const shieldRef = useRef(null);
+  const logoutRef = useRef(null);
   const noticeTimerRef = useRef(null);
 
   useGameSessionGuard(logout, navigate);
@@ -260,12 +264,28 @@ const PrePage = () => {
       {/* Receive button: posts the login API's balance_received to the
           backend, then refreshes the displayed balance. */}
       <button
+        ref={receiveRef}
+        tabIndex={0}
         className={`absolute cursor-pointer prepage-receive-btn ${receiveGlow ? "glowing" : ""} ${saving ? "saving" : ""}`}
         disabled={saving}
         onClick={handleReceive}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowRight") {
+            e.preventDefault();
+            rejectRef.current?.focus();
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            shieldRef.current?.focus();
+          } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            gameRef.current?.focus();
+          } else if (e.key === "Enter" || e.key === "Select" || e.key === "Ok" || e.keyCode === 13 || e.keyCode === 23) {
+            e.preventDefault();
+            handleReceive();
+          }
+        }}
         aria-label="Receive points"
         style={{
-
           left: "24.5%",
           top: "58%",
           width: "7.5%",
@@ -278,9 +298,26 @@ const PrePage = () => {
 
       {/* Reject button: calls balance_reject API to reject/refund pending received points */}
       <button
+        ref={rejectRef}
+        tabIndex={0}
         className={`absolute cursor-pointer prepage-reject-btn ${rejectGlow ? "glowing" : ""} ${rejecting ? "rejecting" : ""}`}
         disabled={rejecting}
         onClick={handleReject}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            receiveRef.current?.focus();
+          } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+            e.preventDefault();
+            shieldRef.current?.focus();
+          } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            gameRef.current?.focus();
+          } else if (e.key === "Enter" || e.key === "Select" || e.key === "Ok" || e.keyCode === 13 || e.keyCode === 23) {
+            e.preventDefault();
+            handleReject();
+          }
+        }}
         aria-label="Reject points"
         style={{
           ...boxStyle,
@@ -296,10 +333,24 @@ const PrePage = () => {
 
       {/* Transparent hit area over the Point Transfer shield in PrevBG with magical fiery glow. */}
       <button
+        ref={shieldRef}
         type="button"
+        tabIndex={0}
         className={`absolute cursor-pointer prepage-transfer-shield-btn ${transferGlow ? "glowing" : ""}`}
         aria-label="Open point transfer"
         onClick={handleOpenTransfer}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            rejectRef.current?.focus();
+          } else if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+            e.preventDefault();
+            gameRef.current?.focus();
+          } else if (e.key === "Enter" || e.key === "Select" || e.key === "Ok" || e.keyCode === 13 || e.keyCode === 23) {
+            e.preventDefault();
+            handleOpenTransfer();
+          }
+        }}
         style={{
           left: "43.5%",
           top: "17.5%",
@@ -311,40 +362,13 @@ const PrePage = () => {
 
       <PointTransferModal
         open={transferOpen}
-        onClose={() => setTransferOpen(false)}
+        onClose={() => {
+          setTransferOpen(false);
+          setTimeout(() => shieldRef.current?.focus(), 50);
+        }}
         user={user}
         onTransferSuccess={handleTransferSuccess}
       />
-
-      {/* Notice Banner (for coming soon games) */}
-      {/* {noticeMessage && (
-        <div
-          style={{
-            position: "fixed",
-            top: "12%",
-            left: "50%",
-            transform: "translateX(-50%)",
-            backgroundColor: "rgba(10, 10, 10, 0.92)",
-            border: "2px solid #ffd700",
-            color: "#ffd700",
-            padding: "8px 22px",
-            borderRadius: "8px",
-            fontSize: "clamp(13px, 1.2vw, 19px)",
-            fontFamily: '"Times New Roman", serif',
-            fontWeight: "bold",
-            boxShadow: "0 4px 18px rgba(0,0,0,0.85), 0 0 10px rgba(255,215,0,0.5)",
-            zIndex: 9999,
-            pointerEvents: "none",
-            letterSpacing: "0.5px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          <span>⏳</span>
-          <span>{noticeMessage}</span>
-        </div>
-      )} */}
 
       {/* Scrollable Game List inside wooden ladder frame */}
       <div
@@ -377,7 +401,10 @@ const PrePage = () => {
               onMouseLeave={() => setHoveredGameId(null)}
               onClick={() => handleGameSelect(game)}
               onKeyDown={(e) => {
-                if (
+                if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+                  e.preventDefault();
+                  shieldRef.current?.focus();
+                } else if (
                   e.key === "Enter" ||
                   e.key === "Select" ||
                   e.key === "Ok" ||
@@ -404,6 +431,8 @@ const PrePage = () => {
 
       {/* Logout button -> calls logout API + clears session */}
       <button
+        ref={logoutRef}
+        tabIndex={0}
         className="absolute cursor-pointer"
         style={{
           ...boxStyle,
@@ -418,6 +447,18 @@ const PrePage = () => {
           boxShadow: "none",
         }}
         onClick={handleLogout}
+        onKeyDown={(e) => {
+          if (
+            e.key === "Enter" ||
+            e.key === "Select" ||
+            e.key === "Ok" ||
+            e.keyCode === 13 ||
+            e.keyCode === 23
+          ) {
+            e.preventDefault();
+            handleLogout();
+          }
+        }}
       ></button>
     </div>
   );

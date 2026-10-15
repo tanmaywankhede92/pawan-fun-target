@@ -18,7 +18,6 @@ import LastWinningData, {
 import TimerDisplayGif, {
   gifPos,
 } from "@features/home/components/TimerDisplayGif";
-import GifDisplay from "../features/home/components/GifDisplay";
 import WheelDisplay, { wheelPos } from "@features/home/components/WheelDisplay";
 import NumberDisplay from "@features/home/components/NumberDisplay";
 import PanelDisplay from "@features/home/components/PanelDisplay";
@@ -800,7 +799,6 @@ const HomePage = () => {
       <WinnerDisplay winner={lastWinner} winAmount={winInfo?.win_amount} />
       <TimerDisplay time={time} />
       <TimerDisplayGif time={time} />
-      <GifDisplay />
       <WheelDisplay
         spinTrigger={spinCount}
         spinStartMs={spinStartMs}
