@@ -44,7 +44,7 @@ const BUTTONS = [
     base: exitBtn,
     glow: exitGlow,
     zoom: 1.05,
-    box: { left: "91%", top: "94.5%", width: "8.5%", height: "5%" },
+    box: { left: "91%", top: "94.5%", width: "9%", height: "5%" },
   },
   {
     id: "cancelSpecific",

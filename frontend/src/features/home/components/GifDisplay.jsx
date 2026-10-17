@@ -2,9 +2,9 @@ import FTlogoGif from "@assets/images/gifs/FTlogo2.webp";
 
 const POS = {
   left: "0%",
-  top: "40%",
+  top: "41.5%",
   width: "100%",
-  height: "43%",
+  height: "38.2%",
 };
 
 const GifDisplay = () => {
