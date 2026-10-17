@@ -42,8 +42,8 @@ const DESKTOP_POINTER_POS = {
 const ANDROID_POS = {
   left: "50%",
   top: "38%",
-  width: "min(43vw, 62vh)",
-  height: "min(43vw, 62vh)",
+  width: "min(39vw, 58vh)",
+  height: "min(39vw, 58vh)",
   aspectRatio: "1 / 1",
   scaleX: 1.12,
 };
@@ -188,10 +188,10 @@ const WheelDisplay = ({
         winNum != null
           ? winNum
           : winnerResolvedRef.current != null
-          ? winnerResolvedRef.current
-          : targetWinnerRef.current != null
-          ? targetWinnerRef.current
-          : 0;
+            ? winnerResolvedRef.current
+            : targetWinnerRef.current != null
+              ? targetWinnerRef.current
+              : 0;
 
       const finalAngle =
         decelFinalAngleRef.current ||
