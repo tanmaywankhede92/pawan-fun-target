@@ -8,27 +8,79 @@ import bonus from "@assets/images/gifs/joker3.webp";
 import drum from "@assets/images/gifs/joker4.webp";
 import pointerGif from "@assets/images/gifs/DG.webp";
 
-const POS = {
+// ========================================================
+// 💻 1. DESKTOP / LAPTOP / BROWSER CONFIGURATION
+// (Aapke desktop/laptop browser ke liye alag setting)
+// ========================================================
+const DESKTOP_POS = {
   left: "50%",
   top: "37%",
   width: "min(46vw, 66vh)",
   height: "min(46vw, 66vh)",
   aspectRatio: "1 / 1",
+  scaleX: 1.23,
 };
 
-const OVERLAY_POS = {
+const DESKTOP_OVERLAY_POS = {
   left: "50%",
   top: "50%",
   width: "33.3%",
   height: "33.3%",
 };
 
-const POINTER_POS = {
+const DESKTOP_POINTER_POS = {
   left: "50%",
   top: "2.0%",
   width: "11%",
   height: "auto",
 };
+
+// ========================================================
+// 📱 📺 2. ANDROID APP & ANDROID TV CONFIGURATION
+// (Android TV aur Android mobile APK ke liye alag setting)
+// ========================================================
+const ANDROID_POS = {
+  left: "50%",
+  top: "38%",
+  width: "min(43vw, 62vh)",
+  height: "min(43vw, 62vh)",
+  aspectRatio: "1 / 1",
+  scaleX: 1.12,
+};
+
+const ANDROID_OVERLAY_POS = {
+  left: "50%",
+  top: "50%",
+  width: "33.3%",
+  height: "33.3%",
+};
+
+const ANDROID_POINTER_POS = {
+  left: "50%",
+  top: "2.0%",
+  width: "11%",
+  height: "auto",
+};
+
+// Auto-detect platform: Android App/TV vs Desktop Browser
+const isAndroidPlatform = () => {
+  if (typeof window === "undefined") return false;
+  const search = window.location?.search || "";
+  if (search.includes("platform=android")) return true;
+  if (search.includes("platform=desktop")) return false;
+
+  if (window.Capacitor?.isNativePlatform?.() && window.Capacitor?.getPlatform?.() === "android") {
+    return true;
+  }
+  const ua = navigator.userAgent || "";
+  return /Android/i.test(ua) && !/Windows NT|Macintosh|Mac OS X/i.test(ua);
+};
+
+const IS_ANDROID = isAndroidPlatform();
+
+const POS = IS_ANDROID ? ANDROID_POS : DESKTOP_POS;
+const OVERLAY_POS = IS_ANDROID ? ANDROID_OVERLAY_POS : DESKTOP_OVERLAY_POS;
+const POINTER_POS = IS_ANDROID ? ANDROID_POINTER_POS : DESKTOP_POINTER_POS;
 
 const NON_JACKPOT_IMAGES = [goldie, bonus, drum];
 
@@ -342,11 +394,12 @@ const WheelDisplay = ({
 
   return (
     <div
-      className="absolute pointer-events-none select-none ft-responsive-wheel"
+      className={`absolute pointer-events-none select-none ${IS_ANDROID ? "ft-wheel-android" : "ft-wheel-desktop"}`}
       style={{
         left: POS.left,
         top: POS.top,
         width: POS.width,
+        height: POS.height,
         maxWidth: "100%",
         maxHeight: "100%",
         aspectRatio: "1 / 1",
@@ -430,17 +483,23 @@ const WheelDisplay = ({
       </div>
 
       <style>{`
-        /* Rectangular screens (16:9 TVs, widescreen laptops, mobile landscape):
-           scaleX(1.23) stretches the wheel horizontally to match the 16:9 stretched background */
-        .ft-responsive-wheel {
-          transform: translate(-50%, -50%) scaleX(1.23);
-          width: min(46vw, 66vh);
-          height: min(46vw, 66vh);
+        /* Android TV & Android App wheel styling */
+        .ft-wheel-android {
+          transform: translate(-50%, -50%) scaleX(${ANDROID_POS.scaleX});
+          width: ${ANDROID_POS.width};
+          height: ${ANDROID_POS.height};
+        }
+
+        /* Desktop & Laptop browser wheel styling */
+        .ft-wheel-desktop {
+          transform: translate(-50%, -50%) scaleX(${DESKTOP_POS.scaleX});
+          width: ${DESKTOP_POS.width};
+          height: ${DESKTOP_POS.height};
         }
 
         /* Semi-square screens (ratio <= 1.4, like tablets / 14:10 displays) */
         @media (max-aspect-ratio: 14/10) {
-          .ft-responsive-wheel {
+          .ft-wheel-desktop, .ft-wheel-android {
             transform: translate(-50%, -50%) scaleX(1.10);
             width: min(45vw, 65vh) !important;
             height: min(45vw, 65vh) !important;
@@ -449,7 +508,7 @@ const WheelDisplay = ({
 
         /* Square screens (ratio <= 1.2, like 4:3 displays / iPads) */
         @media (max-aspect-ratio: 12/10) {
-          .ft-responsive-wheel {
+          .ft-wheel-desktop, .ft-wheel-android {
             transform: translate(-50%, -50%) scaleX(1.0);
             width: min(48vw, 62vh) !important;
             height: min(48vw, 62vh) !important;
@@ -460,5 +519,5 @@ const WheelDisplay = ({
   );
 };
 
-export { POS as wheelPos };
+export { POS as wheelPos, DESKTOP_POS, ANDROID_POS };
 export default WheelDisplay;
