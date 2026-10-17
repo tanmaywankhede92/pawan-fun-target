@@ -73,7 +73,6 @@ import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@context/AuthContext";
 import AppRoutes from "@routes/AppRoutes";
 import FullscreenHandler from "@components/common/FullscreenHandler";
-import VirtualCursor from "@components/common/VirtualCursor";
 import useTvNavigation from "@hooks/useTvNavigation";
 import prevImg from "@assets/images/background/prevImg.webp";
 import { SplashScreen as CapSplash } from "@capacitor/splash-screen";
@@ -124,7 +123,6 @@ const App = () => {
     <BrowserRouter>
       <AuthProvider>
         <FullscreenHandler />
-        <VirtualCursor />
         <AppRoutes />
       </AuthProvider>
     </BrowserRouter>

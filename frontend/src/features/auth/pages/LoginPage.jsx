@@ -22,7 +22,7 @@ const LoginPage = () => {
   const { play } = useSound();
 
   const handleEnter = useCallback(async () => {
-    const trimmedUser = username.trim();
+    const trimmedUser = username.trim().toLowerCase();
     if (!trimmedUser || !password) return;
     if (loading) return;
     play("CLICK");
@@ -70,7 +70,7 @@ const LoginPage = () => {
 
       <UsernameInput
         value={username}
-        onChange={setUsername}
+        onChange={(val) => setUsername((val || "").toLowerCase())}
         onKeyDown={handleKeyDown}
       />
       <PasswordInput

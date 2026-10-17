@@ -21,7 +21,7 @@ const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
       <input
         type="text"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value.toLowerCase())}
         onKeyDown={onKeyDown}
         onFocus={onFocus}
         onBlur={onBlur}
@@ -33,6 +33,7 @@ const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
           boxSizing: "border-box",
           paddingLeft: "12px",
           marginLeft: "0px",
+          textTransform: "lowercase",
         }}
       />
     </div>

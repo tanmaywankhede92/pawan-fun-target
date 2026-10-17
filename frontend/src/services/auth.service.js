@@ -17,6 +17,9 @@ const getDeviceType = () => {
 
 const normalizeLoginPayload = (credentials = {}) => {
   const normalized = { ...credentials };
+  if (normalized.username) {
+    normalized.username = String(normalized.username).trim().toLowerCase();
+  }
   const resolvedDeviceUuid = credentials.deviceUuid || credentials.device_uuid || deviceUuid;
 
   normalized.device = credentials.device || getDeviceType();

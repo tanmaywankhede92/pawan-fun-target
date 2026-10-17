@@ -60,14 +60,14 @@ const PointTransferModal = ({
 
     play("CLICK");
 
-    const targetAccount = account.trim();
+    const targetAccount = account.trim().toLowerCase();
     if (!targetAccount) {
       setResponseType("error");
       setResponseMsg("ENTER TO ACCOUNT NO");
       return;
     }
 
-    if (targetAccount.toLowerCase() === (user?.username || "").toLowerCase()) {
+    if (targetAccount === (user?.username || "").toLowerCase()) {
       setResponseType("error");
       setResponseMsg("CANNOT TRANSFER TO OWN ACCOUNT");
       return;
@@ -176,7 +176,7 @@ const PointTransferModal = ({
             value={account}
             disabled={loading}
             onChange={(e) => {
-              setAccount(e.target.value);
+              setAccount(e.target.value.toLowerCase());
               if (responseType === "error") setResponseMsg("");
             }}
             onKeyDown={(e) => {
