@@ -19,6 +19,7 @@ import TimerDisplayGif, {
   gifPos,
 } from "@features/home/components/TimerDisplayGif";
 import WheelDisplay, { wheelPos } from "@features/home/components/WheelDisplay";
+import GifDisplay from "@features/home/components/GifDisplay";
 import NumberDisplay from "@features/home/components/NumberDisplay";
 import PanelDisplay from "@features/home/components/PanelDisplay";
 import ButtonDisplay from "@features/home/components/ButtonDisplay";
@@ -806,6 +807,7 @@ const HomePage = () => {
         joker={lastJoker}
         onComplete={handleSpinComplete}
       />
+      <GifDisplay />
       {resultError && (
         <div
           className="absolute pointer-events-none text-red-600 text-center z-40"

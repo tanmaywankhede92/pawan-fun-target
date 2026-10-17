@@ -26,7 +26,7 @@ const BUTTONS = [
     base: takeBtn,
     glow: takeBetGlow,
     zoom: 1.05,
-    box: { left: "0.8%", bottom: "21.2%", width: "13.6%", height: "5%" },
+    box: { left: "0%", bottom: "21.2%", width: "14.2%", height: "5%" },
   },
   {
     id: "preview",
@@ -35,7 +35,7 @@ const BUTTONS = [
     base: previewBtn,
     glow: previewGlow,
     zoom: 1.05,
-    box: { left: "85.6%", bottom: "21.2%", width: "13.6%", height: "5%" },
+    box: { left: "85.4%", bottom: "21.2%", width: "14.6%", height: "5%" },
   },
   {
     id: "exit",
@@ -182,9 +182,8 @@ const ButtonDisplay = ({
                 decoding="async"
                 src={btn.glow}
                 alt={`${btn.name} glow`}
-                className={`absolute pointer-events-none ${
-                  blink || takeBlink ? "ft-blink" : ""
-                }`}
+                className={`absolute pointer-events-none ${blink || takeBlink ? "ft-blink" : ""
+                  }`}
                 style={{
                   width: `${btn.zoom * 100}%`,
                   height: `${btn.zoom * 100}%`,
