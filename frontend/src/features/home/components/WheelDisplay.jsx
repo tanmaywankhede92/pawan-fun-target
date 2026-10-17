@@ -430,24 +430,27 @@ const WheelDisplay = ({
       </div>
 
       <style>{`
-        /* Perfectly circular wheel matching arcade Fun Target design */
+        /* Rectangular screens (16:9 TVs, widescreen laptops, mobile landscape):
+           scaleX(1.23) stretches the wheel horizontally to match the 16:9 stretched background */
         .ft-responsive-wheel {
-          transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%) scaleX(1.23);
           width: min(46vw, 66vh);
           height: min(46vw, 66vh);
         }
 
+        /* Semi-square screens (ratio <= 1.4, like tablets / 14:10 displays) */
         @media (max-aspect-ratio: 14/10) {
           .ft-responsive-wheel {
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%) scaleX(1.10);
             width: min(45vw, 65vh) !important;
             height: min(45vw, 65vh) !important;
           }
         }
 
+        /* Square screens (ratio <= 1.2, like 4:3 displays / iPads) */
         @media (max-aspect-ratio: 12/10) {
           .ft-responsive-wheel {
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%) scaleX(1.0);
             width: min(48vw, 62vh) !important;
             height: min(48vw, 62vh) !important;
           }
