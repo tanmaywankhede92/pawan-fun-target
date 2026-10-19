@@ -14,7 +14,7 @@ import { useSound } from "@hooks/useSound";
 //               rolling up or down; it stops as soon as the roll ends
 const useAnimatedNumber = (
   target,
-  { tick = 10, maxSteps = 150, snapDown = false, sound = null } = {},
+  { tick = 25, maxSteps = 60, snapDown = false, sound = null } = {},
 ) => {
   const { play, stop } = useSound();
   const [value, setValue] = useState(() => Number(target) || 0);

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useLayoutEffect, memo } from "react";
 import { useSound } from "@hooks/useSound";
 import wheelImg from "@assets/images/wheel/wheel.webp";
 import wheelGif from "@assets/images/gifs/joker_gif1_slow.webp";
@@ -10,15 +10,14 @@ import pointerGif from "@assets/images/gifs/DG.webp";
 
 // ========================================================
 // 💻 1. DESKTOP / LAPTOP / BROWSER CONFIGURATION
-// (Aapke desktop/laptop browser ke liye alag setting)
 // ========================================================
 const DESKTOP_POS = {
   left: "50%",
   top: "37%",
-  width: "min(46vw, 66vh)",
-  height: "min(46vw, 66vh)",
+  width: "min(45vw, 54vh)",
+  height: "min(45vw, 54vh)",
   aspectRatio: "1 / 1",
-  scaleX: 1.23,
+  scaleX: 1.46,
 };
 
 const DESKTOP_OVERLAY_POS = {
@@ -37,15 +36,15 @@ const DESKTOP_POINTER_POS = {
 
 // ========================================================
 // 📱 📺 2. ANDROID APP & ANDROID TV CONFIGURATION
-// (Android TV aur Android mobile APK ke liye alag setting)
+// (Reference photo matching: width 44.3vw, height 54vh, scaleX 1.46, top 37%)
 // ========================================================
 const ANDROID_POS = {
   left: "50%",
-  top: "38%",
-  width: "min(39vw, 58vh)",
-  height: "min(39vw, 58vh)",
+  top: "37%",
+  width: "min(45vw, 54vh)",
+  height: "min(45vw, 54vh)",
   aspectRatio: "1 / 1",
-  scaleX: 1.12,
+  scaleX: 1.46,
 };
 
 const ANDROID_OVERLAY_POS = {
@@ -444,16 +443,12 @@ const WheelDisplay = ({
   const showGif = spinning;
 
   // ── Glitch prevention ──────────────────────────────────────────────
-  // The rAF loop writes directly to wheelImgRef.current.style.transform
-  // at 60 fps. If React re-renders for ANY reason (timer tick, state change
-  // in parent, setSpinning, etc.) it would overwrite the transform with the
-  // stale `rotation` state value → visible snap/jump.
-  // useLayoutEffect (no deps = runs after EVERY render, synchronously before
-  // the browser paints) corrects the transform back to rotationRef.current
-  // so the browser never sees the wrong value.
+  // Guard: NEVER overwrite the transform while the 60fps rAF spin loop
+  // is actively running. When not spinning, maintain translate3d to preserve
+  // the GPU composition layer on Android TV.
   useLayoutEffect(() => {
-    if (wheelImgRef.current) {
-      wheelImgRef.current.style.transform = `rotate(${rotationRef.current}deg)`;
+    if (wheelImgRef.current && !spinningRef.current) {
+      wheelImgRef.current.style.transform = `translate3d(0, 0, 0) rotate(${rotationRef.current}deg)`;
     }
   });
 
@@ -467,6 +462,11 @@ const WheelDisplay = ({
         width: `${dims.width}px`,
         height: `${dims.height}px`,
         transform: `translate(-50%, -50%) scaleX(${POS.scaleX || 1})`,
+        transformOrigin: "50% 50%",
+        willChange: "transform",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+        contain: "layout style paint",
         overflow: "visible",
         zIndex: 2,
         isolation: "isolate",
@@ -541,7 +541,6 @@ const WheelDisplay = ({
             width: POINTER_POS.width,
             height: POINTER_POS.width,
             transform: "translate(-50%, -50%)",
-            filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.4))",
           }}
         />
       </div>
@@ -557,4 +556,4 @@ const WheelDisplay = ({
 };
 
 export { POS as wheelPos, DESKTOP_POS, ANDROID_POS };
-export default WheelDisplay;
+export default memo(WheelDisplay);
