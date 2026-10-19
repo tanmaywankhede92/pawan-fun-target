@@ -107,6 +107,11 @@ public class MainActivity extends BridgeActivity {
     private void configureWebView() {
         WebView webView = getBridge().getWebView();
 
+        // Enable Chrome DevTools inspection (chrome://inspect/#devices)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            WebView.setWebContentsDebuggingEnabled(true);
+        }
+
         // WebView settings for smooth game performance.
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);

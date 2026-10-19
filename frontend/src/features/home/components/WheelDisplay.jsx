@@ -69,9 +69,19 @@ const isAndroidPlatform = () => {
   if (search.includes("platform=android")) return true;
   if (search.includes("platform=desktop")) return false;
 
+  // Native Android bridge injected by MainActivity.java
+  if (window.Android) return true;
+
+  // Capacitor native platform
   if (window.Capacitor?.isNativePlatform?.() && window.Capacitor?.getPlatform?.() === "android") {
     return true;
   }
+
+  // Capacitor production webview origin (https://localhost without dev port)
+  if (window.location.hostname === "localhost" && !window.location.port) {
+    return true;
+  }
+
   const ua = navigator.userAgent || "";
   return /Android/i.test(ua) && !/Windows NT|Macintosh|Mac OS X/i.test(ua);
 };
@@ -116,6 +126,47 @@ const calculateFinalRotation = (currentRot, winnerNum, minSpins = 3) => {
   return currentRot + diff + minSpins * 360;
 };
 
+// Parses CSS dimension strings ("35vw", "35vh", "min(46vw, 66vh)", "300px") to exact pixels
+// Ensures 100% compatibility across both modern browsers and legacy Android TV WebViews (Chrome 74)
+const parseCssDimension = (val, defaultPx = 280) => {
+  if (typeof window === "undefined" || !val) return defaultPx;
+  if (typeof val === "number") return val;
+  const str = String(val).trim();
+
+  // Handle min(...) e.g. min(46vw, 66vh) or min(35vw, 35vh)
+  const minMatch = str.match(/min\s*\(\s*([^,]+)\s*,\s*([^)]+)\s*\)/i);
+  if (minMatch) {
+    const v1 = parseCssDimension(minMatch[1], defaultPx);
+    const v2 = parseCssDimension(minMatch[2], defaultPx);
+    return Math.min(v1, v2);
+  }
+
+  // Handle max(...)
+  const maxMatch = str.match(/max\s*\(\s*([^,]+)\s*,\s*([^)]+)\s*\)/i);
+  if (maxMatch) {
+    const v1 = parseCssDimension(maxMatch[1], defaultPx);
+    const v2 = parseCssDimension(maxMatch[2], defaultPx);
+    return Math.max(v1, v2);
+  }
+
+  if (str.endsWith("vh")) {
+    return Math.round((parseFloat(str) / 100) * window.innerHeight);
+  }
+  if (str.endsWith("vw")) {
+    return Math.round((parseFloat(str) / 100) * window.innerWidth);
+  }
+  if (str.endsWith("px")) {
+    return Math.round(parseFloat(str));
+  }
+  if (str.endsWith("%")) {
+    return Math.round(
+      (parseFloat(str) / 100) * Math.min(window.innerWidth, window.innerHeight),
+    );
+  }
+  const num = parseFloat(str);
+  return isNaN(num) ? defaultPx : num;
+};
+
 const WheelDisplay = ({
   spinTrigger,
   spinStartMs,
@@ -123,11 +174,25 @@ const WheelDisplay = ({
   joker,
   onComplete,
 }) => {
+  const getDims = useCallback(() => {
+    return {
+      width: parseCssDimension(POS.width, 280),
+      height: parseCssDimension(POS.height, 280),
+    };
+  }, []);
+
+  const [dims, setDims] = useState(getDims);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState(null);
   const [resultJoker, setResultJoker] = useState(() =>
     jokerImageFor(null, null),
   );
+
+  useEffect(() => {
+    const onResize = () => setDims(getDims());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [getDims]);
 
   const wheelImgRef = useRef(null);
   const rotationRef = useRef(0);
@@ -394,15 +459,14 @@ const WheelDisplay = ({
 
   return (
     <div
+      data-wheel-container
       className={`absolute pointer-events-none select-none ${IS_ANDROID ? "ft-wheel-android" : "ft-wheel-desktop"}`}
       style={{
         left: POS.left,
         top: POS.top,
-        width: POS.width,
-        height: POS.height,
-        maxWidth: "100%",
-        maxHeight: "100%",
-        aspectRatio: "1 / 1",
+        width: `${dims.width}px`,
+        height: `${dims.height}px`,
+        transform: `translate(-50%, -50%) scaleX(${POS.scaleX || 1})`,
         overflow: "visible",
         zIndex: 2,
         isolation: "isolate",
@@ -483,36 +547,9 @@ const WheelDisplay = ({
       </div>
 
       <style>{`
-        /* Android TV & Android App wheel styling */
-        .ft-wheel-android {
-          transform: translate(-50%, -50%) scaleX(${ANDROID_POS.scaleX});
-          width: ${ANDROID_POS.width};
-          height: ${ANDROID_POS.height};
-        }
-
-        /* Desktop & Laptop browser wheel styling */
+        .ft-wheel-android,
         .ft-wheel-desktop {
-          transform: translate(-50%, -50%) scaleX(${DESKTOP_POS.scaleX});
-          width: ${DESKTOP_POS.width};
-          height: ${DESKTOP_POS.height};
-        }
-
-        /* Semi-square screens (ratio <= 1.4, like tablets / 14:10 displays) */
-        @media (max-aspect-ratio: 14/10) {
-          .ft-wheel-desktop, .ft-wheel-android {
-            transform: translate(-50%, -50%) scaleX(1.10);
-            width: min(45vw, 65vh) !important;
-            height: min(45vw, 65vh) !important;
-          }
-        }
-
-        /* Square screens (ratio <= 1.2, like 4:3 displays / iPads) */
-        @media (max-aspect-ratio: 12/10) {
-          .ft-wheel-desktop, .ft-wheel-android {
-            transform: translate(-50%, -50%) scaleX(1.0);
-            width: min(48vw, 62vh) !important;
-            height: min(48vw, 62vh) !important;
-          }
+          transform-origin: 50% 50%;
         }
       `}</style>
     </div>
