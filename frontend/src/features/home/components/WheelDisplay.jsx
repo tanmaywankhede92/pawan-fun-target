@@ -6,7 +6,7 @@ import jackpot from "@assets/images/gifs/joker1.webp";
 import goldie from "@assets/images/gifs/joker2.webp";
 import bonus from "@assets/images/gifs/joker3.webp";
 import drum from "@assets/images/gifs/joker4.webp";
-import pointerGif from "@assets/images/gifs/DG.webp";
+import pointerGif from "@assets/images/gifs/DG.gif";
 
 // ========================================================
 // 💻 1. DESKTOP / LAPTOP / BROWSER CONFIGURATION
@@ -101,11 +101,10 @@ const jokerImageFor = (joker, winner) => {
 const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
 
-// Spin takes exactly 6.0 seconds total: starts immediately at :00, stops smoothly at 54s countdown
-const TOTAL_SPIN_DURATION_MS = 6000;
-const DECEL_DURATION_MS = 2200; // Smooth 2.2s deceleration matching physical wheel
-const MAX_SPEED = 0.9; // deg/ms = 900 deg/sec = 2.5 rev/sec
-const ACCEL_TIME_MS = 600;
+// Spin starts at 00s boundary and smoothly stops at 54s countdown (total ~6s)
+const MIN_CRUISE_MS = 3800; // Cruise through at least 3.8s before smooth deceleration
+const MAX_SPEED = 0.85; // deg/ms = 850 deg/sec (~2.36 rev/sec)
+const ACCEL_TIME_MS = 600; // Smooth 0.6s spin-up
 
 const angleFor = (w) =>
   ((SECTORS - (Number(w) % SECTORS)) % SECTORS) * SECTOR_ANGLE;
@@ -327,33 +326,43 @@ const WheelDisplay = ({
       const elapsed = now - startTime;
 
       // 1. Resolve winner from props ref if not yet resolved
-      if (winnerResolvedRef.current === null) {
-        if (targetWinnerRef.current != null) {
-          winnerResolvedRef.current = targetWinnerRef.current;
-        } else if (elapsed >= TOTAL_SPIN_DURATION_MS - 800) {
-          // Fallback if API hasn't replied by 5.2s
-          winnerResolvedRef.current = 0;
-        }
+      if (winnerResolvedRef.current === null && targetWinnerRef.current != null) {
+        winnerResolvedRef.current = targetWinnerRef.current;
+      }
+
+      // Safety fallback: if no winner arrived after 12s, fallback to 0
+      if (winnerResolvedRef.current === null && elapsed >= 12000) {
+        winnerResolvedRef.current = 0;
       }
 
       // 2. Determine when to start deceleration:
-      // Cruise at full speed until the deceleration window begins (DECEL_DURATION_MS before TOTAL_SPIN_DURATION_MS).
-      // This prevents the wheel from slowing down or stopping 2 seconds before the joker GIF!
-      const shouldDecelerate =
+      // Begins once winner is known AND minimum cruise time (3.8s) has passed.
+      // This ensures the spin covers 00s -> 54s countdown and stops smoothly at 54s.
+      const canDecelerate =
         winnerResolvedRef.current !== null &&
-        elapsed >= TOTAL_SPIN_DURATION_MS - DECEL_DURATION_MS;
+        elapsed >= MIN_CRUISE_MS;
 
-      if (decelStartTimeRef.current === null && shouldDecelerate) {
+      if (decelStartTimeRef.current === null && canDecelerate) {
         const w = winnerResolvedRef.current;
         decelStartTimeRef.current = now;
-        decelDurationRef.current = Math.max(1000, TOTAL_SPIN_DURATION_MS - elapsed);
         decelStartAngleRef.current = currentAngle;
-        const minSpins = Math.max(1, Math.round(decelDurationRef.current / 1100));
-        decelFinalAngleRef.current = calculateFinalRotation(
-          currentAngle,
-          w,
-          minSpins,
-        );
+
+        // Current speed is MAX_SPEED (0.85 deg/ms).
+        // For smooth cubic ease-out (1 - (1 - u)^3), initial speed = 3 * Distance / Duration.
+        // We match initial speed to MAX_SPEED so there is zero velocity jump:
+        // Ideal distance for ~2.0s deceleration = MAX_SPEED * 2000 / 3 = ~566 degrees.
+        const currentMod = ((currentAngle % 360) + 360) % 360;
+        const target = targetAngle(w);
+        const targetMod = ((target % 360) + 360) % 360;
+        let diff = targetMod - currentMod;
+        if (diff <= 0) diff += 360;
+
+        // Extra full spins so that total distance is around ~566 deg
+        let extraSpins = Math.max(1, Math.round((566 - diff) / 360));
+        const totalDecelDist = diff + extraSpins * 360;
+        decelFinalAngleRef.current = currentAngle + totalDecelDist;
+        // Adjust duration so v(0) = MAX_SPEED exactly! Zero velocity jump.
+        decelDurationRef.current = (3 * totalDecelDist) / MAX_SPEED;
       }
 
       // 3. Motion calculation
@@ -363,17 +372,17 @@ const WheelDisplay = ({
         const speed = MAX_SPEED * accel;
         currentAngle += speed * dt;
       } else {
-        // Deceleration phase: smooth quadratic ease-out (u * (2 - u))
-        // Stays visibly moving throughout the deceleration, settling on the exact winner at u = 1.0!
+        // Deceleration phase: smooth cubic ease-out (1 - (1 - u)^3)
+        // Velocity smoothly and continuously decays to 0.00 at u = 1.0 — zero snap!
         const decelElapsed = now - decelStartTimeRef.current;
         const u = Math.min(1, Math.max(0, decelElapsed / decelDurationRef.current));
-        const easeOut = u * (2 - u);
+        const easeOut = 1 - Math.pow(1 - u, 3);
         currentAngle =
           decelStartAngleRef.current +
           (decelFinalAngleRef.current - decelStartAngleRef.current) * easeOut;
 
-        // Finish spin: Wheel and Joker GIF stop at the EXACT SAME MOMENT
-        if (u >= 1 || elapsed >= TOTAL_SPIN_DURATION_MS) {
+        // Finish spin: Wheel naturally reaches speed 0 at target angle, Joker GIF stops at same instant
+        if (u >= 1) {
           currentAngle = decelFinalAngleRef.current;
           rotationRef.current = currentAngle;
           if (wheelImgRef.current) {
@@ -394,12 +403,12 @@ const WheelDisplay = ({
 
     rafIdRef.current = requestAnimationFrame(animate);
 
-    // Watchdog safety timeout: wheel MUST stop at 54s ("54 per stop ho jayenga iske bad nhi ghumnge any how")
+    // Watchdog safety timeout
     safetyTimeoutRef.current = setTimeout(() => {
       if (spinningRef.current) {
         finishSpin(winnerResolvedRef.current);
       }
-    }, TOTAL_SPIN_DURATION_MS + 200);
+    }, 15000);
 
     return () => {
       if (rafIdRef.current != null) {
@@ -445,7 +454,7 @@ const WheelDisplay = ({
     if (wheelImgRef.current && !spinningRef.current) {
       wheelImgRef.current.style.transform = `translate3d(0, 0, 0) rotate(${rotationRef.current}deg)`;
     }
-  });
+  }, [spinning]);
 
   return (
     <div
@@ -477,10 +486,8 @@ const WheelDisplay = ({
             transformOrigin: "50% 50%",
             objectFit: "contain",
             willChange: "transform",
-            transform: "translate3d(0, 0, 0)",
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
-            imageRendering: "-webkit-optimize-contrast",
           }}
         />
 
@@ -535,6 +542,7 @@ const WheelDisplay = ({
             width: POINTER_POS.width,
             height: POINTER_POS.width,
             transform: "translate(-50%, -50%)",
+            contain: "paint",
           }}
         />
       </div>

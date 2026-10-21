@@ -12,7 +12,7 @@ import jackpot from "@assets/images/gifs/joker1.webp";
 import goldie from "@assets/images/gifs/joker2.webp";
 import bonus from "@assets/images/gifs/joker3.webp";
 import drum from "@assets/images/gifs/joker4.webp";
-import pointerGif from "@assets/images/gifs/DG.webp";
+import pointerGif from "@assets/images/gifs/DG.gif";
 
 import PointTransferModal from "../components/PointTransferModal";
 
@@ -439,7 +439,23 @@ const PrePage = () => {
               role="button"
               data-tv-default={game.id === "funtarget" ? "true" : undefined}
               aria-label={game.name}
-              className={`prepage-game-item  ${isActive ? "active" : ""}`}
+              className={`prepage-game-item ${isActive ? "active" : ""}`}
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                gap: "6px",
+                width: "100%",
+                height: "28px",
+                minHeight: "28px",
+                maxHeight: "28px",
+                padding: "2px 6px",
+                boxSizing: "border-box",
+                borderRadius: "3px",
+                overflow: "hidden",
+                flexShrink: 0,
+              }}
               onFocus={(e) => {
                 setSelectedGameId(game.id);
                 e.currentTarget.scrollIntoView({
@@ -471,8 +487,37 @@ const PrePage = () => {
                 src={game.icon}
                 alt={game.name}
                 className="pointer-events-none"
+                style={{
+                  width: "32px",
+                  minWidth: "32px",
+                  maxWidth: "32px",
+                  height: "20px",
+                  minHeight: "20px",
+                  maxHeight: "20px",
+                  flex: "0 0 32px",
+                  objectFit: "cover",
+                  border: "none",
+                  borderRadius: "2px",
+                  display: "block",
+                }}
               />
-              <span className="prepage-game-title">{game.shortName || game.name}</span>
+              <span
+                className="prepage-game-title"
+                style={{
+                  flex: "1 1 auto",
+                  minWidth: 0,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  lineHeight: 1.1,
+                  textAlign: "left",
+                }}
+              >
+                {game.shortName || game.name}
+              </span>
             </div>
           );
         })}

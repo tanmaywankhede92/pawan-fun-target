@@ -12,7 +12,7 @@ const PRELOAD_IMAGES = [
   import("@assets/images/gifs/joker2.webp"),
   import("@assets/images/gifs/joker3.webp"),
   import("@assets/images/gifs/joker4.webp"),
-  import("@assets/images/gifs/DG.webp"),
+  import("@assets/images/gifs/DG.gif"),
   import("@assets/images/gifs/FTlogo2.webp"),
   import("@assets/images/gifs/timerDisplay.webp"),
 ];

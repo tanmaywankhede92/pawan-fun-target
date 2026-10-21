@@ -236,6 +236,7 @@ const HomePage = () => {
     setSpinStartMs(performance.now());
     setWheelSpinning(true);
     setSpinCount((c) => c + 1);
+
     try {
       const { data } = await resultService.getCurrentResult();
       const r = data?.result?.[0];
@@ -471,6 +472,7 @@ const HomePage = () => {
       }
     }
   }, [time, totalBet, handlePlaceBet, submitted, takePending]);
+
 
   // Phase message:
   //   last 10 sec      -> "Bet Time over"
