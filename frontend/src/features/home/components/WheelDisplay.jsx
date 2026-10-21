@@ -166,6 +166,17 @@ const parseCssDimension = (val, defaultPx = 280) => {
   return isNaN(num) ? defaultPx : num;
 };
 
+const getResponsiveScaleX = () => {
+  if (typeof window === "undefined") return 1.36;
+  const ar = window.innerWidth / Math.max(1, window.innerHeight);
+  // Standard 16:9 is 1.777. Standard 4:3 is 1.333. Square 1:1 is 1.0.
+  // On square / 4:3 displays, circular scale 1.0 fits the background stand perfectly.
+  if (ar >= 1.75) return 1.36;
+  if (ar <= 1.35) return 1.0;
+  const t = (ar - 1.35) / (1.75 - 1.35);
+  return Number((1.0 + t * (1.36 - 1.0)).toFixed(3));
+};
+
 const WheelDisplay = ({
   spinTrigger,
   spinStartMs,
@@ -177,6 +188,7 @@ const WheelDisplay = ({
     return {
       width: parseCssDimension(POS.width, 280),
       height: parseCssDimension(POS.height, 280),
+      scaleX: getResponsiveScaleX(),
     };
   }, []);
 
@@ -461,12 +473,11 @@ const WheelDisplay = ({
         top: POS.top,
         width: `${dims.width}px`,
         height: `${dims.height}px`,
-        transform: `translate(-50%, -50%) scaleX(${POS.scaleX || 1})`,
+        transform: `translate(-50%, -50%) scaleX(${dims.scaleX || POS.scaleX || 1})`,
         transformOrigin: "50% 50%",
         willChange: "transform",
         backfaceVisibility: "hidden",
         WebkitBackfaceVisibility: "hidden",
-        contain: "layout style",
         overflow: "visible",
         zIndex: 2,
         isolation: "isolate",

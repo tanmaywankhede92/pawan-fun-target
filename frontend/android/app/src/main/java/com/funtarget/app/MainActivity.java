@@ -97,17 +97,14 @@ public class MainActivity extends BridgeActivity {
     private void suppressSoftKeyboardIfTv() {
         if (!isRunningOnTv()) return;
         try {
-            getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
-            View decorView = getWindow().getDecorView();
-            decorView.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
-                try {
-                    android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-                    View focus = getCurrentFocus();
-                    if (imm != null && focus != null) {
-                        imm.hideSoftInputFromWindow(focus.getWindowToken(), 0);
-                    }
-                } catch (Exception ignored) {}
-            });
+            // FLAG_ALT_FOCUSABLE_IM (0x00020000): Inverts interaction with InputMethod so the
+            // soft keyboard (IME) is completely suppressed and never shown or popped up on screen,
+            // while hardware keyboards (USB, RF, Bluetooth) still deliver KeyEvents directly.
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
+            getWindow().setSoftInputMode(
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN |
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
+            );
         } catch (Exception ignored) {}
     }
 
@@ -174,6 +171,9 @@ public class MainActivity extends BridgeActivity {
         }
 
         // Android TV remote control & USB/Wireless mouse support
+        try {
+            webView.setMapTrackballToArrowKeys(false);
+        } catch (Exception ignored) {}
         webView.setFocusable(true);
         webView.setFocusableInTouchMode(true);
         webView.requestFocus();

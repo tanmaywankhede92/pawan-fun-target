@@ -22,7 +22,7 @@ const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
 
   return (
     <div
-      className="absolute ft-login-pos flex items-center bg-white cursor-text"
+      className="absolute ft-login-pos flex items-center bg-white cursor-text overflow-hidden"
       onClick={() => inputRef.current?.focus()}
       style={{
         left: POS.left,
@@ -31,10 +31,12 @@ const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
         height: POS.height,
         boxSizing: "border-box",
         paddingLeft: "12px",
+        borderRadius: "4px",
+        overflow: "hidden",
       }}
     >
       <span
-        className="select-none pointer-events-none font-bold text-black"
+        className="select-none pointer-events-none font-bold text-black flex-shrink-0"
         style={{
           fontSize: POS.fontSize,
           lineHeight: 1,
@@ -56,7 +58,7 @@ const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
         onFocus={onFocus}
         onBlur={onBlur}
         autoComplete="off"
-        className="flex-1 h-full border-none outline-none text-black caret-black cursor-text p-0 m-0 ft-login-field font-bold text-left bg-transparent"
+        className="flex-1 min-w-0 w-full h-full border-none outline-none text-black caret-black cursor-text p-0 m-0 ft-login-field font-bold text-left bg-transparent"
         style={{
           fontSize: POS.fontSize,
           lineHeight: 1,
@@ -64,6 +66,7 @@ const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
           paddingLeft: "0px",
           marginLeft: "0px",
           textTransform: "lowercase",
+          minWidth: 0,
         }}
       />
     </div>

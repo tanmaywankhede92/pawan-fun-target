@@ -79,7 +79,7 @@ const PanelDisplay = ({ selectedValue, onSelect, disabled = false }) => {
               tabIndex={disabled ? -1 : 0}
               role="button"
               aria-disabled={disabled}
-              className={`absolute overflow-visible cursor-pointer z-20 select-none transition-all duration-150 ${
+              className={`absolute overflow-visible cursor-pointer z-20 select-none outline-none focus:outline-none transition-all duration-150 ${
                 isSelected ? "scale-110" : isHovered || isFocused ? "scale-105" : "hover:scale-105"
               }`}
               style={{
@@ -89,6 +89,8 @@ const PanelDisplay = ({ selectedValue, onSelect, disabled = false }) => {
                 width: box.width,
                 height: box.height,
                 filter: ringFilter,
+                outline: "none",
+                WebkitTapHighlightColor: "transparent",
               }}
               onMouseEnter={() => setHovered(value)}
               onMouseLeave={() => setHovered(null)}

@@ -161,13 +161,15 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
               right: box.right,
               width: box.width,
               height: box.height,
+              transform: "translateZ(0)",
+              contain: "paint layout",
             }}
           >
             <div
               tabIndex={disabled ? -1 : 0}
               role="button"
               aria-disabled={disabled}
-              className="absolute inset-0 overflow-hidden cursor-pointer select-none"
+              className="absolute inset-0 overflow-hidden cursor-pointer select-none outline-none focus:outline-none"
               onMouseEnter={() => setHoveredNum(num)}
               onMouseLeave={() => {
                 setHoveredNum(null);
@@ -226,6 +228,8 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
                 WebkitTouchCallout: "none",
                 WebkitUserSelect: "none",
                 userSelect: "none",
+                outline: "none",
+                WebkitTapHighlightColor: "transparent",
               }}
             >
               {(isHovered || focusedNum === num || bet > 0 || isWinner) && img && (
