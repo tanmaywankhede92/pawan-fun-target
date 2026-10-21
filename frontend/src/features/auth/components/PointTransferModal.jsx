@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import modalBg from "@assets/images/background/pointTransferModal.webp";
 import { authService } from "@services/auth.service";
 import { useSound } from "@hooks/useSound";
+import { isAndroidTv } from "@utils/isTv";
 
 const PointTransferModal = ({
   open,
@@ -22,6 +23,28 @@ const PointTransferModal = ({
   const transferBtnRef = useRef(null);
   const closeBtnRef = useRef(null);
   const { play } = useSound();
+  const isTv = isAndroidTv();
+
+  const getDims = useCallback(() => {
+    if (typeof window === "undefined") return { width: 580, height: 332 };
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    let targetW = Math.min(620, Math.round(w * 0.65));
+    let targetH = Math.round((targetW * 531) / 928);
+    if (targetH > h * 0.72) {
+      targetH = Math.round(h * 0.72);
+      targetW = Math.round((targetH * 928) / 531);
+    }
+    return { width: Math.max(280, targetW), height: Math.max(160, targetH) };
+  }, []);
+
+  const [dims, setDims] = useState(getDims);
+
+  useEffect(() => {
+    const onResize = () => setDims(getDims());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [getDims]);
 
   // Reset fields and focus first input when opening modal
   useEffect(() => {
@@ -60,14 +83,15 @@ const PointTransferModal = ({
 
     play("CLICK");
 
-    const targetAccount = account.trim().toLowerCase();
+    const targetAccount = account.trim().toLowerCase().replace(/^gk/i, "");
     if (!targetAccount) {
       setResponseType("error");
       setResponseMsg("ENTER TO ACCOUNT NO");
       return;
     }
 
-    if (targetAccount === (user?.username || "").toLowerCase()) {
+    const currentUsername = (user?.username || "").toLowerCase().replace(/^gk/i, "");
+    if (targetAccount === currentUsername) {
       setResponseType("error");
       setResponseMsg("CANNOT TRANSFER TO OWN ACCOUNT");
       return;
@@ -99,7 +123,7 @@ const PointTransferModal = ({
 
     try {
       const payload = {
-        username: user?.username || "",
+        username: (user?.username || "").replace(/^gk/i, ""),
         user_transfer: targetAccount,
         pin: !isNaN(Number(pin)) ? Number(pin) : pin,
         amount: numAmount,
@@ -142,9 +166,11 @@ const PointTransferModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center select-none"
+      className="fixed inset-0 z-[100] flex items-center justify-center select-none"
       style={{
-        backgroundColor: "rgba(0, 0, 0, 0.35)",
+        backgroundColor: "rgba(0, 0, 0, 0.72)",
+        backdropFilter: "blur(2px)",
+        WebkitBackdropFilter: "blur(2px)",
       }}
       onClick={handleClose}
     >
@@ -155,51 +181,81 @@ const PointTransferModal = ({
         aria-label="Point Transfer Modal"
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: "min(72vw, calc(65vh * 928 / 531), 580px)",
-          height: "min(65vh, calc(72vw * 531 / 928), 332px)",
-          aspectRatio: "928 / 531",
+          width: `${dims.width}px`,
+          height: `${dims.height}px`,
           backgroundImage: `url(${modalBg})`,
           backgroundSize: "100% 100%",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
-          boxShadow: "0 12px 32px rgba(0, 0, 0, 0.9), 0 0 16px rgba(255, 60, 20, 0.4)",
+          boxShadow: "0 12px 36px rgba(0, 0, 0, 0.95), 0 0 20px rgba(255, 60, 20, 0.5)",
+          borderRadius: "16px",
         }}
       >
         <form onSubmit={handleSubmit} className="w-full h-full relative">
           {/* TO ACCOUNT NO input */}
-          <input
-            ref={accountInputRef}
-            type="text"
-            id="transfer-account"
-            name="user_transfer"
-            autoComplete="off"
-            value={account}
-            disabled={loading}
-            onChange={(e) => {
-              setAccount(e.target.value.toLowerCase());
-              if (responseType === "error") setResponseMsg("");
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "ArrowDown" || e.key === "Enter" || e.keyCode === 13 || e.keyCode === 23) {
-                e.preventDefault();
-                pinInputRef.current?.focus();
-              }
-            }}
-            placeholder="GK"
-            className="point-transfer-input"
+          <div
+            className="flex items-center cursor-text"
+            onClick={() => accountInputRef.current?.focus()}
             style={{
               position: "absolute",
               left: "34.7%",
               top: "17.3%",
               width: "33.5%",
               height: "10.7%",
+              paddingLeft: "14px",
+              boxSizing: "border-box",
             }}
-          />
+          >
+            <span
+              className="select-none pointer-events-none"
+              style={{
+                color: "#2b1103",
+                fontFamily: '"Playfair Display", "Times New Roman", serif, sans-serif',
+                fontWeight: 700,
+                fontSize: "clamp(12px, 1.8vw, 21px)",
+                lineHeight: 1,
+                paddingRight: "2px",
+                textShadow: "0 1px 1px rgba(255, 255, 255, 0.5)",
+              }}
+            >
+              GK
+            </span>
+            <input
+              ref={accountInputRef}
+              type="text"
+              inputMode={isTv ? "none" : undefined}
+              id="transfer-account"
+              name="user_transfer"
+              autoComplete="off"
+              value={(account || "").replace(/^gk/i, "")}
+              disabled={loading}
+              onChange={(e) => {
+                const raw = e.target.value.toLowerCase().replace(/^gk/i, "");
+                setAccount(raw);
+                if (responseType === "error") setResponseMsg("");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown" || e.key === "Enter" || e.keyCode === 13 || e.keyCode === 23) {
+                  e.preventDefault();
+                  pinInputRef.current?.focus();
+                }
+              }}
+              className="point-transfer-input"
+              style={{
+                flex: 1,
+                width: "100%",
+                height: "100%",
+                padding: "0",
+                background: "transparent",
+              }}
+            />
+          </div>
 
           {/* PIN input */}
           <input
             ref={pinInputRef}
             type="password"
+            inputMode={isTv ? "none" : undefined}
             id="transfer-pin"
             name="pin"
             autoComplete="new-password"
@@ -233,6 +289,7 @@ const PointTransferModal = ({
           <input
             ref={amountInputRef}
             type="number"
+            inputMode={isTv ? "none" : undefined}
             id="transfer-amount"
             name="amount"
             min="1"

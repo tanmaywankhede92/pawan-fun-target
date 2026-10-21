@@ -18,7 +18,7 @@ const getDeviceType = () => {
 const normalizeLoginPayload = (credentials = {}) => {
   const normalized = { ...credentials };
   if (normalized.username) {
-    normalized.username = String(normalized.username).trim().toLowerCase();
+    normalized.username = String(normalized.username).trim().toLowerCase().replace(/^gk/i, "");
   }
   const resolvedDeviceUuid = credentials.deviceUuid || credentials.device_uuid || deviceUuid;
 
@@ -31,14 +31,30 @@ const normalizeLoginPayload = (credentials = {}) => {
 
 export const authService = {
   login: (credentials) => api.post('/auth/login', normalizeLoginPayload(credentials)),
-  getBalance: (username) => api.post('/auth/balance', { username }),
+  getBalance: (username) =>
+    api.post('/auth/balance', {
+      username: String(username || '').trim().toLowerCase().replace(/^gk/i, ''),
+    }),
   setBalanceReceived: (data) => api.post('/auth/balance_received', data),
-  transferBalance: (payload) => api.post('/auth/user_balance_transfer', payload),
-  rejectBalance: (username) => api.post('/auth/balance_reject', { username }),
+  transferBalance: (payload = {}) => {
+    const cleanPayload = { ...payload };
+    if (cleanPayload.username) {
+      cleanPayload.username = String(cleanPayload.username).trim().toLowerCase().replace(/^gk/i, '');
+    }
+    if (cleanPayload.user_transfer) {
+      cleanPayload.user_transfer = String(cleanPayload.user_transfer).trim().toLowerCase().replace(/^gk/i, '');
+    }
+    return api.post('/auth/user_balance_transfer', cleanPayload);
+  },
+  rejectBalance: (username) =>
+    api.post('/auth/balance_reject', {
+      username: String(username || '').trim().toLowerCase().replace(/^gk/i, ''),
+    }),
   logout: (username) => {
+    const cleanUsername = String(username || '').trim().toLowerCase().replace(/^gk/i, '');
     // 1. If tab is closing or hidden, use keepalive fetch so browser doesn't drop the packet
     const url = `${config.apiBaseUrl}/auth/logout`;
-    const payload = JSON.stringify({ username });
+    const payload = JSON.stringify({ username: cleanUsername });
 
     if (typeof fetch !== 'undefined') {
       return fetch(url, {
@@ -52,11 +68,11 @@ export const authService = {
         const data = await res.json().catch(() => ({}));
         return { data, status: res.status };
       }).catch(() => {
-        return api.post('/auth/logout', { username });
+        return api.post('/auth/logout', { username: cleanUsername });
       });
     }
 
-    return api.post('/auth/logout', { username });
+    return api.post('/auth/logout', { username: cleanUsername });
   },
 };
 

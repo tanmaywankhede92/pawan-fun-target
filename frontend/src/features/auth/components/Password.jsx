@@ -1,6 +1,7 @@
 // === ADJUST THESE VALUES TO MATCH YOUR IMAGE ===
 import { useState } from "react";
 import { useSound } from "@hooks/useSound";
+import { isAndroidTv } from "@utils/isTv";
 
 const POS = {
   left: "25%",
@@ -43,6 +44,7 @@ const EyeOffIcon = () => (
 const PasswordInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
   const [showPassword, setShowPassword] = useState(false);
   const { play } = useSound();
+  const isTv = isAndroidTv();
 
   return (
     <div
@@ -56,6 +58,7 @@ const PasswordInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
     >
       <input
         type={showPassword ? "text" : "password"}
+        inputMode={isTv ? "none" : undefined}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}

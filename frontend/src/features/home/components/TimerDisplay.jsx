@@ -3,25 +3,24 @@ const POS = {
   top: "32.5%",
   width: "18.0%",
   height: "8.0%",
-  fontSize: "clamp(13px, min(2.0vw, 4.5vh), 30px)",
+  fontSize: "clamp(14px, min(1.8vw, 3.6vh), 28px)",
 };
 
 const TimerDisplay = ({ time }) => {
   return (
     <div
-      className="absolute pointer-events-none flex items-center justify-center text-center z-10 ft-timer-text tracking-[.13em] "
+      className="absolute pointer-events-none flex items-center justify-center text-center z-10 ft-timer-text tracking-[.13em]"
       style={{
         left: POS.left,
         top: POS.top,
         width: POS.width,
         height: POS.height,
         fontSize: POS.fontSize,
-        fontFamily: "'Digital-7', sans-serif",
+        fontFamily: "'Digital-7', monospace, sans-serif",
+        fontVariantNumeric: "lining-nums tabular-nums",
         color: "#1b0e00",
         fontWeight: "bold",
         lineHeight: 1,
-        WebkitTextStroke: "0.4px #1b0e00",
-        textShadow: "0 0 0.5px #1b0e00",
         whiteSpace: "nowrap",
         overflow: "visible",
       }}

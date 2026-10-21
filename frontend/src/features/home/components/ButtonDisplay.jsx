@@ -53,7 +53,7 @@ const BUTTONS = [
     base: cancelBtn,
     glow: cancelBetGlow,
     zoom: 1.05,
-    box: { left: "65.5%", bottom: "20.5%", width: "17.5%", height: "5%" },
+    box: { left: "65.0%", bottom: "20.5%", width: "18.2%", height: "5%" },
   },
 ];
 
@@ -201,12 +201,13 @@ const ButtonDisplay = ({
                 fontWeight: 700,
                 fontSize:
                   btn.id === "cancelSpecific"
-                    ? "clamp(6px, 0.85vw, 13px)"
+                    ? "clamp(5.5px, 0.72vw, 11px)"
                     : "clamp(7px, 1.25vw, 16px)",
-                letterSpacing: "0.01em",
+                letterSpacing: btn.id === "cancelSpecific" ? "-0.015em" : "0.01em",
                 textShadow: "0 1px 2px rgba(0, 0, 0, 0.65)",
                 transform: "translateY(-10%)",
                 whiteSpace: "nowrap",
+                padding: btn.id === "cancelSpecific" ? "0 4px" : undefined,
               }}
             >
               {name}

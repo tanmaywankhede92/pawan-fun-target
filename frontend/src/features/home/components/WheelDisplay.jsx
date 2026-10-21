@@ -13,11 +13,11 @@ import pointerGif from "@assets/images/gifs/DG.webp";
 // ========================================================
 const DESKTOP_POS = {
   left: "50%",
-  top: "37%",
-  width: "min(45vw, 54vh)",
-  height: "min(45vw, 54vh)",
+  top: "36.5%",
+  width: "min(45vw, 58vh)",
+  height: "min(45vw, 58vh)",
   aspectRatio: "1 / 1",
-  scaleX: 1.46,
+  scaleX: 1.36,
 };
 
 const DESKTOP_OVERLAY_POS = {
@@ -29,7 +29,7 @@ const DESKTOP_OVERLAY_POS = {
 
 const DESKTOP_POINTER_POS = {
   left: "50%",
-  top: "2.0%",
+  top: "2.6%",
   width: "11%",
   height: "auto",
 };
@@ -40,11 +40,11 @@ const DESKTOP_POINTER_POS = {
 // ========================================================
 const ANDROID_POS = {
   left: "50%",
-  top: "37%",
-  width: "min(45vw, 54vh)",
-  height: "min(45vw, 54vh)",
+  top: "36.5%",
+  width: "min(45vw, 58vh)",
+  height: "min(45vw, 58vh)",
   aspectRatio: "1 / 1",
-  scaleX: 1.46,
+  scaleX: 1.36,
 };
 
 const ANDROID_OVERLAY_POS = {
@@ -56,7 +56,7 @@ const ANDROID_OVERLAY_POS = {
 
 const ANDROID_POINTER_POS = {
   left: "50%",
-  top: "2.0%",
+  top: "2.6%",
   width: "11%",
   height: "auto",
 };
@@ -466,7 +466,7 @@ const WheelDisplay = ({
         willChange: "transform",
         backfaceVisibility: "hidden",
         WebkitBackfaceVisibility: "hidden",
-        contain: "layout style paint",
+        contain: "layout style",
         overflow: "visible",
         zIndex: 2,
         isolation: "isolate",

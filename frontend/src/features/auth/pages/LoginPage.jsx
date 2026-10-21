@@ -22,7 +22,7 @@ const LoginPage = () => {
   const { play } = useSound();
 
   const handleEnter = useCallback(async () => {
-    const trimmedUser = username.trim().toLowerCase();
+    const trimmedUser = username.trim().toLowerCase().replace(/^gk/i, "");
     if (!trimmedUser || !password) return;
     if (loading) return;
     play("CLICK");

@@ -35,6 +35,10 @@ public class MainActivity extends BridgeActivity {
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
         );
 
+        // Suppress on-screen virtual keyboard on Android TV:
+        // Hardware keyboard device is connected; soft keyboard must never display on screen.
+        suppressSoftKeyboardIfTv();
+
         // After Capacitor bridge initialises, configure the WebView and inject
         // the native → JS bridge that closeApplication.js and the session
         // guard hook look for.
@@ -74,6 +78,37 @@ public class MainActivity extends BridgeActivity {
             webView.clearCache(false);
         } catch (Exception ignored) {
         }
+    }
+
+    private boolean isRunningOnTv() {
+        try {
+            android.app.UiModeManager uiModeManager = (android.app.UiModeManager) getSystemService(UI_MODE_SERVICE);
+            if (uiModeManager != null && uiModeManager.getCurrentModeType() == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION) {
+                return true;
+            }
+            android.content.pm.PackageManager pm = getPackageManager();
+            return pm.hasSystemFeature(android.content.pm.PackageManager.FEATURE_LEANBACK)
+                || pm.hasSystemFeature("android.hardware.type.television");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void suppressSoftKeyboardIfTv() {
+        if (!isRunningOnTv()) return;
+        try {
+            getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+            View decorView = getWindow().getDecorView();
+            decorView.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+                try {
+                    android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                    View focus = getCurrentFocus();
+                    if (imm != null && focus != null) {
+                        imm.hideSoftInputFromWindow(focus.getWindowToken(), 0);
+                    }
+                } catch (Exception ignored) {}
+            });
+        } catch (Exception ignored) {}
     }
 
     private void hideSystemUI() {
@@ -165,17 +200,7 @@ public class MainActivity extends BridgeActivity {
                 // Detect if the running device is an Android TV / Google TV
                 @android.webkit.JavascriptInterface
                 public boolean isAndroidTV() {
-                    try {
-                        android.app.UiModeManager uiModeManager = (android.app.UiModeManager) getSystemService(UI_MODE_SERVICE);
-                        if (uiModeManager != null && uiModeManager.getCurrentModeType() == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION) {
-                            return true;
-                        }
-                        android.content.pm.PackageManager pm = getPackageManager();
-                        return pm.hasSystemFeature(android.content.pm.PackageManager.FEATURE_LEANBACK)
-                            || pm.hasSystemFeature("android.hardware.type.television");
-                    } catch (Exception e) {
-                        return false;
-                    }
+                    return isRunningOnTv();
                 }
             },
             "Android"

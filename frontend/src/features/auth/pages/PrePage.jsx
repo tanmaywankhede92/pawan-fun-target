@@ -422,8 +422,7 @@ const PrePage = () => {
                 alt={game.name}
                 className="pointer-events-none"
               />
-              <span className="prepage-name-desktop">{game.name}</span>
-              <span className="prepage-name-mobile">{game.shortName || game.name}</span>
+              <span className="font-bold text-white tracking-wide">{game.name}</span>
             </div>
           );
         })}
