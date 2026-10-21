@@ -2,11 +2,11 @@ import { useRef } from "react";
 import { isAndroidTv } from "@utils/isTv";
 
 const POS = {
-  left: "25%",
-  top: "78%",
-  width: "24%",
-  height: "6%",
-  fontSize: "clamp(11px, 3.2vh, 18px)",
+  left: "25.2%",
+  top: "78.6%",
+  width: "23%",
+  height: "4.7%",
+  fontSize: "clamp(12px, 2.5vh, 19px)",
 };
 
 const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
@@ -22,7 +22,7 @@ const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
 
   return (
     <div
-      className="absolute ft-login-pos flex items-center bg-white cursor-text overflow-hidden"
+      className="absolute ft-login-pos flex items-center bg-white cursor-text"
       onClick={() => inputRef.current?.focus()}
       style={{
         left: POS.left,
@@ -30,20 +30,23 @@ const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
         width: POS.width,
         height: POS.height,
         boxSizing: "border-box",
-        paddingLeft: "12px",
+        paddingLeft: "14px",
+        paddingRight: "10px",
         borderRadius: "4px",
+
         overflow: "hidden",
       }}
     >
       <span
-        className="select-none pointer-events-none font-bold text-black flex-shrink-0"
+        className="select-none pointer-events-none flex-shrink-0"
         style={{
           fontSize: POS.fontSize,
           lineHeight: 1,
-          paddingRight: "2px",
-          color: "#000",
-          fontWeight: 700,
-          fontFamily: "inherit",
+          paddingRight: "0px",
+          color: "#1a1a1a",
+          fontWeight: 400,
+          fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+          letterSpacing: "0.5px",
         }}
       >
         GK
@@ -58,10 +61,15 @@ const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
         onFocus={onFocus}
         onBlur={onBlur}
         autoComplete="off"
-        className="flex-1 min-w-0 w-full h-full border-none outline-none text-black caret-black cursor-text p-0 m-0 ft-login-field font-bold text-left bg-transparent"
+        spellCheck="false"
+        className="flex-1 min-w-0 w-full h-full border-none outline-none caret-black cursor-text p-0 m-0 ft-login-field text-left bg-transparent"
         style={{
           fontSize: POS.fontSize,
           lineHeight: 1,
+          fontWeight: 400,
+          fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+          color: "#1a1a1a",
+          letterSpacing: "0.5px",
           boxSizing: "border-box",
           paddingLeft: "0px",
           marginLeft: "0px",
@@ -73,5 +81,4 @@ const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
   );
 };
 
-export { POS as usernamePos };
 export default UsernameInput;

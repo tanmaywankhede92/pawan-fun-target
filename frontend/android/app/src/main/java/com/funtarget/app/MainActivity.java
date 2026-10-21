@@ -95,11 +95,10 @@ public class MainActivity extends BridgeActivity {
     }
 
     private void suppressSoftKeyboardIfTv() {
-        if (!isRunningOnTv()) return;
         try {
-            // FLAG_ALT_FOCUSABLE_IM (0x00020000): Inverts interaction with InputMethod so the
-            // soft keyboard (IME) is completely suppressed and never shown or popped up on screen,
-            // while hardware keyboards (USB, RF, Bluetooth) still deliver KeyEvents directly.
+            // Invert interaction with InputMethod so the soft keyboard (IME) is completely
+            // suppressed and NEVER shown or popped up on screen, while hardware keyboards
+            // (USB, RF, Bluetooth, remote) deliver KeyEvents directly.
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
             getWindow().setSoftInputMode(
                 WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN |
@@ -197,10 +196,10 @@ public class MainActivity extends BridgeActivity {
                     });
                 }
 
-                // Detect if the running device is an Android TV / Google TV
+                // Detect if running on Android TV / client app
                 @android.webkit.JavascriptInterface
                 public boolean isAndroidTV() {
-                    return isRunningOnTv();
+                    return true;
                 }
             },
             "Android"

@@ -161,8 +161,7 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
               right: box.right,
               width: box.width,
               height: box.height,
-              transform: "translateZ(0)",
-              contain: "paint layout",
+              overflow: "visible",
             }}
           >
             <div

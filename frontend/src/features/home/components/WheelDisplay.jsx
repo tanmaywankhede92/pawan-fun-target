@@ -103,6 +103,7 @@ const SECTOR_ANGLE = 360 / SECTORS;
 
 // Spin takes exactly 6.0 seconds total: starts immediately at :00, stops smoothly at 54s countdown
 const TOTAL_SPIN_DURATION_MS = 6000;
+const DECEL_DURATION_MS = 2200; // Smooth 2.2s deceleration matching physical wheel
 const MAX_SPEED = 0.9; // deg/ms = 900 deg/sec = 2.5 rev/sec
 const ACCEL_TIME_MS = 600;
 
@@ -275,7 +276,7 @@ const WheelDisplay = ({
 
       rotationRef.current = finalAngle;
       if (wheelImgRef.current) {
-        wheelImgRef.current.style.transform = `rotate(${finalAngle}deg)`;
+        wheelImgRef.current.style.transform = `translate3d(0, 0, 0) rotate(${finalAngle}deg)`;
       }
 
       setSpinning(false);
@@ -315,20 +316,8 @@ const WheelDisplay = ({
     decelStartAngleRef.current = currentAngle;
     decelFinalAngleRef.current = 0;
 
-    // If targetWinner was already available at the moment spin triggered:
-    if (targetWinnerRef.current != null) {
-      const w = targetWinnerRef.current;
-      winnerResolvedRef.current = w;
-      decelStartTimeRef.current = startTime;
-      decelDurationRef.current = TOTAL_SPIN_DURATION_MS;
-      decelStartAngleRef.current = currentAngle;
-      const minSpins = Math.max(2, Math.round(TOTAL_SPIN_DURATION_MS / 1200));
-      decelFinalAngleRef.current = calculateFinalRotation(
-        currentAngle,
-        w,
-        minSpins,
-      );
-    }
+    // Winner starts as null or whatever is already available in props
+    winnerResolvedRef.current = targetWinnerRef.current != null ? targetWinnerRef.current : null;
 
     const animate = (now) => {
       if (!spinningRef.current) return;
@@ -337,60 +326,54 @@ const WheelDisplay = ({
       lastTime = now;
       const elapsed = now - startTime;
 
-      // Check if targetWinner has arrived from the API
+      // 1. Resolve winner from props ref if not yet resolved
       if (winnerResolvedRef.current === null) {
-        const w = targetWinnerRef.current;
-        if (w != null) {
-          winnerResolvedRef.current = w;
-          decelStartTimeRef.current = now;
-          decelDurationRef.current = Math.max(
-            800,
-            TOTAL_SPIN_DURATION_MS - elapsed,
-          );
-          decelStartAngleRef.current = currentAngle;
-          const minSpins = Math.max(
-            1,
-            Math.round(decelDurationRef.current / 1200),
-          );
-          decelFinalAngleRef.current = calculateFinalRotation(
-            currentAngle,
-            w,
-            minSpins,
-          );
-        } else if (elapsed >= TOTAL_SPIN_DURATION_MS - 600) {
-          // Late fallback if API takes > 4.8s
-          const fallbackW = 0;
-          winnerResolvedRef.current = fallbackW;
-          decelStartTimeRef.current = now;
-          decelDurationRef.current = Math.max(
-            400,
-            TOTAL_SPIN_DURATION_MS - elapsed,
-          );
-          decelStartAngleRef.current = currentAngle;
-          decelFinalAngleRef.current = calculateFinalRotation(
-            currentAngle,
-            fallbackW,
-            1,
-          );
+        if (targetWinnerRef.current != null) {
+          winnerResolvedRef.current = targetWinnerRef.current;
+        } else if (elapsed >= TOTAL_SPIN_DURATION_MS - 800) {
+          // Fallback if API hasn't replied by 5.2s
+          winnerResolvedRef.current = 0;
         }
       }
 
-      if (winnerResolvedRef.current === null) {
-        // Accelerate and cruise phase
+      // 2. Determine when to start deceleration:
+      // Cruise at full speed until the deceleration window begins (DECEL_DURATION_MS before TOTAL_SPIN_DURATION_MS).
+      // This prevents the wheel from slowing down or stopping 2 seconds before the joker GIF!
+      const shouldDecelerate =
+        winnerResolvedRef.current !== null &&
+        elapsed >= TOTAL_SPIN_DURATION_MS - DECEL_DURATION_MS;
+
+      if (decelStartTimeRef.current === null && shouldDecelerate) {
+        const w = winnerResolvedRef.current;
+        decelStartTimeRef.current = now;
+        decelDurationRef.current = Math.max(1000, TOTAL_SPIN_DURATION_MS - elapsed);
+        decelStartAngleRef.current = currentAngle;
+        const minSpins = Math.max(1, Math.round(decelDurationRef.current / 1100));
+        decelFinalAngleRef.current = calculateFinalRotation(
+          currentAngle,
+          w,
+          minSpins,
+        );
+      }
+
+      // 3. Motion calculation
+      if (decelStartTimeRef.current === null) {
+        // Cruise phase: accelerate up to MAX_SPEED and spin at full speed alongside center GIF
         const accel = Math.min(1, elapsed / ACCEL_TIME_MS);
         const speed = MAX_SPEED * accel;
         currentAngle += speed * dt;
       } else {
-        // Deceleration phase: smooth cubic ease-out to target sector
+        // Deceleration phase: smooth quadratic ease-out (u * (2 - u))
+        // Stays visibly moving throughout the deceleration, settling on the exact winner at u = 1.0!
         const decelElapsed = now - decelStartTimeRef.current;
         const u = Math.min(1, Math.max(0, decelElapsed / decelDurationRef.current));
-        const easeOut = 1 - Math.pow(1 - u, 3);
+        const easeOut = u * (2 - u);
         currentAngle =
           decelStartAngleRef.current +
           (decelFinalAngleRef.current - decelStartAngleRef.current) * easeOut;
 
-        // Both wheel and center GIF must finish at the EXACT same instant (at TOTAL_SPIN_DURATION_MS)
-        if (elapsed >= TOTAL_SPIN_DURATION_MS || (u >= 1 && elapsed >= TOTAL_SPIN_DURATION_MS - 50)) {
+        // Finish spin: Wheel and Joker GIF stop at the EXACT SAME MOMENT
+        if (u >= 1 || elapsed >= TOTAL_SPIN_DURATION_MS) {
           currentAngle = decelFinalAngleRef.current;
           rotationRef.current = currentAngle;
           if (wheelImgRef.current) {

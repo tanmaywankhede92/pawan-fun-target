@@ -207,14 +207,14 @@ const PointTransferModal = ({
             }}
           >
             <span
-              className="select-none pointer-events-none"
+              className="select-none pointer-events-none font-semibold"
               style={{
                 color: "#2b1103",
                 fontFamily: '"Playfair Display", "Times New Roman", serif, sans-serif',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: "clamp(12px, 1.8vw, 21px)",
                 lineHeight: 1,
-                paddingRight: "2px",
+                paddingRight: "1px",
                 textShadow: "0 1px 1px rgba(255, 255, 255, 0.5)",
               }}
             >
@@ -240,13 +240,14 @@ const PointTransferModal = ({
                   pinInputRef.current?.focus();
                 }
               }}
-              className="point-transfer-input"
+              className="point-transfer-input font-semibold"
               style={{
                 flex: 1,
                 width: "100%",
                 height: "100%",
                 padding: "0",
                 background: "transparent",
+                fontWeight: 600,
               }}
             />
           </div>

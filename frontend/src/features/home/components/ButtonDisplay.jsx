@@ -201,8 +201,7 @@ const ButtonDisplay = ({
                 fontWeight: 700,
                 fontSize:
                   btn.id === "cancelSpecific"
-                    ? "clamp(5.5px, 0.72vw, 11px)"
-                    : "clamp(7px, 1.25vw, 16px)",
+                    ? "clamp(5.5px, 1.25vw, 20px)" : "clamp(7px, 1.25vw, 16px)",
                 letterSpacing: btn.id === "cancelSpecific" ? "-0.015em" : "0.01em",
                 textShadow: "0 1px 2px rgba(0, 0, 0, 0.65)",
                 transform: "translateY(-10%)",

@@ -31,6 +31,7 @@ import { useSound } from "@hooks/useSound";
 import { useTimer } from "@hooks/useTimer";
 import useGameSessionGuard from "@hooks/useGameSessionGuard";
 import useDigitBets from "@hooks/useDigitBets";
+import useGameKeyboard, { CHIP_VALUES } from "@hooks/useGameKeyboard";
 import { recordService } from "@services/record.service";
 import {
   savePendingBet,
@@ -689,16 +690,52 @@ const HomePage = () => {
     ],
   );
 
-  // exit overlay disabled
-  // const handleExitConfirm = useCallback(async () => {
-  //   setShowExitConfirm(false);
-  //   await logout();
-  //   navigate("/login", { replace: true });
-  // }, [logout, navigate]);
+  // Physical Keyboard shortcuts:
+  // - Tab: Switch chip denomination (1 -> 5 -> 10 -> 50 -> 100 -> 500 -> 1000 -> 5000 -> 1)
+  // - Enter: Bet OK (places bet, or loads previous bet if 0 bets)
+  // - Space: Take (claims winning points if win pending)
+  // - Esc: Back / Exit to lobby (/pre)
+  const handleTabSwitch = useCallback(
+    (isShift) => {
+      const current = selectedRef.current;
+      const currentIndex = CHIP_VALUES.indexOf(current);
+      let nextIndex;
+      if (isShift) {
+        nextIndex =
+          currentIndex <= 0 ? CHIP_VALUES.length - 1 : currentIndex - 1;
+      } else {
+        nextIndex =
+          currentIndex < 0 || currentIndex >= CHIP_VALUES.length - 1
+            ? 0
+            : currentIndex + 1;
+      }
+      const nextValue = CHIP_VALUES[nextIndex];
+      setSelectedValue(nextValue);
+      play("CLICK");
+    },
+    [play],
+  );
 
-  // const handleExitCancel = useCallback(() => {
-  //   setShowExitConfirm(false);
-  // }, []);
+  const handleBetOkKey = useCallback(() => {
+    play("CLICK");
+    handleButtonAction("preview");
+  }, [play, handleButtonAction]);
+
+  const handleTakeKey = useCallback(() => {
+    handleButtonAction("takeBet");
+  }, [handleButtonAction]);
+
+  const handleBackKey = useCallback(() => {
+    play("CLICK");
+    handleButtonAction("exit");
+  }, [play, handleButtonAction]);
+
+  useGameKeyboard({
+    onTabSwitch: handleTabSwitch,
+    onBetOk: handleBetOkKey,
+    onTake: handleTakeKey,
+    onBack: handleBackKey,
+  });
 
   useEffect(() => {
     let mounted = true;

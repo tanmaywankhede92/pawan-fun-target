@@ -3,7 +3,7 @@ import prevBg from "@assets/images/background/PrevBG.webp";
 import { useAuth } from "@hooks/useAuth";
 import { useSound } from "@hooks/useSound";
 import { authService } from "@services/auth.service";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import useGameSessionGuard from "@hooks/useGameSessionGuard";
 
 import wheelImg from "@assets/images/wheel/wheel.webp";
@@ -35,14 +35,14 @@ import imgNohold from "@assets/gamelist/Nohold.jpeg";
 import imgSuperGoldenWheel from "@assets/gamelist/SuperGoldenWheel.jpeg";
 
 const GAME_LIST = [
-  { id: "funtarget", name: "Fun Target", shortName: "Fun Target", icon: iconFunTarget, playable: true },
   { id: "funaviator", name: "Fun Aviator", shortName: "Fun Aviator", icon: imgFunAviator, playable: false },
   { id: "7up7down", name: "7Up7Down", shortName: "7Up7Down", icon: img7up7Down, playable: false },
   { id: "funandarbahar", name: "Fun Andar Bahar", shortName: "Fun AB", icon: imgFunAndarBahar, playable: false },
   { id: "triplefun", name: "Triple Fun", shortName: "Triple Fun", icon: imgTripleFun, playable: false },
-  { id: "funroulette", name: "Fun Roulette", shortName: "Roulette", icon: imgFunRoulette, playable: false },
+  { id: "funroulette", name: "Fun Roulette", shortName: "Fun Roulette", icon: imgFunRoulette, playable: false },
   { id: "bingo", name: "Bingo", shortName: "Bingo", icon: imgBingo, playable: false },
   { id: "checker", name: "Checker", shortName: "Checker", icon: imgChecker, playable: false },
+  { id: "funtarget", name: "Fun Target", shortName: "Fun Target", icon: iconFunTarget, playable: true },
   { id: "feverjokerbonus", name: "Fever Joker Bonus", shortName: "Fever Joker", icon: imgFeverJokerBonus, playable: false },
   { id: "supergoldenwheel", name: "Super Golden Wheel", shortName: "Golden Wheel", icon: imgSuperGoldenWheel, playable: false },
   { id: "giantjackpot", name: "Giant Jackpot", shortName: "Jackpot", icon: imgGiantJackpot, playable: false },
@@ -98,6 +98,10 @@ const PrePage = () => {
       if (gameRef.current) {
         gameRef.current.focus({ preventScroll: true });
         setSelectedGameId("funtarget");
+        gameRef.current.scrollIntoView({
+          block: "nearest",
+          behavior: "smooth",
+        });
       }
     }, 150);
     return () => clearTimeout(t);
@@ -112,11 +116,27 @@ const PrePage = () => {
     }
   };
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     play("CLICK");
     await logout();
     navigate("/login", { replace: true });
-  };
+  }, [play, logout, navigate]);
+
+  // Global Escape key: close transfer modal if open, otherwise logout (go back to login)
+  useEffect(() => {
+    const handleGlobalEsc = (e) => {
+      if (e.repeat) return;
+      if (e.key === "Escape" || e.key === "Esc" || e.keyCode === 27) {
+        if (transferOpen) {
+          setTransferOpen(false);
+        } else {
+          handleLogout();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleGlobalEsc);
+    return () => window.removeEventListener("keydown", handleGlobalEsc);
+  }, [transferOpen, handleLogout]);
 
   // Posts the balance_received value from the login API to the backend.
   // As soon as it succeeds, the displayed balance is refreshed so the
@@ -414,10 +434,10 @@ const PrePage = () => {
           return (
             <div
               key={game.id}
-              ref={idx === 0 ? gameRef : null}
+              ref={game.id === "funtarget" ? gameRef : null}
               tabIndex={0}
               role="button"
-              data-tv-default={idx === 0 ? "true" : undefined}
+              data-tv-default={game.id === "funtarget" ? "true" : undefined}
               aria-label={game.name}
               className={`prepage-game-item  ${isActive ? "active" : ""}`}
               onFocus={(e) => {
@@ -452,7 +472,7 @@ const PrePage = () => {
                 alt={game.name}
                 className="pointer-events-none"
               />
-              <span className="prepage-game-title">{game.name}</span>
+              <span className="prepage-game-title">{game.shortName || game.name}</span>
             </div>
           );
         })}

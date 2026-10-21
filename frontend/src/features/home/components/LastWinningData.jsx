@@ -3,8 +3,8 @@ import { resultService } from "@services/result.service";
 import { DISPLAY_FONT } from "@constants/displayFont";
 
 const POS = {
-  right: "3.2%",
-  width: "18.8%",
+  right: "2.4%",
+  width: "20.7%",
   height: "7.8%",
   top: "32.5%",
   fontSize: "clamp(14px, min(1.6vw, 4.0vh), 26px)",
