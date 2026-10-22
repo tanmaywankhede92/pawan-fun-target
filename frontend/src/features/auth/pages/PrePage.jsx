@@ -445,7 +445,7 @@ const PrePage = () => {
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "flex-start",
-                gap: "6px",
+                gap: "12px",
                 width: "100%",
                 height: "28px",
                 minHeight: "28px",

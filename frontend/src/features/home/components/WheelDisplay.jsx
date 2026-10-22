@@ -458,24 +458,31 @@ const WheelDisplay = ({
 
   return (
     <div
-      data-wheel-container
-      className={`absolute pointer-events-none select-none ${IS_ANDROID ? "ft-wheel-android" : "ft-wheel-desktop"}`}
+      className="absolute pointer-events-none select-none"
       style={{
         left: POS.left,
         top: POS.top,
         width: `${dims.width}px`,
         height: `${dims.height}px`,
-        transform: `translate(-50%, -50%) scaleX(${dims.scaleX || POS.scaleX || 1})`,
+        transform: "translate(-50%, -50%)",
         transformOrigin: "50% 50%",
-        willChange: "transform",
-        backfaceVisibility: "hidden",
-        WebkitBackfaceVisibility: "hidden",
         overflow: "visible",
         zIndex: 2,
-        isolation: "isolate",
       }}
     >
-      <div className="relative w-full h-full">
+      {/* 1. Independent GPU layer for the wheel + center jokers (scaled horizontally) */}
+      <div
+        data-wheel-container
+        className={`w-full h-full relative ${IS_ANDROID ? "ft-wheel-android" : "ft-wheel-desktop"}`}
+        style={{
+          transform: `scaleX(${dims.scaleX || POS.scaleX || 1})`,
+          transformOrigin: "50% 50%",
+          willChange: "transform",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
+          isolation: "isolate",
+        }}
+      >
         <img
           ref={wheelImgRef}
           decoding="async"
@@ -530,22 +537,26 @@ const WheelDisplay = ({
             }}
           />
         )}
-
-        <img
-          decoding="async"
-          src={pointerGif}
-          alt="pointer"
-          className="absolute pointer-events-none z-30"
-          style={{
-            left: POINTER_POS.left,
-            top: POINTER_POS.top,
-            width: POINTER_POS.width,
-            height: POINTER_POS.width,
-            transform: "translate(-50%, -50%)",
-            contain: "paint",
-          }}
-        />
       </div>
+
+      {/* 2. Pointer moved completely OUTSIDE the wheel's scaleX GPU layer into its own isolated layer.
+             Eliminates Chromium/Mali GPU damage rect clipping artifact (blinking golden box). */}
+      <img
+        decoding="async"
+        src={pointerGif}
+        alt="pointer"
+        className="absolute pointer-events-none z-30"
+        style={{
+          left: POINTER_POS.left,
+          top: POINTER_POS.top,
+          width: "14%",
+          height: "auto",
+          transform: "translate(-50%, -50%) translateZ(0)",
+          willChange: "transform",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
+        }}
+      />
 
       <style>{`
         .ft-wheel-android,

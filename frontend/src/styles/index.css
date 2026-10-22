@@ -319,7 +319,7 @@
   flex-direction: row !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  gap: 6px !important;
+  gap: 12px !important;
   width: 100% !important;
   height: 28px !important;
   min-height: 28px !important;
@@ -397,7 +397,7 @@
     min-height: 22px !important;
     max-height: 22px !important;
     flex: 0 0 22px !important;
-    gap: 4px !important;
+    gap: 8px !important;
     padding: 1px 4px !important;
   }
 
