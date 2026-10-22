@@ -40,9 +40,9 @@ const GAME_LIST = [
   { id: "funandarbahar", name: "Fun Andar Bahar", shortName: "Fun AB", icon: imgFunAndarBahar, playable: false },
   { id: "triplefun", name: "Triple Fun", shortName: "Triple Fun", icon: imgTripleFun, playable: false },
   { id: "funroulette", name: "Fun Roulette", shortName: "Fun Roulette", icon: imgFunRoulette, playable: false },
+  { id: "funtarget", name: "Fun Target", shortName: "Fun Target", icon: iconFunTarget, playable: true },
   { id: "bingo", name: "Bingo", shortName: "Bingo", icon: imgBingo, playable: false },
   { id: "checker", name: "Checker", shortName: "Checker", icon: imgChecker, playable: false },
-  { id: "funtarget", name: "Fun Target", shortName: "Fun Target", icon: iconFunTarget, playable: true },
   { id: "feverjokerbonus", name: "Fever Joker Bonus", shortName: "Fever Joker", icon: imgFeverJokerBonus, playable: false },
   { id: "supergoldenwheel", name: "Super Golden Wheel", shortName: "Golden Wheel", icon: imgSuperGoldenWheel, playable: false },
   { id: "giantjackpot", name: "Giant Jackpot", shortName: "Jackpot", icon: imgGiantJackpot, playable: false },
@@ -445,7 +445,6 @@ const PrePage = () => {
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "flex-start",
-                gap: "12px",
                 width: "100%",
                 height: "28px",
                 minHeight: "28px",
@@ -455,6 +454,7 @@ const PrePage = () => {
                 borderRadius: "3px",
                 overflow: "hidden",
                 flexShrink: 0,
+                border: "none",
               }}
               onFocus={(e) => {
                 setSelectedGameId(game.id);
@@ -496,9 +496,10 @@ const PrePage = () => {
                   maxHeight: "20px",
                   flex: "0 0 32px",
                   objectFit: "cover",
-                  border: "none",
+                  border: "1px solid #ffffff",
                   borderRadius: "2px",
                   display: "block",
+                  marginRight: "12px",
                 }}
               />
               <span

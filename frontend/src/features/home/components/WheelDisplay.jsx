@@ -102,8 +102,8 @@ const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
 
 // Spin starts at 00s boundary and smoothly stops at 54s countdown (total ~6s)
-const MIN_CRUISE_MS = 3800; // Cruise through at least 3.8s before smooth deceleration
-const MAX_SPEED = 0.85; // deg/ms = 850 deg/sec (~2.36 rev/sec)
+const MIN_CRUISE_MS = 3500; // Cruise through at least 3.5s before smooth deceleration
+const MAX_SPEED = 0.58; // deg/ms = 580 deg/sec (~1.61 rev/sec) - Eliminates wagon-wheel optical illusion
 const ACCEL_TIME_MS = 600; // Smooth 0.6s spin-up
 
 const angleFor = (w) =>
@@ -347,18 +347,19 @@ const WheelDisplay = ({
         decelStartTimeRef.current = now;
         decelStartAngleRef.current = currentAngle;
 
-        // Current speed is MAX_SPEED (0.85 deg/ms).
+        // Current speed is MAX_SPEED.
         // For smooth cubic ease-out (1 - (1 - u)^3), initial speed = 3 * Distance / Duration.
         // We match initial speed to MAX_SPEED so there is zero velocity jump:
-        // Ideal distance for ~2.0s deceleration = MAX_SPEED * 2000 / 3 = ~566 degrees.
+        // Ideal distance for ~2.0s deceleration = MAX_SPEED * 2000 / 3
+        const idealDecelDist = Math.round((MAX_SPEED * 2000) / 3);
         const currentMod = ((currentAngle % 360) + 360) % 360;
         const target = targetAngle(w);
         const targetMod = ((target % 360) + 360) % 360;
         let diff = targetMod - currentMod;
         if (diff <= 0) diff += 360;
 
-        // Extra full spins so that total distance is around ~566 deg
-        let extraSpins = Math.max(1, Math.round((566 - diff) / 360));
+        // Extra full spins so that total distance is around idealDecelDist
+        let extraSpins = Math.max(1, Math.round((idealDecelDist - diff) / 360));
         const totalDecelDist = diff + extraSpins * 360;
         decelFinalAngleRef.current = currentAngle + totalDecelDist;
         // Adjust duration so v(0) = MAX_SPEED exactly! Zero velocity jump.

@@ -26,16 +26,16 @@ const PointTransferModal = ({
   const isTv = isAndroidTv();
 
   const getDims = useCallback(() => {
-    if (typeof window === "undefined") return { width: 580, height: 332 };
+    if (typeof window === "undefined") return { width: 490, height: 280 };
     const w = window.innerWidth;
     const h = window.innerHeight;
-    let targetW = Math.min(620, Math.round(w * 0.65));
+    let targetW = Math.min(500, Math.round(w * 0.52));
     let targetH = Math.round((targetW * 531) / 928);
-    if (targetH > h * 0.72) {
-      targetH = Math.round(h * 0.72);
+    if (targetH > h * 0.58) {
+      targetH = Math.round(h * 0.58);
       targetW = Math.round((targetH * 928) / 531);
     }
-    return { width: Math.max(280, targetW), height: Math.max(160, targetH) };
+    return { width: Math.max(260, targetW), height: Math.max(148, targetH) };
   }, []);
 
   const [dims, setDims] = useState(getDims);

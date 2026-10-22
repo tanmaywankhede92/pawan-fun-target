@@ -319,7 +319,6 @@
   flex-direction: row !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  gap: 12px !important;
   width: 100% !important;
   height: 28px !important;
   min-height: 28px !important;
@@ -337,7 +336,8 @@
   flex-shrink: 0 !important;
   color: #ffffff !important;
   background-color: rgba(0, 0, 0, 0.75) !important;
-  border: 1px solid rgba(255, 215, 0, 0.25) !important;
+  border: none !important;
+  box-shadow: none !important;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.95), 0 0 1px #000 !important;
   transition: all 150ms ease !important;
   overflow: hidden !important;
@@ -347,9 +347,10 @@
 .prepage-game-item:hover,
 .prepage-game-item:focus,
 .prepage-game-item:focus-visible {
-  border-color: #ffd700 !important;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.9), inset 0 0 5px rgba(255, 215, 0, 0.3) !important;
-  background-color: rgba(0, 0, 0, 0.92) !important;
+  border: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  background-color: rgba(255, 255, 255, 0.16) !important;
 }
 
 .prepage-game-item img {
@@ -361,11 +362,20 @@
   max-height: 20px !important;
   flex: 0 0 32px !important;
   object-fit: cover !important;
-  border: none !important;
+  border: 1px solid #ffffff !important;
   border-radius: 2px !important;
   box-sizing: border-box !important;
   box-shadow: none !important;
   display: block !important;
+  margin-right: 12px !important; /* Critical for Android TV WebView (Chrome 74) flex gap support */
+}
+
+.prepage-game-item.active img,
+.prepage-game-item:hover img,
+.prepage-game-item:focus img,
+.prepage-game-item:focus-visible img {
+  border: 1.5px solid #ffffff !important;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.85) !important;
 }
 
 .prepage-game-item .prepage-game-title {
@@ -397,8 +407,9 @@
     min-height: 22px !important;
     max-height: 22px !important;
     flex: 0 0 22px !important;
-    gap: 8px !important;
     padding: 1px 4px !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 
   .prepage-game-item img {
@@ -409,6 +420,8 @@
     min-height: 15px !important;
     max-height: 15px !important;
     flex: 0 0 24px !important;
+    border: 1px solid #ffffff !important;
+    margin-right: 8px !important;
   }
 
   .prepage-game-item .prepage-game-title {

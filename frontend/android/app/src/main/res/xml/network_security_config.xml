@@ -6,7 +6,7 @@
             <certificates src="user" />
         </trust-anchors>
     </base-config>
-    <domain-config cleartextTrafficPermitted="false">
+    <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">api.funtarget.us</domain>
         <trust-anchors>
             <certificates src="system" />
