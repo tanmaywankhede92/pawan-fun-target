@@ -5,7 +5,8 @@ const HomeBackground = () => {
     <img
       src={homeBg}
       alt="game background"
-      decoding="async"
+      decoding="sync"
+      fetchPriority="high"
       className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none"
       style={{
         transform: "translateZ(0)",

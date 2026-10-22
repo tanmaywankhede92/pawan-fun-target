@@ -9,7 +9,10 @@ export const isAndroidTv = () => {
     // fallback
   }
   const search = window.location?.search || "";
-  if (search.includes("platform=tv") || search.includes("tv=1") || search.includes("platform=android")) return true;
+  if (search.includes("platform=tv") || search.includes("tv=1")) return true;
+  if (search.includes("platform=mobile") || search.includes("mobile=1")) return false;
+
   const ua = navigator.userAgent || "";
-  return /Android/i.test(ua);
+  // Check for TV specific User-Agents (Android TV, GoogleTV, Leanback, Smart TVs)
+  return /TV|GoogleTV|AndroidTV|SmartTV|BRAVIA|AFT|MiTV|NetCast|Tizen|WebOS/i.test(ua);
 };

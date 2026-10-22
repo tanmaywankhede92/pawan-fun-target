@@ -70,7 +70,7 @@ const PasswordInput = ({ value = "", onChange, onKeyDown, onFocus, onBlur }) => 
       <input
         ref={inputRef}
         type="text"
-        inputMode={isTv ? "none" : undefined}
+        inputMode={isTv ? "none" : "text"}
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}

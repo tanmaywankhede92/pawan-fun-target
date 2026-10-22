@@ -367,7 +367,8 @@
   box-sizing: border-box !important;
   box-shadow: none !important;
   display: block !important;
-  margin-right: 12px !important; /* Critical for Android TV WebView (Chrome 74) flex gap support */
+  margin-right: 12px !important;
+  /* Critical for Android TV WebView (Chrome 74) flex gap support */
 }
 
 .prepage-game-item.active img,
@@ -513,14 +514,14 @@
   background: transparent;
   border: none;
   outline: none !important;
-  color: #2b1103;
-  font-family: "Playfair Display", "Times New Roman", serif, sans-serif;
-  font-weight: 600;
-  font-size: clamp(12px, 1.8vw, 21px);
-  padding: 0 14px;
+  color: #1a1a1a;
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  font-weight: 400;
+  font-size: clamp(10px, 1.3vw, 15px);
+  padding: 0 10px;
   box-sizing: border-box;
-  border-radius: 6px;
-  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+
+  letter-spacing: 0.5px;
 }
 
 .point-transfer-input::placeholder {
@@ -528,9 +529,7 @@
   font-weight: 500;
 }
 
-.point-transfer-input:focus {
-  box-shadow: inset 0 0 6px rgba(180, 80, 20, 0.45), 0 0 6px rgba(255, 200, 50, 0.65);
-}
+
 
 /* Remove number input increment / decrement spinners */
 .point-transfer-input::-webkit-outer-spin-button,
@@ -613,9 +612,12 @@ button,
 }
 
 @keyframes ftBlink {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0;
   }

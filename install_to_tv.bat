@@ -6,7 +6,7 @@ echo ========================================================
 echo.
 
 set ADB="C:\Users\USER\AppData\Local\Android\Sdk\platform-tools\adb.exe"
-set APK="d:\React Project\Fun Target React pawan(07-10-2026)\Fun Target React\FunTarget_New_Build.apk"
+set APK="d:\React Project\Fun Target React pawan(07-10-2026)\Fun Target React\build_apk\FunTarget_Latest.apk"
 
 set /p TV_IP="TV ka IP address enter kare (Default: 192.168.1.64 - Enter dabaye agar same hai): "
 if "%TV_IP%"=="" set TV_IP=192.168.1.64

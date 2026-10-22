@@ -30,12 +30,12 @@ const PointTransferModal = ({
     const w = window.innerWidth;
     const h = window.innerHeight;
     let targetW = Math.min(500, Math.round(w * 0.52));
-    let targetH = Math.round((targetW * 531) / 928);
+    let targetH = Math.round((targetW * 510) / 942);
     if (targetH > h * 0.58) {
       targetH = Math.round(h * 0.58);
-      targetW = Math.round((targetH * 928) / 531);
+      targetW = Math.round((targetH * 942) / 510);
     }
-    return { width: Math.max(260, targetW), height: Math.max(148, targetH) };
+    return { width: Math.max(260, targetW), height: Math.max(140, targetH) };
   }, []);
 
   const [dims, setDims] = useState(getDims);
@@ -188,7 +188,7 @@ const PointTransferModal = ({
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
           boxShadow: "0 12px 36px rgba(0, 0, 0, 0.95), 0 0 20px rgba(255, 60, 20, 0.5)",
-          borderRadius: "16px",
+          borderRadius: "6px",
         }}
       >
         <form onSubmit={handleSubmit} className="w-full h-full relative">
@@ -198,24 +198,25 @@ const PointTransferModal = ({
             onClick={() => accountInputRef.current?.focus()}
             style={{
               position: "absolute",
-              left: "34.7%",
-              top: "17.3%",
-              width: "33.5%",
-              height: "10.7%",
-              paddingLeft: "14px",
+              left: "39.6%",
+              top: "14.9%",
+              width: "27.0%",
+              height: "9.3%",
+              paddingLeft: "10px",
+              paddingRight: "8px",
               boxSizing: "border-box",
             }}
           >
             <span
-              className="select-none pointer-events-none font-semibold"
+              className="select-none pointer-events-none flex-shrink-0"
               style={{
-                color: "#2b1103",
-                fontFamily: '"Playfair Display", "Times New Roman", serif, sans-serif',
-                fontWeight: 600,
-                fontSize: "clamp(12px, 1.8vw, 21px)",
+                color: "#1a1a1a",
+                fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+                fontWeight: 400,
+                fontSize: "clamp(10px, 1.3vw, 15px)",
                 lineHeight: 1,
-                paddingRight: "1px",
-                textShadow: "0 1px 1px rgba(255, 255, 255, 0.5)",
+                paddingRight: "2px",
+                letterSpacing: "0.5px",
               }}
             >
               GK
@@ -223,7 +224,7 @@ const PointTransferModal = ({
             <input
               ref={accountInputRef}
               type="text"
-              inputMode={isTv ? "none" : undefined}
+              inputMode={isTv ? "none" : "text"}
               id="transfer-account"
               name="user_transfer"
               autoComplete="off"
@@ -240,14 +241,15 @@ const PointTransferModal = ({
                   pinInputRef.current?.focus();
                 }
               }}
-              className="point-transfer-input font-semibold"
+              className="point-transfer-input"
               style={{
                 flex: 1,
                 width: "100%",
                 height: "100%",
                 padding: "0",
                 background: "transparent",
-                fontWeight: 600,
+                fontWeight: 400,
+                fontSize: "clamp(10px, 1.3vw, 15px)",
               }}
             />
           </div>
@@ -256,7 +258,7 @@ const PointTransferModal = ({
           <input
             ref={pinInputRef}
             type="password"
-            inputMode={isTv ? "none" : undefined}
+            inputMode={isTv ? "none" : "numeric"}
             id="transfer-pin"
             name="pin"
             autoComplete="new-password"
@@ -279,10 +281,12 @@ const PointTransferModal = ({
             className="point-transfer-input"
             style={{
               position: "absolute",
-              left: "34.7%",
-              top: "33.7%",
-              width: "33.5%",
-              height: "10.7%",
+              left: "39.6%",
+              top: "31.2%",
+              width: "27.0%",
+              height: "9.4%",
+              paddingLeft: "10px",
+              paddingRight: "8px",
             }}
           />
 
@@ -290,7 +294,7 @@ const PointTransferModal = ({
           <input
             ref={amountInputRef}
             type="number"
-            inputMode={isTv ? "none" : undefined}
+            inputMode={isTv ? "none" : "decimal"}
             id="transfer-amount"
             name="amount"
             min="1"
@@ -314,10 +318,12 @@ const PointTransferModal = ({
             className="point-transfer-input"
             style={{
               position: "absolute",
-              left: "34.7%",
-              top: "48.8%",
-              width: "33.5%",
-              height: "10.7%",
+              left: "39.6%",
+              top: "47.5%",
+              width: "27.0%",
+              height: "9.4%",
+              paddingLeft: "10px",
+              paddingRight: "8px",
             }}
           />
 
@@ -343,10 +349,10 @@ const PointTransferModal = ({
             }}
             style={{
               position: "absolute",
-              left: "16.9%",
-              top: "63.3%",
-              width: "25.8%",
-              height: "16.6%",
+              left: "21.9%",
+              top: "64.9%",
+              width: "20.1%",
+              height: "12.7%",
             }}
           >
             {loading ? (
@@ -377,10 +383,10 @@ const PointTransferModal = ({
             className="point-transfer-btn"
             style={{
               position: "absolute",
-              left: "56.0%",
-              top: "63.3%",
-              width: "25.0%",
-              height: "16.6%",
+              left: "58.5%",
+              top: "64.9%",
+              width: "20.2%",
+              height: "12.5%",
             }}
           />
 
@@ -390,10 +396,10 @@ const PointTransferModal = ({
             aria-live="polite"
             style={{
               position: "absolute",
-              left: "28.5%",
-              top: "82.5%",
+              left: "27.5%",
+              top: "84.5%",
               width: "68.0%",
-              height: "8.7%",
+              height: "10.0%",
               display: "flex",
               alignItems: "center",
               overflow: "hidden",
@@ -403,7 +409,7 @@ const PointTransferModal = ({
           >
             <span
               style={{
-                fontFamily: '"Times New Roman", "Century Gothic", sans-serif',
+                fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
                 fontWeight: 700,
                 fontSize: "clamp(10px, 1.6vw, 18px)",
                 letterSpacing: "0.5px",

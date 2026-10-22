@@ -9,7 +9,7 @@ export const PublicRoute = ({ children }) => {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/pre" replace />;
   }
 
   return children;

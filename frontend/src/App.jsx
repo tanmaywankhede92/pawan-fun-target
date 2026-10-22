@@ -1,73 +1,3 @@
-// import { useState, useEffect } from "react";
-// import { BrowserRouter } from "react-router-dom";
-// import { AuthProvider } from "@context/AuthContext";
-// import AppRoutes from "@routes/AppRoutes";
-// import FullscreenHandler from "@components/common/FullscreenHandler";
-// import prevImg from "@assets/images/background/prevImg.webp";
-// import { Capacitor } from "@capacitor/core";
-// import { SplashScreen as CapSplash } from "@capacitor/splash-screen";
-
-// const SPLASH_LOGO_MS = 300;
-// const SPLASH_PREV_MS = 2000;
-
-// const App = () => {
-//   const [phase, setPhase] = useState("logo");
-
-//   useEffect(() => {
-//     // Phase 1: Logo (native Capacitor splash shows for 1 sec)
-//     // Phase 2: prevImg for 2 sec
-//     // Phase 3: App
-//     const t1 = setTimeout(() => {
-//       setPhase("prev");
-//       CapSplash.hide({ fadeOutDuration: 300 }).catch(() => {});
-//     }, SPLASH_LOGO_MS);
-
-//     const t2 = setTimeout(
-//       () => setPhase("app"),
-//       SPLASH_LOGO_MS + SPLASH_PREV_MS,
-//     );
-
-//     return () => {
-//       clearTimeout(t1);
-//       clearTimeout(t2);
-//     };
-//   }, []);
-
-//   if (phase === "logo") return null;
-
-//   if (phase === "prev") {
-//     return (
-//       <div
-//         style={{
-//           width: "100vw",
-//           height: "100vh",
-//           backgroundColor: "#000",
-//           display: "flex",
-//           alignItems: "center",
-//           justifyContent: "center",
-//         }}
-//       >
-//         <img
-//           src={prevImg}
-//           alt="Fun Target"
-//           style={{ width: "100%", height: "100%", objectFit: "fill" }}
-//         />
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <BrowserRouter>
-//       <AuthProvider>
-//         <FullscreenHandler />
-//         <AppRoutes />
-//       </AuthProvider>
-//     </BrowserRouter>
-//   );
-// };
-
-// export default App;
-
 import { useState, useEffect } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@context/AuthContext";
@@ -77,55 +7,57 @@ import useTvNavigation from "@hooks/useTvNavigation";
 import prevImg from "@assets/images/background/prevImg.webp";
 import { SplashScreen as CapSplash } from "@capacitor/splash-screen";
 
-const SPLASH_PREV_MS = 2000;
-
 const App = () => {
-  const [phase, setPhase] = useState("prev");
+  const [splashVisible, setSplashVisible] = useState(true);
+  const [splashFade, setSplashFade] = useState(false);
   useTvNavigation();
 
   useEffect(() => {
-    // Phase 2: prevImg for 2 sec
-    // Phase 3: App
-    CapSplash.hide({ fadeOutDuration: 300 }).catch(() => {});
+    CapSplash.hide({ fadeOutDuration: 150 }).catch(() => {});
 
-    const t = setTimeout(
-      () => setPhase("app"),
-      SPLASH_PREV_MS,
-    );
+    // Show the branded splash overlay briefly while the login page & background mount underneath,
+    // then smoothly fade out. This completely eliminates any black screen hang on launch.
+    const tFade = setTimeout(() => setSplashFade(true), 600);
+    const tHide = setTimeout(() => setSplashVisible(false), 900);
 
     return () => {
-      clearTimeout(t);
+      clearTimeout(tFade);
+      clearTimeout(tHide);
     };
   }, []);
 
-  if (phase === "prev") {
-    return (
-      <div
-        style={{
-          width: "100vw",
-          height: "100vh",
-          backgroundColor: "#000",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <img
-          src={prevImg}
-          alt="Fun Target"
-          style={{ width: "100%", height: "100%", objectFit: "fill" }}
-        />
-      </div>
-    );
-  }
-
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <FullscreenHandler />
-        <AppRoutes />
-      </AuthProvider>
-    </BrowserRouter>
+    <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden", backgroundColor: "#000000" }}>
+      <BrowserRouter>
+        <AuthProvider>
+          <FullscreenHandler />
+          <AppRoutes />
+        </AuthProvider>
+      </BrowserRouter>
+
+      {splashVisible && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 99999,
+            backgroundColor: "#000000",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: splashFade ? 0 : 1,
+            transition: "opacity 0.3s ease-out",
+            pointerEvents: splashFade ? "none" : "auto",
+          }}
+        >
+          <img
+            src={prevImg}
+            alt="Fun Target"
+            style={{ width: "100%", height: "100%", objectFit: "fill" }}
+          />
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -54,7 +54,7 @@ const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
       <input
         ref={inputRef}
         type="text"
-        inputMode={isTv ? "none" : undefined}
+        inputMode={isTv ? "none" : "text"}
         value={displayVal}
         onChange={handleChange}
         onKeyDown={onKeyDown}

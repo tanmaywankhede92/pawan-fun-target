@@ -1,24 +1,29 @@
-import { applyLowSpecDeviceProfile } from './deviceProfile';
+import loginBg from "../assets/images/login/login-bg.webp";
+import prevBg from "../assets/images/background/PrevBG.webp";
+import homeBg from "../assets/images/home/homeImg.webp";
+import prevImg from "../assets/images/background/prevImg.webp";
 
-const lowSpecDevice = applyLowSpecDeviceProfile();
-
-// On low-spec Android TV devices, skip heavy image preloading to reduce RAM
-// and CPU pressure. The app still works normally because assets are loaded on demand.
-const images = import.meta.glob('../assets/images/**/*.{png,jpg,jpeg,webp,gif}', {
-  eager: true,
-});
+// Preload and GPU-decode only the critical flow backgrounds so transitions
+// between Boot -> Login -> Lobby -> Game are instantaneous with zero black or blank flashes.
+const criticalImages = [loginBg, prevBg, homeBg, prevImg];
 
 const preloadImages = () => {
-  if (typeof window === 'undefined') return;
-  if (lowSpecDevice) return;
+  if (typeof window === "undefined") return;
 
-  for (const key of Object.keys(images)) {
-    const src = images[key].default;
-    if (!src) continue;
-    const img = new Image();
-    img.decoding = 'async';
-    img.src = src;
-  }
+  criticalImages.forEach((src) => {
+    if (!src) return;
+    try {
+      const img = new Image();
+      img.src = src;
+      if (img.decode) {
+        img.decode().catch(() => {});
+      }
+    } catch {
+      // Ignore background decode errors
+    }
+  });
 };
 
 preloadImages();
+
+export default preloadImages;

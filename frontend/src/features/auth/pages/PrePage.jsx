@@ -6,6 +6,7 @@ import { authService } from "@services/auth.service";
 import { useEffect, useState, useRef, useCallback } from "react";
 import useGameSessionGuard from "@hooks/useGameSessionGuard";
 
+import homeBg from "@assets/images/home/homeImg.webp";
 import wheelImg from "@assets/images/wheel/wheel.webp";
 import wheelGif from "@assets/images/gifs/joker_gif1_slow.webp";
 import jackpot from "@assets/images/gifs/joker1.webp";
@@ -87,6 +88,22 @@ const PrePage = () => {
   };
 
   useEffect(() => {
+    // Pre-warm and GPU-decode game assets while user is in the lobby
+    // so navigating to /game renders instantly with zero blank flash
+    const gameAssets = [homeBg, wheelImg, wheelGif, jackpot, goldie, bonus, drum, pointerGif];
+    gameAssets.forEach((src) => {
+      if (!src) return;
+      try {
+        const img = new Image();
+        img.src = src;
+        if (img.decode) {
+          img.decode().catch(() => {});
+        }
+      } catch {
+        // Ignore decode errors
+      }
+    });
+
     return () => {
       if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
     };

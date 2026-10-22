@@ -39,10 +39,14 @@ public class MainActivity extends BridgeActivity {
         // Hardware keyboard device is connected; soft keyboard must never display on screen.
         suppressSoftKeyboardIfTv();
 
-        // After Capacitor bridge initialises, configure the WebView and inject
-        // the native → JS bridge that closeApplication.js and the session
-        // guard hook look for.
-        getBridge().getWebView().postDelayed(this::configureWebView, 500);
+        // After Capacitor bridge initialises, configure the WebView immediately and inject
+        // the native → JS bridge that closeApplication.js and the session guard hook look for.
+        WebView webView = getBridge().getWebView();
+        if (webView != null) {
+            configureWebView();
+        } else {
+            getWindow().getDecorView().post(this::configureWebView);
+        }
     }
 
     /**
@@ -73,9 +77,6 @@ public class MainActivity extends BridgeActivity {
 
             // 3) Clear all WebView cookies (session cookies, auth cookies).
             CookieManager.getInstance().removeAllCookies(null);
-
-            // 4) Clear WebView cache to prevent stale page restores.
-            webView.clearCache(false);
         } catch (Exception ignored) {
         }
     }
@@ -87,23 +88,39 @@ public class MainActivity extends BridgeActivity {
                 return true;
             }
             android.content.pm.PackageManager pm = getPackageManager();
-            return pm.hasSystemFeature(android.content.pm.PackageManager.FEATURE_LEANBACK)
-                || pm.hasSystemFeature("android.hardware.type.television");
-        } catch (Exception e) {
-            return false;
+            if (pm != null) {
+                if (pm.hasSystemFeature(android.content.pm.PackageManager.FEATURE_LEANBACK)
+                        || pm.hasSystemFeature("android.hardware.type.television")) {
+                    return true;
+                }
+                // Many Android TV boxes identify as large non-touchscreen devices:
+                if (!pm.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN)) {
+                    return true;
+                }
+            }
+        } catch (Exception ignored) {
         }
+        return false;
     }
 
     private void suppressSoftKeyboardIfTv() {
         try {
-            // Invert interaction with InputMethod so the soft keyboard (IME) is completely
-            // suppressed and NEVER shown or popped up on screen, while hardware keyboards
-            // (USB, RF, Bluetooth, remote) deliver KeyEvents directly.
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
-            getWindow().setSoftInputMode(
-                WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN |
-                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
-            );
+            if (isRunningOnTv()) {
+                // ANDROID TV: Suppress on-screen virtual keyboard completely
+                // because a remote control or physical hardware keyboard is used.
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
+                getWindow().setSoftInputMode(
+                    WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN |
+                    WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
+                );
+            } else {
+                // MOBILE / TABLET: Soft keyboard must show up when inputs are tapped!
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
+                getWindow().setSoftInputMode(
+                    WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED |
+                    WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                );
+            }
         } catch (Exception ignored) {}
     }
 
@@ -199,7 +216,7 @@ public class MainActivity extends BridgeActivity {
                 // Detect if running on Android TV / client app
                 @android.webkit.JavascriptInterface
                 public boolean isAndroidTV() {
-                    return true;
+                    return isRunningOnTv();
                 }
             },
             "Android"
