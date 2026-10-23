@@ -119,6 +119,28 @@ const playBuffer = (name) => {
   activeSources.set(name, src);
 };
 
+const playBufferLoop = (name) => {
+  if (muted) return;
+  const buf = buffers.get(name);
+  const ac = getCtx();
+  if (!buf || !ac) return;
+  const prev = activeSources.get(name);
+  if (prev) {
+    try {
+      prev.stop();
+    } catch {
+      // already ended
+    }
+    activeSources.delete(name);
+  }
+  const src = ac.createBufferSource();
+  src.buffer = buf;
+  src.loop = true;
+  src.connect(ac.destination);
+  src.start(0);
+  activeSources.set(name, src);
+};
+
 const getSfxElement = (name, src) => {
   if (!sfxElements.has(name)) {
     const el = new Audio(src);
@@ -183,8 +205,12 @@ const unlock = () => {
   unlocked = true;
   for (const name of [...pendingSounds]) {
     pendingSounds.delete(name);
-    if (loopNames.has(name)) elementLoopPlay(name);
-    else playOneShot(name);
+    if (loopNames.has(name)) {
+      if (ac && ac.state === 'running' && buffers.has(name)) playBufferLoop(name);
+      else elementLoopPlay(name);
+    } else {
+      playOneShot(name);
+    }
   }
   // A BGM that was blocked on the first gesture can now resume.
   if (bgmElement && bgmElement.paused && !muted) {
@@ -207,11 +233,23 @@ const onVisibilityChange = () => {
     for (const el of sfxElements.values()) {
       if (el.loop && !el.paused) el.pause();
     }
+    for (const [name, src] of activeSources.entries()) {
+      if (loopNames.has(name)) {
+        try { src.stop(); } catch {}
+        activeSources.delete(name);
+      }
+    }
     if (bgmElement && !bgmElement.paused) bgmElement.pause();
     return;
   }
   for (const el of sfxElements.values()) {
     if (el.loop && el.paused && !muted) el.play().catch(() => {});
+  }
+  for (const name of loopNames) {
+    const ac = getCtx();
+    if (ac && ac.state === 'running' && buffers.has(name)) {
+      playBufferLoop(name);
+    }
   }
   if (bgmElement && bgmElement.paused && !muted) {
     bgmElement.play().catch(() => {});
@@ -257,10 +295,13 @@ export const playSound = (name, { loop = false, sync = false } = {}) => {
     return;
   }
   if (loop) {
-    // Looping sounds (timer ticks) always use the element path so the
-    // track keeps repeating seamlessly. Already looping -> keep playing.
     loopNames.add(name);
-    elementLoopPlay(name);
+    const ac = getCtx();
+    if (ac && ac.state === 'running' && buffers.has(name)) {
+      playBufferLoop(name);
+    } else {
+      elementLoopPlay(name);
+    }
     return;
   }
   loopNames.delete(name);

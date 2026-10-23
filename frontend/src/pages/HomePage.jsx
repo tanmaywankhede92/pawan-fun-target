@@ -228,7 +228,8 @@ const HomePage = () => {
         return;
       }
     }
-    refreshBalance();
+    // Defer balance check slightly so it doesn't trigger a full-tree re-render at the exact spin-start frame
+    setTimeout(() => refreshBalance(), 1000);
     setLastWinner(null);
     setLastJoker(null);
     setResultRevealed(false);

@@ -102,7 +102,7 @@ const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
 
 // Spin starts at 00s boundary and smoothly stops at 54s countdown (total ~6s)
-const MIN_CRUISE_MS = 3500; // Cruise through at least 3.5s before smooth deceleration
+const MIN_CRUISE_MS = 2800; // Cruise through at least 2.8s before smooth ~3.1s deceleration
 const MAX_SPEED = 0.58; // deg/ms = 580 deg/sec (~1.61 rev/sec) - Eliminates wagon-wheel optical illusion
 const ACCEL_TIME_MS = 600; // Smooth 0.6s spin-up
 
@@ -275,7 +275,7 @@ const WheelDisplay = ({
 
       rotationRef.current = finalAngle;
       if (wheelImgRef.current) {
-        wheelImgRef.current.style.transform = `translate3d(0, 0, 0) rotate(${finalAngle}deg)`;
+        wheelImgRef.current.style.transform = `rotate(${finalAngle}deg)`;
       }
 
       setSpinning(false);
@@ -305,8 +305,8 @@ const WheelDisplay = ({
     setResultJoker(null);
     play("SPIN", { loop: true });
 
-    const startTime = performance.now();
-    let lastTime = startTime;
+    let startTime = null;
+    let lastTime = null;
     let currentAngle = rotationRef.current;
 
     winnerResolvedRef.current = null;
@@ -320,6 +320,11 @@ const WheelDisplay = ({
 
     const animate = (now) => {
       if (!spinningRef.current) return;
+
+      if (startTime === null) {
+        startTime = now;
+        lastTime = now;
+      }
 
       const dt = Math.min(100, Math.max(1, now - lastTime));
       lastTime = now;
@@ -348,22 +353,27 @@ const WheelDisplay = ({
         decelStartAngleRef.current = currentAngle;
 
         // Current speed is MAX_SPEED.
-        // For smooth cubic ease-out (1 - (1 - u)^3), initial speed = 3 * Distance / Duration.
+        // Advance currentAngle by speed * dt for this frame so there is zero 1-frame stall/hitch:
+        currentAngle += MAX_SPEED * dt;
+        decelStartTimeRef.current = now;
+        decelStartAngleRef.current = currentAngle;
+
+        // For smooth quadratic ease-out (u * (2 - u)), initial speed = 2 * Distance / Duration.
         // We match initial speed to MAX_SPEED so there is zero velocity jump:
-        // Ideal distance for ~2.0s deceleration = MAX_SPEED * 2000 / 3
-        const idealDecelDist = Math.round((MAX_SPEED * 2000) / 3);
+        // Ideal distance for ~3.1s gentle, luxurious deceleration = (MAX_SPEED * 3100) / 2
+        const idealDecelDist = Math.round((MAX_SPEED * 3100) / 2);
         const currentMod = ((currentAngle % 360) + 360) % 360;
         const target = targetAngle(w);
         const targetMod = ((target % 360) + 360) % 360;
         let diff = targetMod - currentMod;
         if (diff <= 0) diff += 360;
 
-        // Extra full spins so that total distance is around idealDecelDist
-        let extraSpins = Math.max(1, Math.round((idealDecelDist - diff) / 360));
+        // Ensure at least 2 full extra spins so every number (including 0, 8, 9) glides for ~3s
+        let extraSpins = Math.max(2, Math.round((idealDecelDist - diff) / 360));
         const totalDecelDist = diff + extraSpins * 360;
         decelFinalAngleRef.current = currentAngle + totalDecelDist;
         // Adjust duration so v(0) = MAX_SPEED exactly! Zero velocity jump.
-        decelDurationRef.current = (3 * totalDecelDist) / MAX_SPEED;
+        decelDurationRef.current = (2 * totalDecelDist) / MAX_SPEED;
       }
 
       // 3. Motion calculation
@@ -373,11 +383,11 @@ const WheelDisplay = ({
         const speed = MAX_SPEED * accel;
         currentAngle += speed * dt;
       } else {
-        // Deceleration phase: smooth cubic ease-out (1 - (1 - u)^3)
-        // Velocity smoothly and continuously decays to 0.00 at u = 1.0 — zero snap!
+        // Deceleration phase: smooth quadratic ease-out (u * (2 - u))
+        // Stays visibly moving throughout deceleration without stalling or freezing early!
         const decelElapsed = now - decelStartTimeRef.current;
         const u = Math.min(1, Math.max(0, decelElapsed / decelDurationRef.current));
-        const easeOut = 1 - Math.pow(1 - u, 3);
+        const easeOut = u * (2 - u);
         currentAngle =
           decelStartAngleRef.current +
           (decelFinalAngleRef.current - decelStartAngleRef.current) * easeOut;
@@ -387,7 +397,7 @@ const WheelDisplay = ({
           currentAngle = decelFinalAngleRef.current;
           rotationRef.current = currentAngle;
           if (wheelImgRef.current) {
-            wheelImgRef.current.style.transform = `translate3d(0, 0, 0) rotate(${currentAngle}deg)`;
+            wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
           }
           finishSpin(winnerResolvedRef.current);
           return;
@@ -396,7 +406,7 @@ const WheelDisplay = ({
 
       rotationRef.current = currentAngle;
       if (wheelImgRef.current) {
-        wheelImgRef.current.style.transform = `translate3d(0, 0, 0) rotate(${currentAngle}deg)`;
+        wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
       }
 
       rafIdRef.current = requestAnimationFrame(animate);
@@ -453,7 +463,7 @@ const WheelDisplay = ({
   // the GPU composition layer on Android TV.
   useLayoutEffect(() => {
     if (wheelImgRef.current && !spinningRef.current) {
-      wheelImgRef.current.style.transform = `translate3d(0, 0, 0) rotate(${rotationRef.current}deg)`;
+      wheelImgRef.current.style.transform = `rotate(${rotationRef.current}deg)`;
     }
   }, [spinning]);
 
@@ -570,4 +580,10 @@ const WheelDisplay = ({
 };
 
 export { POS as wheelPos, DESKTOP_POS, ANDROID_POS };
-export default memo(WheelDisplay);
+export default memo(WheelDisplay, (prev, next) => {
+  return (
+    prev.spinTrigger === next.spinTrigger &&
+    prev.targetWinner === next.targetWinner &&
+    prev.joker === next.joker
+  );
+});
