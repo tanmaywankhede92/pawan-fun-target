@@ -12,14 +12,14 @@ import ApiResponseBox from "../components/ApiResponseBox";
 import { useSound } from "@hooks/useSound";
 import { closeApplication } from "@utils/closeApplication";
 import { deviceUuid } from "@utils/deviceUuid";
-import { isAndroidTv } from "@utils/isTv";
+import { isMobile } from "@utils/isTv";
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
-  const isTv = isAndroidTv();
+  const isPhone = isMobile();
   const { login } = useAuth();
   const navigate = useNavigate();
   const { play } = useSound();
@@ -68,7 +68,7 @@ const LoginPage = () => {
   }, [play]);
 
   return (
-    <LoginOverlay isShifted={!isTv && inputFocused}>
+    <LoginOverlay isShifted={isPhone && inputFocused}>
       <GameBackground />
 
       <UsernameInput
