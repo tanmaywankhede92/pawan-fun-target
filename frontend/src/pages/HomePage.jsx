@@ -52,6 +52,10 @@ const HomePage = () => {
   const [spinCount, setSpinCount] = useState(0);
   const [spinStartMs, setSpinStartMs] = useState(0);
   const [wheelSpinning, setWheelSpinning] = useState(false);
+  const [wheelTarget, setWheelTarget] = useState(null);
+  const [wheelJoker, setWheelJoker] = useState(null);
+  const wheelJokerRef = useRef(null);
+  wheelJokerRef.current = wheelJoker;
   const [lastWinner, setLastWinner] = useState(null);
   const [lastJoker, setLastJoker] = useState(null);
   const [resultError, setResultError] = useState(false);
@@ -217,7 +221,10 @@ const HomePage = () => {
   const handleNewMinute = useCallback(async () => {
     // If a winning take is pending (user hasn't claimed yet), freeze
     // everything at :00 — no new spin, no sound, timer stops at 0.
-    if (takePendingRef.current) return;
+    if (takePendingRef.current) {
+      frozenRef.current = true;
+      return;
+    }
     if (totalBet > 0) {
       noBetRounds.current = 0;
     } else {
@@ -228,27 +235,55 @@ const HomePage = () => {
         return;
       }
     }
-    // Defer balance check slightly so it doesn't trigger a full-tree re-render at the exact spin-start frame
-    setTimeout(() => refreshBalance(), 1000);
+    // Clear previous round results immediately so we do not show any old round result
     setLastWinner(null);
     setLastJoker(null);
     setResultRevealed(false);
+    setWinInfo(null);
+    setWheelTarget(null);
+    setWheelJoker(null);
     setTaken(false);
+
+    // Defer balance check slightly so it doesn't trigger a full-tree re-render at the exact spin-start frame
+    setTimeout(() => refreshBalance(), 1000);
+
+    // Expected draw time for THIS minute's round (e.g. "15:42:00")
+    const expectedDrawTime = ist24hStr(0);
+
+    // Fetch the CURRENT round's result (retrying if server hasn't updated to current minute yet):
+    let currentRecord = null;
+    for (let attempt = 0; attempt < 8; attempt++) {
+      try {
+        const { data } = await resultService.getCurrentResult();
+        const r = data?.result?.[0];
+        if (r && r.result_time24 === expectedDrawTime) {
+          currentRecord = r;
+          break;
+        }
+      } catch {
+        // network retry
+      }
+      await new Promise((res) => setTimeout(res, 200));
+    }
+
+    if (!currentRecord) {
+      try {
+        const { data } = await resultService.getCurrentResult();
+        currentRecord = data?.result?.[0] || null;
+      } catch {}
+    }
+
+    const winDigit = currentRecord ? Number(currentRecord.result) % 10 : 0;
+    const jokerVal = currentRecord ? Number(currentRecord.joker) || null : 1;
+
+    setWheelTarget(winDigit);
+    setWheelJoker(jokerVal);
+    setResultError(false);
+
+    // Start wheel spin: Wheel immediately snaps to winDigit for 0.5s, then rotates and stops at 54s
     setSpinStartMs(performance.now());
     setWheelSpinning(true);
     setSpinCount((c) => c + 1);
-
-    try {
-      const { data } = await resultService.getCurrentResult();
-      const r = data?.result?.[0];
-      if (!r) throw new Error("no result");
-      setLastWinner(Number(r.result) % 10);
-      setLastJoker(Number(r.joker) || null);
-      setResultError(false);
-    } catch {
-      setResultError(true);
-      setLastWinner((prev) => (prev != null ? prev : 0));
-    }
   }, [refreshBalance, totalBet, logout, navigate]);
 
   // ── Server-calibrated IST countdown ─────────────────────────────
@@ -262,7 +297,7 @@ const HomePage = () => {
   // A ref is used because rawTime keeps ticking past 0 → 59, and we
   // need the frozen state to persist across those ticks.
   const frozenRef = useRef(false);
-  if (takePending && rawTime === 0) frozenRef.current = true;
+  if (takePending && (rawTime === 0 || rawTime === 60)) frozenRef.current = true;
   if (!takePending) frozenRef.current = false;
   const timerFrozen = frozenRef.current;
   const time = timerFrozen ? 0 : rawTime;
@@ -766,6 +801,7 @@ const HomePage = () => {
   const handleSpinComplete = useCallback(
     async (winner) => {
       setLastWinner(winner);
+      setLastJoker(wheelJokerRef.current);
       setWheelSpinning(false);
       setResultRevealed(true);
       // Reload the last 10 wins as soon as the wheel stops.
@@ -842,8 +878,8 @@ const HomePage = () => {
       <WheelDisplay
         spinTrigger={spinCount}
         spinStartMs={spinStartMs}
-        targetWinner={lastWinner}
-        joker={lastJoker}
+        targetWinner={wheelTarget != null ? wheelTarget : lastWinner}
+        joker={wheelJoker != null ? wheelJoker : lastJoker}
         onComplete={handleSpinComplete}
       />
       <GifDisplay />

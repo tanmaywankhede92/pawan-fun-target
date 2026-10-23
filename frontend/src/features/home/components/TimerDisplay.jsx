@@ -3,10 +3,12 @@ const POS = {
   top: "32.5%",
   width: "18.0%",
   height: "8.0%",
-  fontSize: "clamp(14px, min(1.8vw, 3.6vh), 28px)",
+  fontSize: "clamp(16px, min(2.5vw, 4.6vh), 34px)",
 };
 
 const TimerDisplay = ({ time }) => {
+  const formattedTime =
+    time != null ? String(time).padStart(2, "0") : "00";
   return (
     <div
       className="absolute pointer-events-none flex items-center justify-center text-center z-10 ft-timer-text tracking-[.13em]"
@@ -31,7 +33,7 @@ const TimerDisplay = ({ time }) => {
     >
       <span>0</span>
       <span style={{ margin: "0 0.22em" }}>:</span>
-      <span>{time ?? 0}</span>
+      <span>{formattedTime}</span>
     </div>
   );
 };

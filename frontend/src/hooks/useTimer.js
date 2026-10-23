@@ -14,7 +14,9 @@ import { useState, useEffect, useRef } from "react";
 import { getNow, secondsToNextMinute, onCalibrate } from "@utils/istTime";
 
 export const useTimer = ({ onMinuteStart }) => {
-  const [time, setTime] = useState(() => secondsToNextMinute(getNow().second));
+  const [time, setTime] = useState(() =>
+    secondsToNextMinute(getNow().second, getNow().millisecond),
+  );
 
   const mountedRef = useRef(true);
   const onMinuteStartRef = useRef(onMinuteStart);
@@ -28,10 +30,11 @@ export const useTimer = ({ onMinuteStart }) => {
   const tick = () => {
     const now = getNow();
     const s = now.second;
+    const ms = now.millisecond;
     const currentMinute = now.minute;
 
-    // Update the countdown display.
-    setTime(secondsToNextMinute(s));
+    // Update the countdown display (supports 00 -> 60 transition at 400ms).
+    setTime(secondsToNextMinute(s, ms));
 
     // Minute boundary: fires on normal crossing AND on missed (throttled)
     // boundaries — always exactly once per IST minute.
@@ -45,7 +48,7 @@ export const useTimer = ({ onMinuteStart }) => {
   useEffect(() => {
     mountedRef.current = true;
     tick(); // immediate first tick
-    const id = setInterval(tick, 1000);
+    const id = setInterval(tick, 100);
     return () => {
       mountedRef.current = false;
       clearInterval(id);
@@ -63,7 +66,8 @@ export const useTimer = ({ onMinuteStart }) => {
       const currentMinute = getNow().minute;
       targetMinuteRef.current = currentMinute;
       // Also correct the displayed time immediately.
-      setTime(secondsToNextMinute(getNow().second));
+      const now = getNow();
+      setTime(secondsToNextMinute(now.second, now.millisecond));
     });
   }, []);
 

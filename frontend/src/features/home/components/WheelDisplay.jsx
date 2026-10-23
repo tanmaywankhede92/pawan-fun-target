@@ -7,6 +7,7 @@ import goldie from "@assets/images/gifs/joker2.webp";
 import bonus from "@assets/images/gifs/joker3.webp";
 import drum from "@assets/images/gifs/joker4.webp";
 import pointerGif from "@assets/images/gifs/DG.gif";
+import { isMobile } from "@utils/isTv";
 
 // ========================================================
 // 💻 1. DESKTOP / LAPTOP / BROWSER CONFIGURATION
@@ -61,6 +62,33 @@ const ANDROID_POINTER_POS = {
   height: "auto",
 };
 
+// ========================================================
+// 📱 3. HANDHELD MOBILE PHONE VIEW (Landscape)
+// Wheel is larger, wider, and positioned safely without touching the top
+// ========================================================
+const MOBILE_POS = {
+  left: "50%",
+  top: "37%",
+  width: "min(54vw, 63vh)",
+  height: "min(54vw, 63vh)",
+  aspectRatio: "1 / 1",
+  scaleX: 1.45,
+};
+
+const MOBILE_OVERLAY_POS = {
+  left: "50%",
+  top: "50%",
+  width: "33.3%",
+  height: "33.3%",
+};
+
+const MOBILE_POINTER_POS = {
+  left: "50%",
+  top: "2.6%",
+  width: "11%",
+  height: "auto",
+};
+
 // Auto-detect platform: Android App/TV vs Desktop Browser
 const isAndroidPlatform = () => {
   if (typeof window === "undefined") return false;
@@ -85,11 +113,12 @@ const isAndroidPlatform = () => {
   return /Android/i.test(ua) && !/Windows NT|Macintosh|Mac OS X/i.test(ua);
 };
 
+const IS_MOBILE = isMobile();
 const IS_ANDROID = isAndroidPlatform();
 
-const POS = IS_ANDROID ? ANDROID_POS : DESKTOP_POS;
-const OVERLAY_POS = IS_ANDROID ? ANDROID_OVERLAY_POS : DESKTOP_OVERLAY_POS;
-const POINTER_POS = IS_ANDROID ? ANDROID_POINTER_POS : DESKTOP_POINTER_POS;
+const POS = IS_MOBILE ? MOBILE_POS : IS_ANDROID ? ANDROID_POS : DESKTOP_POS;
+const OVERLAY_POS = IS_MOBILE ? MOBILE_OVERLAY_POS : IS_ANDROID ? ANDROID_OVERLAY_POS : DESKTOP_OVERLAY_POS;
+const POINTER_POS = IS_MOBILE ? MOBILE_POINTER_POS : IS_ANDROID ? ANDROID_POINTER_POS : DESKTOP_POINTER_POS;
 
 const NON_JACKPOT_IMAGES = [goldie, bonus, drum];
 
@@ -101,10 +130,12 @@ const jokerImageFor = (joker, winner) => {
 const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
 
-// Spin starts at 00s boundary and smoothly stops at 54s countdown (total ~6s)
-const MIN_CRUISE_MS = 2800; // Cruise through at least 2.8s before smooth ~3.1s deceleration
+// Spin starts at 60s countdown and smoothly stops at 54s / 53.9s countdown (total ~5.5s)
+const SET_PAUSE_MS = 20; // 200ms pause where wheel and joker first snap/set to target result before rotating
+const MIN_CRUISE_MS = 1800; // Cruise through at least 1.8s of spinning after set pause before deceleration
 const MAX_SPEED = 0.58; // deg/ms = 580 deg/sec (~1.61 rev/sec) - Eliminates wagon-wheel optical illusion
-const ACCEL_TIME_MS = 600; // Smooth 0.6s spin-up
+const ACCEL_TIME_MS = 500; // Smooth 0.5s spin-up
+const TOTAL_MAX_SPIN_MS = 5600; // Unconditionally stops at 54s / 53.9s countdown
 
 const angleFor = (w) =>
   ((SECTORS - (Number(w) % SECTORS)) % SECTORS) * SECTOR_ANGLE;
@@ -168,6 +199,7 @@ const parseCssDimension = (val, defaultPx = 280) => {
 
 const getResponsiveScaleX = () => {
   if (typeof window === "undefined") return 1.36;
+  if (isMobile()) return 1.45;
   const ar = window.innerWidth / Math.max(1, window.innerHeight);
   // Standard 16:9 is 1.777. Standard 4:3 is 1.333. Square 1:1 is 1.0.
   // On square / 4:3 displays, circular scale 1.0 fits the background stand perfectly.
@@ -194,6 +226,7 @@ const WheelDisplay = ({
 
   const [dims, setDims] = useState(getDims);
   const [spinning, setSpinning] = useState(false);
+  const [isActuallyRotating, setIsActuallyRotating] = useState(false);
   const [winner, setWinner] = useState(null);
   const [resultJoker, setResultJoker] = useState(() =>
     jokerImageFor(null, null),
@@ -278,6 +311,7 @@ const WheelDisplay = ({
         wheelImgRef.current.style.transform = `rotate(${finalAngle}deg)`;
       }
 
+      setIsActuallyRotating(false);
       setSpinning(false);
       stop("SPIN");
       setWinner(finalWinner);
@@ -302,11 +336,17 @@ const WheelDisplay = ({
 
     spinningRef.current = true;
     setSpinning(true);
-    setResultJoker(null);
-    play("SPIN", { loop: true });
+    setIsActuallyRotating(false);
+
+    // Keep/show winner's joker image during the 350ms snap pause
+    if (targetWinnerRef.current != null) {
+      setResultJoker(jokerImageFor(jokerRef.current, targetWinnerRef.current));
+    }
 
     let startTime = null;
     let lastTime = null;
+    let initialSetDone = false;
+    let rotatingStarted = false;
     let currentAngle = rotationRef.current;
 
     winnerResolvedRef.current = null;
@@ -335,51 +375,80 @@ const WheelDisplay = ({
         winnerResolvedRef.current = targetWinnerRef.current;
       }
 
-      // Safety fallback: if no winner arrived after 12s, fallback to 0
-      if (winnerResolvedRef.current === null && elapsed >= 12000) {
+      // Snap wheel to target result position immediately so user clearly sees it set
+      if (!initialSetDone && winnerResolvedRef.current !== null) {
+        initialSetDone = true;
+        currentAngle = targetAngle(winnerResolvedRef.current);
+        rotationRef.current = currentAngle;
+        if (wheelImgRef.current) {
+          wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
+        }
+        setResultJoker(jokerImageFor(jokerRef.current, winnerResolvedRef.current));
+      }
+
+      // For the first SET_PAUSE_MS (350ms), wheel & joker stay set at that result so user clearly sees the starting set/glitch
+      if (elapsed < SET_PAUSE_MS) {
+        if (wheelImgRef.current) {
+          wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
+        }
+        rafIdRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
+      // Exactly at elapsed >= SET_PAUSE_MS (350ms): BOTH wheel AND center joker spinner start spinning together!
+      if (!rotatingStarted) {
+        rotatingStarted = true;
+        setIsActuallyRotating(true);
+        play("SPIN", { loop: true });
+      }
+
+      const spinElapsed = elapsed - SET_PAUSE_MS;
+
+      // Safety fallback: if no winner arrived after 2s of spinning, fallback to 0
+      if (winnerResolvedRef.current === null && spinElapsed >= 2000) {
         winnerResolvedRef.current = 0;
       }
 
       // 2. Determine when to start deceleration:
-      // Begins once winner is known AND minimum cruise time (3.8s) has passed.
-      // This ensures the spin covers 00s -> 54s countdown and stops smoothly at 54s.
+      // Begins once winner is known AND minimum cruise time (1.8s) has passed.
       const canDecelerate =
         winnerResolvedRef.current !== null &&
-        elapsed >= MIN_CRUISE_MS;
+        spinElapsed >= MIN_CRUISE_MS;
 
       if (decelStartTimeRef.current === null && canDecelerate) {
         const w = winnerResolvedRef.current;
-        decelStartTimeRef.current = now;
-        decelStartAngleRef.current = currentAngle;
-
-        // Current speed is MAX_SPEED.
         // Advance currentAngle by speed * dt for this frame so there is zero 1-frame stall/hitch:
         currentAngle += MAX_SPEED * dt;
         decelStartTimeRef.current = now;
         decelStartAngleRef.current = currentAngle;
 
-        // For smooth quadratic ease-out (u * (2 - u)), initial speed = 2 * Distance / Duration.
-        // We match initial speed to MAX_SPEED so there is zero velocity jump:
-        // Ideal distance for ~3.1s gentle, luxurious deceleration = (MAX_SPEED * 3100) / 2
-        const idealDecelDist = Math.round((MAX_SPEED * 3100) / 2);
+        // Target stopping at TOTAL_MAX_SPIN_MS (5600ms / 54s countdown)
+        const remainingToDeadline = Math.max(1800, TOTAL_MAX_SPIN_MS - elapsed);
+        const idealDecelDist = Math.round((MAX_SPEED * remainingToDeadline) / 2);
         const currentMod = ((currentAngle % 360) + 360) % 360;
         const target = targetAngle(w);
         const targetMod = ((target % 360) + 360) % 360;
         let diff = targetMod - currentMod;
         if (diff <= 0) diff += 360;
 
-        // Ensure at least 2 full extra spins so every number (including 0, 8, 9) glides for ~3s
-        let extraSpins = Math.max(2, Math.round((idealDecelDist - diff) / 360));
-        const totalDecelDist = diff + extraSpins * 360;
+        let extraSpins = Math.max(1, Math.round((idealDecelDist - diff) / 360));
+        let totalDecelDist = diff + extraSpins * 360;
+        let naturalDuration = (2 * totalDecelDist) / MAX_SPEED;
+
+        if (elapsed + naturalDuration > TOTAL_MAX_SPIN_MS && extraSpins > 1) {
+          extraSpins -= 1;
+          totalDecelDist = diff + extraSpins * 360;
+          naturalDuration = (2 * totalDecelDist) / MAX_SPEED;
+        }
+
         decelFinalAngleRef.current = currentAngle + totalDecelDist;
-        // Adjust duration so v(0) = MAX_SPEED exactly! Zero velocity jump.
-        decelDurationRef.current = (2 * totalDecelDist) / MAX_SPEED;
+        decelDurationRef.current = naturalDuration;
       }
 
       // 3. Motion calculation
       if (decelStartTimeRef.current === null) {
         // Cruise phase: accelerate up to MAX_SPEED and spin at full speed alongside center GIF
-        const accel = Math.min(1, elapsed / ACCEL_TIME_MS);
+        const accel = Math.min(1, spinElapsed / ACCEL_TIME_MS);
         const speed = MAX_SPEED * accel;
         currentAngle += speed * dt;
       } else {
@@ -392,8 +461,8 @@ const WheelDisplay = ({
           decelStartAngleRef.current +
           (decelFinalAngleRef.current - decelStartAngleRef.current) * easeOut;
 
-        // Finish spin: Wheel naturally reaches speed 0 at target angle, Joker GIF stops at same instant
-        if (u >= 1) {
+        // Finish spin: Wheel naturally reaches speed 0 at target angle, unconditionally at 53.9s / 54s
+        if (u >= 1 || elapsed >= TOTAL_MAX_SPIN_MS) {
           currentAngle = decelFinalAngleRef.current;
           rotationRef.current = currentAngle;
           if (wheelImgRef.current) {
@@ -455,7 +524,7 @@ const WheelDisplay = ({
     [stop],
   );
 
-  const showGif = spinning;
+  const showGif = isActuallyRotating;
 
   // ── Glitch prevention ──────────────────────────────────────────────
   // Guard: NEVER overwrite the transform while the 60fps rAF spin loop
@@ -580,10 +649,4 @@ const WheelDisplay = ({
 };
 
 export { POS as wheelPos, DESKTOP_POS, ANDROID_POS };
-export default memo(WheelDisplay, (prev, next) => {
-  return (
-    prev.spinTrigger === next.spinTrigger &&
-    prev.targetWinner === next.targetWinner &&
-    prev.joker === next.joker
-  );
-});
+export default memo(WheelDisplay);

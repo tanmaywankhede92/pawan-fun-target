@@ -88,23 +88,18 @@ const PrePage = () => {
   };
 
   useEffect(() => {
-    // Pre-warm and GPU-decode game assets while user is in the lobby
-    // so navigating to /game renders instantly with zero blank flash
-    const gameAssets = [homeBg, wheelImg, wheelGif, jackpot, goldie, bonus, drum, pointerGif];
-    gameAssets.forEach((src) => {
-      if (!src) return;
-      try {
+    // Gently pre-warm critical game background and wheel image in background
+    // after PrePage has painted, so opening PrePage is instantaneous on Android TV
+    const timer = setTimeout(() => {
+      [homeBg, wheelImg].forEach((src) => {
+        if (!src) return;
         const img = new Image();
         img.src = src;
-        if (img.decode) {
-          img.decode().catch(() => {});
-        }
-      } catch {
-        // Ignore decode errors
-      }
-    });
+      });
+    }, 500);
 
     return () => {
+      clearTimeout(timer);
       if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
     };
   }, []);
@@ -223,18 +218,6 @@ const PrePage = () => {
     await refreshBalance();
   };
 
-  // Preload game images in background so /game loads instantly on click.
-  useEffect(() => {
-    [wheelImg, wheelGif, jackpot, goldie, bonus, drum, pointerGif].forEach(
-      (src) => {
-        const link = document.createElement("link");
-        link.rel = "preload";
-        link.as = "image";
-        link.href = src;
-        document.head.appendChild(link);
-      }
-    );
-  }, []);
 
   // The lobby must be silent: stop every game/timer sound so nothing that
   // was still playing in the game (or queued for the next gesture) is heard
@@ -314,19 +297,21 @@ const PrePage = () => {
         {Math.max(0, user?.balance || 0)}
       </div>
 
-      {/* Balance received box */}
-      <div
-        className="absolute"
-        style={{
-          ...boxStyle,
-          left: "4.5%",
-          top: "65.5%",
-          width: "14%",
-          height: "6%",
-        }}
-      >
-        {user?.balance_received ?? "0.00"}
-      </div>
+      {/* Balance received box: only show when positive amount exists */}
+      {Number(user?.balance_received || 0) > 0 && (
+        <div
+          className="absolute"
+          style={{
+            ...boxStyle,
+            left: "4.5%",
+            top: "65.5%",
+            width: "14%",
+            height: "6%",
+          }}
+        >
+          {user?.balance_received}
+        </div>
+      )}
 
       {/* Receive button: posts the login API's balance_received to the
           backend, then refreshes the displayed balance. */}
@@ -501,6 +486,7 @@ const PrePage = () => {
             >
               <img
                 decoding="async"
+                loading={game.id === "funtarget" ? "eager" : "lazy"}
                 src={game.icon}
                 alt={game.name}
                 className="pointer-events-none"

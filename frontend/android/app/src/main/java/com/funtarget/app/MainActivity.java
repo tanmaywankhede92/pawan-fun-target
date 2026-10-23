@@ -231,6 +231,13 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public boolean dispatchKeyEvent(android.view.KeyEvent event) {
+        if (event.getAction() == android.view.KeyEvent.ACTION_DOWN && event.isShiftPressed() && event.getKeyCode() == android.view.KeyEvent.KEYCODE_R) {
+            WebView webView = getBridge().getWebView();
+            if (webView != null) {
+                webView.reload();
+                return true;
+            }
+        }
         WebView webView = getBridge().getWebView();
         if (webView != null && !webView.hasFocus()) {
             webView.requestFocus();

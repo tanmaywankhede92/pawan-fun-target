@@ -41,42 +41,12 @@ export const calibrateTime = (serverDateHeader) => {
 /**
  * Global Time Synchronizer:
  * Fetches accurate standard atomic UTC time from reliable global time sources
- * so phone and desktop have 0 millisecond difference.
+ * so phone, desktop and server have 0 millisecond difference.
  */
 export const syncGlobalTime = async () => {
   const sources = [
     async () => {
-      // Source 1: WorldTimeAPI (Asia/Kolkata)
-      const t0 = Date.now();
-      const res = await fetch("https://worldtimeapi.org/api/timezone/Asia/Kolkata", { cache: "no-store" });
-      const data = await res.json();
-      const t1 = Date.now();
-      const rtt = t1 - t0;
-      if (data && data.unixtime) {
-        // unixtime in seconds -> convert to ms and adjust for network round-trip delay
-        const globalUtcMs = data.unixtime * 1000 + Math.floor(rtt / 2);
-        return globalUtcMs - t1;
-      }
-      throw new Error("Invalid WorldTimeAPI response");
-    },
-    async () => {
-      // Source 2: TimeAPI.io (Global fallback)
-      const t0 = Date.now();
-      const res = await fetch("https://timeapi.io/api/v1/time/current/zone?timeZone=Asia/Kolkata", { cache: "no-store" });
-      const data = await res.json();
-      const t1 = Date.now();
-      const rtt = t1 - t0;
-      if (data && data.dateTime) {
-        const dt = DateTime.fromISO(data.dateTime, { zone: "Asia/Kolkata" });
-        if (dt.isValid) {
-          const globalUtcMs = dt.toMillis() + Math.floor(rtt / 2);
-          return globalUtcMs - t1;
-        }
-      }
-      throw new Error("Invalid TimeAPI response");
-    },
-    async () => {
-      // Source 3: Google / Cloudflare HEAD request to inspect standard Date header
+      // Source 1: Cloudflare trace (fastest, anycast edge in India/worldwide, CORS enabled, sub-20ms)
       const t0 = Date.now();
       const res = await fetch("https://www.cloudflare.com/cdn-cgi/trace", { cache: "no-store" });
       const text = await res.text();
@@ -88,6 +58,23 @@ export const syncGlobalTime = async () => {
         return globalUtcMs - t1;
       }
       throw new Error("Invalid Cloudflare trace response");
+    },
+    async () => {
+      // Source 2: TimeAPI.io (Asia/Kolkata fallback)
+      const t0 = Date.now();
+      const res = await fetch("https://timeapi.io/api/v1/time/current/zone?timeZone=Asia/Kolkata", { cache: "no-store" });
+      const data = await res.json();
+      const t1 = Date.now();
+      const rtt = t1 - t0;
+      const dtStr = data?.date_time || data?.dateTime;
+      if (dtStr) {
+        const dt = DateTime.fromISO(dtStr, { zone: "Asia/Kolkata" });
+        if (dt.isValid) {
+          const globalUtcMs = dt.toMillis() + Math.floor(rtt / 2);
+          return globalUtcMs - t1;
+        }
+      }
+      throw new Error("Invalid TimeAPI response");
     },
   ];
 
@@ -106,8 +93,8 @@ export const syncGlobalTime = async () => {
 if (typeof window !== "undefined") {
   syncGlobalTime();
 
-  // Re-sync every 5 minutes to continuously prevent clock drift
-  setInterval(syncGlobalTime, 5 * 60 * 1000);
+  // Re-sync every 30 seconds to continuously prevent clock drift
+  setInterval(syncGlobalTime, 30 * 1000);
 
   // Also re-sync when window becomes visible or device wakes up
   document.addEventListener("visibilitychange", () => {
@@ -115,6 +102,8 @@ if (typeof window !== "undefined") {
       syncGlobalTime();
     }
   });
+
+  window.addEventListener("online", syncGlobalTime);
 }
 
 // ── IST helpers (fully calibrated against global standard time) ─────
@@ -126,8 +115,19 @@ export const getNow = () =>
 /** IST seconds (0-59), server-calibrated. */
 export const istSeconds = () => getNow().second;
 
-/** Seconds remaining until the next IST minute boundary. */
-export const secondsToNextMinute = (s) => (s === 0 ? 0 : 60 - s);
+/** Seconds remaining until the next IST minute boundary.
+ * - At s === 0 and ms < 350: returns 0 (displays as "00")
+ * - At s === 0 and ms >= 350: returns 60 (displays as "60")
+ * - At s === 1..59: returns 60 - s (59, 58, ..., 01)
+ * Sequence: ... 02 -> 01 -> 00 -> 60 -> 59 -> 58 -> ... -> 54
+ */
+export const secondsToNextMinute = (s, ms) => {
+  if (s === 0) {
+    const milli = ms != null ? ms : getNow().millisecond;
+    return milli < 350 ? 0 : 60;
+  }
+  return 60 - s;
+};
 
 /** "2026-08-17" */
 export const istDateStr = () => getNow().toFormat("yyyy-MM-dd");
