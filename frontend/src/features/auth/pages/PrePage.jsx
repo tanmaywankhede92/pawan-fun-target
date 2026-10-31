@@ -19,39 +19,9 @@ import PointTransferModal from "../components/PointTransferModal";
 
 // Game list thumbnails
 import iconFunTarget from "@assets/gamelist/Icon.webp";
-import imgTripleFun from "@assets/gamelist/TripleFun.jpeg";
-import img7up7Down from "@assets/gamelist/7up7Down.jpeg";
-import imgBingo from "@assets/gamelist/Bingo.jpeg";
-import imgChampionPoker from "@assets/gamelist/ChampionPoker.jpeg";
-import imgChecker from "@assets/gamelist/Checker.jpeg";
-import imgFeverJokerBonus from "@assets/gamelist/FeverJokerBonus.jpeg";
-import imgFunAndarBahar from "@assets/gamelist/FunAndarBahar.jpeg";
-import imgFunAviator from "@assets/gamelist/FunAviator.jpeg";
-import imgFunRoulette from "@assets/gamelist/FunRoulette.jpeg";
-import imgGiantJackpot from "@assets/gamelist/GiantJackpot.jpeg";
-import imgJokerBonus from "@assets/gamelist/JokerBonus.jpeg";
-import imgKeno from "@assets/gamelist/Keno.jpeg";
-import imgLucky8Line from "@assets/gamelist/Lucky8Line.jpeg";
-import imgNohold from "@assets/gamelist/Nohold.jpeg";
-import imgSuperGoldenWheel from "@assets/gamelist/SuperGoldenWheel.jpeg";
 
 const GAME_LIST = [
-  { id: "funaviator", name: "Fun Aviator", shortName: "Fun Aviator", icon: imgFunAviator, playable: false },
-  { id: "7up7down", name: "7Up7Down", shortName: "7Up7Down", icon: img7up7Down, playable: false },
-  { id: "funandarbahar", name: "Fun Andar Bahar", shortName: "Fun AB", icon: imgFunAndarBahar, playable: false },
-  { id: "triplefun", name: "Triple Fun", shortName: "Triple Fun", icon: imgTripleFun, playable: false },
-  { id: "funroulette", name: "Fun Roulette", shortName: "Fun Roulette", icon: imgFunRoulette, playable: false },
   { id: "funtarget", name: "Fun Target", shortName: "Fun Target", icon: iconFunTarget, playable: true },
-  { id: "bingo", name: "Bingo", shortName: "Bingo", icon: imgBingo, playable: false },
-  { id: "checker", name: "Checker", shortName: "Checker", icon: imgChecker, playable: false },
-  { id: "feverjokerbonus", name: "Fever Joker Bonus", shortName: "Fever Joker", icon: imgFeverJokerBonus, playable: false },
-  { id: "supergoldenwheel", name: "Super Golden Wheel", shortName: "Golden Wheel", icon: imgSuperGoldenWheel, playable: false },
-  { id: "giantjackpot", name: "Giant Jackpot", shortName: "Jackpot", icon: imgGiantJackpot, playable: false },
-  { id: "keno", name: "Keno", shortName: "Keno", icon: imgKeno, playable: false },
-  { id: "nohold", name: "Nohold", shortName: "Nohold", icon: imgNohold, playable: false },
-  { id: "jokerbonus", name: "Joker Bonus", shortName: "Joker Bonus", icon: imgJokerBonus, playable: false },
-  { id: "lucky8line", name: "Lucky 8 Line", shortName: "Lucky 8 Line", icon: imgLucky8Line, playable: false },
-  { id: "championpoker", name: "Champion Poker", shortName: "Poker", icon: imgChampionPoker, playable: false },
 ];
 
 // Post-login lobby: shows PrevBG full-screen with the user's ID + balance
