@@ -2,6 +2,7 @@ import { createContext, useReducer, useEffect, useCallback, useRef } from 'react
 import { authService } from '@services/auth.service';
 import { STORAGE_KEYS } from '@constants';
 import { recordApiResponse } from '@utils/apiLog';
+import { clearAllPendingBets } from '@utils/pendingBet';
 
 const AuthContext = createContext(null);
 
@@ -67,6 +68,7 @@ export const AuthProvider = ({ children }) => {
       if (!user) {
         throw new Error('Login failed');
       }
+      clearAllPendingBets();
       sessionStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
       dispatch({ type: 'AUTH_SUCCESS', payload: { user } });
       return { redirect: '/pre', user };
@@ -94,13 +96,15 @@ export const AuthProvider = ({ children }) => {
         });
       }
     }
+    clearAllPendingBets();
     sessionStorage.removeItem(STORAGE_KEYS.USER);
     localStorage.removeItem(STORAGE_KEYS.USER);
     dispatch({ type: 'LOGOUT' });
   }, []);
 
   const setAuth = useCallback((user) => {
-    sessionStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    clearAllPendingBets();
+      sessionStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
     dispatch({ type: 'AUTH_SUCCESS', payload: { user } });
   }, []);
 
@@ -124,6 +128,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const handleForceLogout = () => {
+      clearAllPendingBets();
       sessionStorage.removeItem(STORAGE_KEYS.USER);
       localStorage.removeItem(STORAGE_KEYS.USER);
       dispatch({ type: 'LOGOUT' });

@@ -202,7 +202,7 @@ const HomePage = () => {
         setGameMessage(
           "Congratulations!!! You Win. Please Take the Winning Points.",
         );
-      }
+      } else { clearPendingBet(username); }
     };
 
     restore();
@@ -230,6 +230,9 @@ const HomePage = () => {
     } else {
       noBetRounds.current += 1;
       if (noBetRounds.current >= 3) {
+        clearPendingBet(username);
+        setBets({});
+        betOrder.current = [];
         await logout();
         navigate("/login", { replace: true });
         return;

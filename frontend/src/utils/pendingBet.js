@@ -11,8 +11,7 @@ export const savePendingBet = (username, data) => {
   try {
     localStorage.setItem(pendingBetKey(username), JSON.stringify(data));
   } catch {
-    // Storage unavailable (private mode / quota) — the session just won't
-    // be restored, the normal flow is unaffected.
+    // Storage unavailable (private mode / quota)
   }
 };
 
@@ -31,6 +30,18 @@ export const clearPendingBet = (username) => {
   try {
     localStorage.removeItem(pendingBetKey(username));
   } catch {
-    // Ignore — a stale snapshot is draw-gated and harmless anyway.
+    // Ignore
+  }
+};
+
+export const clearAllPendingBets = () => {
+  try {
+    Object.keys(localStorage).forEach((key) => {
+      if (key && key.startsWith(STORAGE_KEYS.PENDING_BET)) {
+        localStorage.removeItem(key);
+      }
+    });
+  } catch {
+    // Ignore
   }
 };

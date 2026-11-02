@@ -1,29 +1,21 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@context/AuthContext";
 import AppRoutes from "@routes/AppRoutes";
 import FullscreenHandler from "@components/common/FullscreenHandler";
 import useTvNavigation from "@hooks/useTvNavigation";
-import prevImg from "@assets/images/background/prevImg.webp";
 import { SplashScreen as CapSplash } from "@capacitor/splash-screen";
 
 const App = () => {
-  const [splashVisible, setSplashVisible] = useState(true);
-  const [splashFade, setSplashFade] = useState(false);
   useTvNavigation();
 
   useEffect(() => {
-    CapSplash.hide({ fadeOutDuration: 150 }).catch(() => {});
+    // Wait for initial render paint, then smoothly fade out native splash screen
+    const t = setTimeout(() => {
+      CapSplash.hide({ fadeOutDuration: 250 }).catch(() => {});
+    }, 150);
 
-    // Show the branded splash overlay briefly while the login page & background mount underneath,
-    // then smoothly fade out. This completely eliminates any black screen hang on launch.
-    const tFade = setTimeout(() => setSplashFade(true), 1000);
-    const tHide = setTimeout(() => setSplashVisible(false), 1400);
-
-    return () => {
-      clearTimeout(tFade);
-      clearTimeout(tHide);
-    };
+    return () => clearTimeout(t);
   }, []);
 
   // Global Shift + R keyboard shortcut to reload game instantly on any platform/TV
@@ -46,29 +38,6 @@ const App = () => {
           <AppRoutes />
         </AuthProvider>
       </BrowserRouter>
-
-      {splashVisible && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 99999,
-            backgroundColor: "#000000",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: splashFade ? 0 : 1,
-            transition: "opacity 0.3s ease-out",
-            pointerEvents: splashFade ? "none" : "auto",
-          }}
-        >
-          <img
-            src={prevImg}
-            alt="Fun Target"
-            style={{ width: "100%", height: "100%", objectFit: "fill" }}
-          />
-        </div>
-      )}
     </div>
   );
 };
