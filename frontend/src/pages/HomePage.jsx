@@ -360,13 +360,6 @@ const HomePage = () => {
       setGameMessage("Score Insufficient.");
       return;
     }
-    // Limit per number: Maximum 5000 allowed on a single number
-    const currentNumBet = betsRef.current?.[num] || 0;
-    if (currentNumBet + sv > 5000) {
-      manualMsg.current = true;
-      setGameMessage("Max Bet 5000 per number limit reached.");
-      return;
-    }
     // A new bet for the next result stops the winner blink and starts
     // a fresh round.
     if (resultRevealedRef.current) {

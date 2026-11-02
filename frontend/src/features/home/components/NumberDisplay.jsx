@@ -90,10 +90,6 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
 
   const doBet = (num, isHoldRepeat = false) => {
     if (disabled) return;
-    if ((bets?.[num] || 0) >= 5000) {
-      stopHold();
-      return;
-    }
     const now = Date.now();
     const last = lastBetTimeRef.current[num] || 0;
     // Debounce guard: Ignore any duplicate bet trigger on the same number within 400ms
@@ -109,14 +105,9 @@ const NumberDisplay = ({ bets, onBet, disabled = false, winnerBlink = null }) =>
   // Press & hold: places 1 bet immediately, and if held for >= 400ms, repeats every 180ms
   const startHold = (num) => {
     stopHold();
-    if ((bets?.[num] || 0) >= 5000) return;
     doBet(num, false);
     holdInitialTimer.current = setTimeout(() => {
       holdTimer.current = setInterval(() => {
-        if ((bets?.[num] || 0) >= 5000) {
-          stopHold();
-          return;
-        }
         doBet(num, true);
       }, 180);
     }, 400);
