@@ -4,6 +4,7 @@ import { calibrateTime } from '@utils/istTime';
 
 const api = axios.create({
   baseURL: config.apiBaseUrl,
+  timeout: 3500,
   headers: {
     'Content-Type': 'application/json',
   },

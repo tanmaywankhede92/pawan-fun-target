@@ -246,47 +246,48 @@ const HomePage = () => {
     setWheelTarget(null);
     setWheelJoker(null);
     setTaken(false);
+    setResultError(false);
+
+    // Start wheel spin IMMEDIATELY at :00 boundary without blocking on network!
+    setSpinStartMs(performance.now());
+    setWheelSpinning(true);
+    setSpinCount((c) => c + 1);
 
     // Defer balance check slightly so it doesn't trigger a full-tree re-render at the exact spin-start frame
     setTimeout(() => refreshBalance(), 1000);
 
-    // Expected draw time for THIS minute's round (e.g. "15:42:00")
-    const expectedDrawTime = ist24hStr(0);
-
-    // Fetch the CURRENT round's result (retrying if server hasn't updated to current minute yet):
-    let currentRecord = null;
-    for (let attempt = 0; attempt < 8; attempt++) {
-      try {
-        const { data } = await resultService.getCurrentResult();
-        const r = data?.result?.[0];
-        if (r && r.result_time24 === expectedDrawTime) {
-          currentRecord = r;
-          break;
+    // Fetch CURRENT round's result in the background while wheel is already smoothly spinning:
+    (async () => {
+      const expectedDrawTime = ist24hStr(0);
+      let currentRecord = null;
+      for (let attempt = 0; attempt < 8; attempt++) {
+        try {
+          const { data } = await resultService.getCurrentResult();
+          const r = data?.result?.[0];
+          if (r && r.result_time24 === expectedDrawTime) {
+            currentRecord = r;
+            break;
+          }
+        } catch {
+          // network retry
         }
-      } catch {
-        // network retry
+        await new Promise((res) => setTimeout(res, 250));
       }
-      await new Promise((res) => setTimeout(res, 200));
-    }
 
-    if (!currentRecord) {
-      try {
-        const { data } = await resultService.getCurrentResult();
-        currentRecord = data?.result?.[0] || null;
-      } catch {}
-    }
+      if (!currentRecord) {
+        try {
+          const { data } = await resultService.getCurrentResult();
+          currentRecord = data?.result?.[0] || null;
+        } catch {}
+      }
 
-    const winDigit = currentRecord ? Number(currentRecord.result) % 10 : 0;
-    const jokerVal = currentRecord ? Number(currentRecord.joker) || null : 1;
+      const winDigit = currentRecord ? Number(currentRecord.result) % 10 : 0;
+      const jokerVal = currentRecord ? Number(currentRecord.joker) || null : 1;
 
-    setWheelTarget(winDigit);
-    setWheelJoker(jokerVal);
-    setResultError(false);
-
-    // Start wheel spin: Wheel immediately snaps to winDigit for 0.5s, then rotates and stops at 54s
-    setSpinStartMs(performance.now());
-    setWheelSpinning(true);
-    setSpinCount((c) => c + 1);
+      setWheelTarget(winDigit);
+      setWheelJoker(jokerVal);
+      setResultError(!currentRecord);
+    })();
   }, [refreshBalance, totalBet, logout, navigate]);
 
   // ── Server-calibrated IST countdown ─────────────────────────────
@@ -785,7 +786,23 @@ const HomePage = () => {
           setResultError(false);
         }
       } catch {
-        if (mounted) setResultError(true);
+        // Silent retry once after 2.5s before showing any error
+        if (mounted) {
+          setTimeout(async () => {
+            if (!mounted) return;
+            try {
+              const { data } = await resultService.getCurrentResult();
+              const r = data?.result?.[0];
+              if (r && mounted) {
+                setLastWinner(Number(r.result) % 10);
+                setLastJoker(Number(r.joker) || null);
+                setResultError(false);
+              }
+            } catch {
+              if (mounted) setResultError(true);
+            }
+          }, 2500);
+        }
       }
     };
     load();

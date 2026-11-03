@@ -12,8 +12,8 @@ const App = () => {
   useEffect(() => {
     // Wait for initial render paint, then smoothly fade out native splash screen
     const t = setTimeout(() => {
-      CapSplash.hide({ fadeOutDuration: 250 }).catch(() => {});
-    }, 150);
+      CapSplash.hide({ fadeOutDuration: 300 }).catch(() => {});
+    }, 400);
 
     return () => clearTimeout(t);
   }, []);

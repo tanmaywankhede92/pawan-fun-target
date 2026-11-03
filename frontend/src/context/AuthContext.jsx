@@ -114,11 +114,23 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await authService.getBalance(username);
       const newBalance = data?.data?.balance;
+      const newReceived = data?.data?.balance_received ?? data?.data?.received_balance;
       const current = userRef.current;
-      if (newBalance != null && current && newBalance !== current.balance) {
-        const updated = { ...current, balance: newBalance };
-        sessionStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updated));
-        dispatch({ type: 'AUTH_SUCCESS', payload: { user: updated } });
+      if (current) {
+        let changed = false;
+        let updated = { ...current };
+        if (newBalance != null && newBalance !== current.balance) {
+          updated.balance = newBalance;
+          changed = true;
+        }
+        if (newReceived != null && String(newReceived) !== String(current.balance_received)) {
+          updated.balance_received = typeof newReceived === 'number' ? newReceived.toFixed(2) : String(newReceived);
+          changed = true;
+        }
+        if (changed) {
+          sessionStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updated));
+          dispatch({ type: 'AUTH_SUCCESS', payload: { user: updated } });
+        }
       }
       return newBalance;
     } catch {

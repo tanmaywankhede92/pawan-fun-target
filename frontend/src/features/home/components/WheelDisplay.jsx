@@ -459,8 +459,10 @@ const WheelDisplay = ({
         clearTimeout(safetyTimeoutRef.current);
         safetyTimeoutRef.current = null;
       }
+      stop("SPIN");
+      spinningRef.current = false;
     };
-  }, [spinTrigger, finishSpin, play]);
+  }, [spinTrigger, finishSpin, play, stop]);
 
   // Background-tab recovery
   useEffect(() => {

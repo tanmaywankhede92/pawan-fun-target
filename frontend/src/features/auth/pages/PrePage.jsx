@@ -40,6 +40,9 @@ const PrePage = () => {
   const [receiveGlow, setReceiveGlow] = useState(false);
   const [rejectGlow, setRejectGlow] = useState(false);
   const [transferGlow, setTransferGlow] = useState(false);
+  const [refreshGlow, setRefreshGlow] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshRef = useRef(null);
   const gameRef = useRef(null);
   const receiveRef = useRef(null);
   const rejectRef = useRef(null);
@@ -148,6 +151,19 @@ const PrePage = () => {
   };
 
   // Posts to balance_reject to reject/refund any pending received balance back to sponsor/agent.
+  const handleRefresh = async () => {
+    play("CLICK");
+    setRefreshGlow(true);
+    setTimeout(() => setRefreshGlow(false), 450);
+    setRefreshing(true);
+    try {
+      await refreshBalance();
+    } catch {
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const handleReject = async () => {
     play("CLICK");
     setRejectGlow(true);
@@ -496,6 +512,40 @@ const PrePage = () => {
           );
         })}
       </div>
+
+      {/* Refresh button -> calls refreshBalance() */}
+      <button
+        ref={refreshRef}
+        tabIndex={0}
+        className={`absolute cursor-pointer ${refreshGlow ? "glowing" : ""}`}
+        style={{
+          ...boxStyle,
+          left: "7.5%",
+          top: "94.5%",
+          width: "7.5%",
+          height: "4.5%",
+          background: "transparent",
+          backgroundColor: "transparent",
+          border: "none",
+          outline: "none",
+          boxShadow: "none",
+          zIndex: 20,
+        }}
+        onClick={handleRefresh}
+        onKeyDown={(e) => {
+          if (
+            e.key === "Enter" ||
+            e.key === "Select" ||
+            e.key === "Ok" ||
+            e.keyCode === 13 ||
+            e.keyCode === 23
+          ) {
+            e.preventDefault();
+            handleRefresh();
+          }
+        }}
+        aria-label="Refresh balance"
+      />
 
       {/* Logout button -> calls logout API + clears session */}
       <button

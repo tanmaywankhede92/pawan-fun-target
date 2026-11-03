@@ -49,9 +49,12 @@ let bgmElement = null;
 let bgmSrc = null;
 
 const getCtx = () => {
-  if (!ctx) {
+  if (!ctx || ctx.state === 'closed') {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (AC) ctx = new AC();
+  }
+  if (ctx && ctx.state === 'suspended') {
+    ctx.resume().catch(() => {});
   }
   return ctx;
 };
@@ -106,6 +109,7 @@ const playBuffer = (name) => {
   if (prev) {
     try {
       prev.stop();
+      prev.disconnect();
     } catch {
       // already ended
     }
@@ -114,7 +118,14 @@ const playBuffer = (name) => {
   const src = ac.createBufferSource();
   src.buffer = buf;
   src.connect(ac.destination);
-  src.onended = () => activeSources.delete(name);
+  src.onended = () => {
+    try {
+      src.disconnect();
+    } catch {}
+    if (activeSources.get(name) === src) {
+      activeSources.delete(name);
+    }
+  };
   src.start(0);
   activeSources.set(name, src);
 };
@@ -128,6 +139,7 @@ const playBufferLoop = (name) => {
   if (prev) {
     try {
       prev.stop();
+      prev.disconnect();
     } catch {
       // already ended
     }
@@ -137,6 +149,14 @@ const playBufferLoop = (name) => {
   src.buffer = buf;
   src.loop = true;
   src.connect(ac.destination);
+  src.onended = () => {
+    try {
+      src.disconnect();
+    } catch {}
+    if (activeSources.get(name) === src) {
+      activeSources.delete(name);
+    }
+  };
   src.start(0);
   activeSources.set(name, src);
 };
@@ -315,14 +335,12 @@ export const playSound = (name, { loop = false, sync = false } = {}) => {
 
 export const stopSound = (name) => {
   loopNames.delete(name);
-  // A stopped sound must never be flushed later by unlock(): leaving it
-  // in pendingSounds would let queued game/timer sounds start on a
-  // different page (e.g. the Pre lobby) after the next user gesture.
   pendingSounds.delete(name);
   const src = activeSources.get(name);
   if (src) {
     try {
       src.stop();
+      src.disconnect();
     } catch {
       // already ended
     }
@@ -340,14 +358,13 @@ export const playMusic = (name = 'BGM') => {
   if (muted || isHidden()) return;
   const src = getSrc(name);
   if (!src) return;
-  const url = new Audio(src).src;
-  if (bgmElement && bgmSrc === url) {
+  if (bgmElement && bgmSrc === src) {
     if (bgmElement.paused) bgmElement.play().catch(() => {});
     return;
   }
   stopMusic();
-  bgmSrc = url;
-  bgmElement = new Audio(url);
+  bgmSrc = src;
+  bgmElement = new Audio(src);
   bgmElement.loop = true;
   bgmElement.volume = 0.4;
   bgmElement.play().catch(() => {
