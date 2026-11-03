@@ -434,7 +434,8 @@
    PrePage Interactive Buttons (Receive & Reject Glows)
    ============================================================ */
 .prepage-receive-btn,
-.prepage-reject-btn {
+.prepage-reject-btn,
+.prepage-refresh-btn {
   background: transparent;
   border-radius: 8px;
   outline: none !important;
@@ -447,7 +448,10 @@
 .prepage-receive-btn:focus-visible,
 .prepage-reject-btn:hover,
 .prepage-reject-btn:focus,
-.prepage-reject-btn:focus-visible {
+.prepage-reject-btn:focus-visible,
+.prepage-refresh-btn:hover,
+.prepage-refresh-btn:focus,
+.prepage-refresh-btn:focus-visible {
   background: radial-gradient(ellipse at center, rgba(255, 220, 60, 0.4) 0%, rgba(255, 160, 0, 0.2) 65%, transparent 85%);
   box-shadow: 0 0 16px rgba(255, 215, 0, 0.85), inset 0 0 10px rgba(255, 240, 120, 0.6);
   filter: brightness(1.2);
@@ -456,7 +460,9 @@
 .prepage-receive-btn:active,
 .prepage-receive-btn.glowing,
 .prepage-reject-btn:active,
-.prepage-reject-btn.glowing {
+.prepage-reject-btn.glowing,
+.prepage-refresh-btn:active,
+.prepage-refresh-btn.glowing {
   background: radial-gradient(ellipse at center, rgba(255, 235, 90, 0.75) 0%, rgba(255, 170, 0, 0.45) 60%, transparent 85%);
   box-shadow: 0 0 25px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 150, 0, 0.8), inset 0 0 12px rgba(255, 255, 220, 0.85);
   transform: scale(0.97);
@@ -464,7 +470,8 @@
 }
 
 .prepage-receive-btn.saving,
-.prepage-reject-btn.rejecting {
+.prepage-reject-btn.rejecting,
+.prepage-refresh-btn.refreshing {
   animation: receiveSavingPulse 1s ease-in-out infinite alternate;
 }
 

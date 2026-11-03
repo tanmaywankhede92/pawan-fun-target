@@ -517,18 +517,13 @@ const PrePage = () => {
       <button
         ref={refreshRef}
         tabIndex={0}
-        className={`absolute cursor-pointer ${refreshGlow ? "glowing" : ""}`}
+        className={`absolute cursor-pointer prepage-refresh-btn ${refreshGlow ? "glowing" : ""} ${refreshing ? "refreshing" : ""}`}
+        disabled={refreshing}
         style={{
-          ...boxStyle,
           left: "7.5%",
           top: "94.5%",
           width: "7.5%",
           height: "4.5%",
-          background: "transparent",
-          backgroundColor: "transparent",
-          border: "none",
-          outline: "none",
-          boxShadow: "none",
           zIndex: 20,
         }}
         onClick={handleRefresh}
@@ -545,7 +540,9 @@ const PrePage = () => {
           }
         }}
         aria-label="Refresh balance"
-      />
+      >
+        {refreshing ? "..." : ""}
+      </button>
 
       {/* Logout button -> calls logout API + clears session */}
       <button
