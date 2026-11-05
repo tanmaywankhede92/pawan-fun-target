@@ -8,12 +8,6 @@ import useGameSessionGuard from "@hooks/useGameSessionGuard";
 
 import homeBg from "@assets/images/home/homeImg.webp";
 import wheelImg from "@assets/images/wheel/wheel.webp";
-import wheelGif from "@assets/images/gifs/joker_gif1_slow.webp";
-import jackpot from "@assets/images/gifs/joker1.webp";
-import goldie from "@assets/images/gifs/joker2.webp";
-import bonus from "@assets/images/gifs/joker3.webp";
-import drum from "@assets/images/gifs/joker4.webp";
-import pointerGif from "@assets/images/gifs/DG.gif";
 
 import PointTransferModal from "../components/PointTransferModal";
 
@@ -277,6 +271,7 @@ const PrePage = () => {
         backgroundSize: "100% 100%",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
+        backgroundColor: "#1a0804",
       }}
     >
       {/* Username (login id) box */}

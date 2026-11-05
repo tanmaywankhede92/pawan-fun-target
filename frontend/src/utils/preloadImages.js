@@ -2,19 +2,64 @@ import loginBg from "../assets/images/login/login-bg.webp";
 import prevBg from "../assets/images/background/PrevBG.webp";
 import homeBg from "../assets/images/home/homeImg.webp";
 import prevImg from "../assets/images/background/prevImg.webp";
+import wheelImg from "../assets/images/wheel/wheel.webp";
 
-// Preload and GPU-decode only the critical flow backgrounds so transitions
-// between Boot -> Login -> Lobby -> Game are instantaneous with zero black or blank flashes.
-const criticalImages = [loginBg, prevBg, homeBg, prevImg];
+// 16 gamelist thumbnails
+import iconFunTarget from "../assets/gamelist/Icon.webp";
+import imgTripleFun from "../assets/gamelist/TripleFun.jpeg";
+import img7up7Down from "../assets/gamelist/7up7Down.jpeg";
+import imgBingo from "../assets/gamelist/Bingo.jpeg";
+import imgChampionPoker from "../assets/gamelist/ChampionPoker.jpeg";
+import imgChecker from "../assets/gamelist/Checker.jpeg";
+import imgFeverJokerBonus from "../assets/gamelist/FeverJokerBonus.jpeg";
+import imgFunAndarBahar from "../assets/gamelist/FunAndarBahar.jpeg";
+import imgFunAviator from "../assets/gamelist/FunAviator.jpeg";
+import imgFunRoulette from "../assets/gamelist/FunRoulette.jpeg";
+import imgGiantJackpot from "../assets/gamelist/GiantJackpot.jpeg";
+import imgJokerBonus from "../assets/gamelist/JokerBonus.jpeg";
+import imgKeno from "../assets/gamelist/Keno.jpeg";
+import imgLucky8Line from "../assets/gamelist/Lucky8Line.jpeg";
+import imgNohold from "../assets/gamelist/Nohold.jpeg";
+import imgSuperGoldenWheel from "../assets/gamelist/SuperGoldenWheel.jpeg";
+
+const allFlowImages = [
+  loginBg,
+  prevBg,
+  homeBg,
+  prevImg,
+  wheelImg,
+  iconFunTarget,
+  imgTripleFun,
+  img7up7Down,
+  imgBingo,
+  imgChampionPoker,
+  imgChecker,
+  imgFeverJokerBonus,
+  imgFunAndarBahar,
+  imgFunAviator,
+  imgFunRoulette,
+  imgGiantJackpot,
+  imgJokerBonus,
+  imgKeno,
+  imgLucky8Line,
+  imgNohold,
+  imgSuperGoldenWheel,
+];
+
+// Persistent global cache to prevent garbage collection from evicting GPU decoded textures
+if (typeof window !== "undefined" && !window.__permanentImageCache) {
+  window.__permanentImageCache = new Map();
+}
 
 const preloadImages = () => {
   if (typeof window === "undefined") return;
 
-  criticalImages.forEach((src) => {
-    if (!src) return;
+  allFlowImages.forEach((src) => {
+    if (!src || window.__permanentImageCache.has(src)) return;
     try {
       const img = new Image();
       img.src = src;
+      window.__permanentImageCache.set(src, img);
       if (img.decode) {
         img.decode().catch(() => {});
       }

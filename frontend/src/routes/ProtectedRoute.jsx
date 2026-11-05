@@ -6,7 +6,7 @@ export const ProtectedRoute = ({ children }) => {
   const location = useLocation();
 
   if (isLoading) {
-    return null;
+    return <div style={{ width: "100vw", height: "100vh", backgroundColor: "#1a0804" }} />;
   }
 
   if (!isAuthenticated) {

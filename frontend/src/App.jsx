@@ -31,7 +31,7 @@ const App = () => {
   }, []);
 
   return (
-    <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden", backgroundColor: "#000000" }}>
+    <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden", backgroundColor: "#1a0804" }}>
       <BrowserRouter>
         <AuthProvider>
           <FullscreenHandler />
