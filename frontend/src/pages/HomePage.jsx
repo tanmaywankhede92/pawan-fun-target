@@ -66,7 +66,7 @@ const HomePage = () => {
   const [taken, setTaken] = useState(false);
   const [won, setWon] = useState(false);
   const [gameMessage, setGameMessage] = useState(
-    "Please Bet to Start Game. Minimum Bet=1",
+    "Please Bet to Start Game. Minimum Bet=5",
   );
   const [winInfo, setWinInfo] = useState(null);
   // Bumped when the wheel stops so LastWinningData reloads right away.
@@ -278,7 +278,7 @@ const HomePage = () => {
         try {
           const { data } = await resultService.getCurrentResult();
           currentRecord = data?.result?.[0] || null;
-        } catch {}
+        } catch { }
       }
 
       const winDigit = currentRecord ? Number(currentRecord.result) % 10 : 0;
@@ -439,9 +439,9 @@ const HomePage = () => {
       }
 
       // Minimum bet validation.
-      if (totalBet < 1) {
+      if (totalBet < 5) {
         manualMsg.current = true;
-        setGameMessage("Minimum bet amount is 1.");
+        setGameMessage("Minimum bet amount is 5.");
         return;
       }
 
@@ -498,10 +498,13 @@ const HomePage = () => {
       autoSubmitted.current = true;
       // Never auto-place while a winning Take is pending — the old bets
       // must not be resubmitted for the next draw.
-      if (!submitted && totalBet > 0 && !takePending) {
+      if (!submitted && totalBet >= 5 && !takePending) {
         manualMsg.current = true;
         setGameMessage("Your Bet has been Accepted");
         handlePlaceBet();
+      } else if (!submitted && totalBet > 0 && totalBet < 5 && !takePending) {
+        manualMsg.current = true;
+        setGameMessage("Minimum bet amount is 5.");
       }
     }
   }, [time, totalBet, handlePlaceBet, submitted, takePending]);
@@ -510,7 +513,7 @@ const HomePage = () => {
   // Phase message:
   //   last 10 sec      -> "Bet Time over"
   //   wheel spinning   -> "FOR AMUSEMENT ONLY NO CASH VALUE"
-  //   betting window   -> "Please Bet to Start Game. Minimum Bet=1"
+  //   betting window   -> "Please Bet to Start Game. Minimum Bet=5"
   // Manual messages (validation / accepted) override the betting-window prompt.
   // While a winning Take is pending, the win banner stays on screen (the
   // "Please Take the Winning Points." reminder is set at the :00 boundary).
@@ -523,7 +526,7 @@ const HomePage = () => {
       manualMsg.current = false;
       setGameMessage("FOR AMUSEMENT ONLY NO CASH VALUE");
     } else if (!manualMsg.current && time > 12) {
-      setGameMessage("Please Bet to Start Game. Minimum Bet=1");
+      setGameMessage("Please Bet to Start Game. Minimum Bet=5");
     }
   }, [time, wheelSpinning, takePending]);
 
