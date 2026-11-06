@@ -8,6 +8,8 @@ import { DateTime, Settings } from "luxon";
 export const TIMEZONE = "Asia/Kolkata";
 Settings.defaultZone = TIMEZONE;
 
+export const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000; // 19,800,000 ms
+
 // Difference between the global standard UTC clock and the local device clock (in ms).
 let serverOffsetMs = 0;
 let isSynced = false;
@@ -19,7 +21,7 @@ export const onCalibrate = (fn) => {
 };
 
 export const setServerOffset = (newOffset) => {
-  const jumped = Math.abs(newOffset - serverOffsetMs) > 1000;
+  const jumped = Math.abs(newOffset - serverOffsetMs) > 2000;
   serverOffsetMs = newOffset;
   isSynced = true;
   if (jumped) {
@@ -29,9 +31,13 @@ export const setServerOffset = (newOffset) => {
 
 /**
  * Calibrate from an HTTP Date header (e.g. from backend API).
+ * Only used as an initial rough fallback when high-precision atomic sync hasn't arrived yet.
  */
 export const calibrateTime = (serverDateHeader) => {
   if (!serverDateHeader) return;
+  // If we already have accurate sub-second sync from atomic time source,
+  // do not overwrite with coarse 1-second HTTP Date header (which adds 500-1000ms jitter).
+  if (isSynced) return;
   const serverUtc = DateTime.fromHTTP(serverDateHeader);
   if (!serverUtc.isValid) return;
   const newOffset = serverUtc.toMillis() - Date.now();
@@ -93,8 +99,8 @@ export const syncGlobalTime = async () => {
 if (typeof window !== "undefined") {
   syncGlobalTime();
 
-  // Re-sync every 30 seconds to continuously prevent clock drift
-  setInterval(syncGlobalTime, 30 * 1000);
+  // Re-sync every 5 minutes to continuously prevent clock drift (NOT 30s which caused network jitter)
+  setInterval(syncGlobalTime, 5 * 60 * 1000);
 
   // Also re-sync when window becomes visible or device wakes up
   document.addEventListener("visibilitychange", () => {
@@ -108,26 +114,29 @@ if (typeof window !== "undefined") {
 
 // ── IST helpers (fully calibrated against global standard time) ─────
 
+/**
+ * Ultra-fast integer arithmetic IST clock.
+ * ZERO Luxon DateTime object allocations.
+ * ZERO memory pressure / Garbage Collection pauses in Android WebView.
+ */
+export const getNowFast = () => {
+  const istMs = Date.now() + serverOffsetMs + IST_OFFSET_MS;
+  const totalSec = Math.floor(istMs / 1000);
+  const second = totalSec % 60;
+  const minute = Math.floor(totalSec / 60) % 60;
+  const msInSecond = istMs % 1000;
+  return { second, minute, msInSecond, istMs };
+};
+
 /** Current IST DateTime, calibrated against global standard time. */
 export const getNow = () =>
   DateTime.now().plus({ milliseconds: serverOffsetMs }).setZone(TIMEZONE);
 
 /** IST seconds (0-59), server-calibrated. */
-export const istSeconds = () => getNow().second;
+export const istSeconds = () => getNowFast().second;
 
-/** Seconds remaining until the next IST minute boundary.
- * - At s === 0 and ms < 350: returns 0 (displays as "00")
- * - At s === 0 and ms >= 350: returns 60 (displays as "60")
- * - At s === 1..59: returns 60 - s (59, 58, ..., 01)
- * Sequence: ... 02 -> 01 -> 00 -> 60 -> 59 -> 58 -> ... -> 54
- */
-export const secondsToNextMinute = (s, ms) => {
-  if (s === 0) {
-    const milli = ms != null ? ms : getNow().millisecond;
-    return milli < 350 ? 0 : 60;
-  }
-  return 60 - s;
-};
+/** Seconds remaining until the next IST minute boundary: 59, 58, ..., 1, 0, 59... */
+export const secondsToNextMinute = (s) => (s === 0 ? 0 : 60 - s);
 
 /** "2026-08-17" */
 export const istDateStr = () => getNow().toFormat("yyyy-MM-dd");
@@ -149,6 +158,3 @@ export const ist24hStr = (minuteOffset = 0) =>
 
 // Back-compat alias (used by old callers).
 export const istNow = getNow;
-
-// Kept for any legacy import.
-export const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
