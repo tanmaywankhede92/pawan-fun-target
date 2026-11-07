@@ -10,7 +10,8 @@ const POS = {
 
 const GifTimerDisplay = ({ time }) => {
   // Blinks strictly at 5, 4, 3 seconds during final countdown
-  const show = time != null && time >= 3 && time <= 5;
+  const numTime = Number(time);
+  const show = !isNaN(numTime) && numTime >= 3 && numTime <= 5;
 
   if (!show) return null;
 
@@ -19,21 +20,17 @@ const GifTimerDisplay = ({ time }) => {
       decoding="async"
       src={FTlogoGif}
       alt="celebration"
-      className="absolute pointer-events-none select-none z-[5]"
+      className="absolute pointer-events-none select-none"
       style={{
         left: POS.left,
         top: POS.top,
         width: POS.width,
         height: POS.height,
+        zIndex: 20,
       }}
     />
   );
 };
 
 export { POS as gifPos };
-
-export default memo(GifTimerDisplay, (prev, next) => {
-  const prevShow = prev.time != null && prev.time >= 3 && prev.time <= 5;
-  const nextShow = next.time != null && next.time >= 3 && next.time <= 5;
-  return prevShow === nextShow;
-});
+export default memo(GifTimerDisplay);

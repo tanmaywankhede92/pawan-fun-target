@@ -29,6 +29,7 @@ const TimerDisplay = ({ time }) => {
         willChange: "contents",
         backfaceVisibility: "hidden",
         contain: "paint layout",
+        zIndex: 30,
       }}
     >
       <span>0</span>
