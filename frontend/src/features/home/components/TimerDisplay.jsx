@@ -1,5 +1,3 @@
-import { memo } from "react";
-
 const POS = {
   left: "3.0%",
   top: "32.5%",
@@ -31,6 +29,7 @@ const TimerDisplay = ({ time }) => {
         willChange: "contents",
         backfaceVisibility: "hidden",
         contain: "paint layout",
+        zIndex: 30,
       }}
     >
       <span>0</span>
@@ -41,4 +40,4 @@ const TimerDisplay = ({ time }) => {
 };
 
 export { POS as timerPos };
-export default memo(TimerDisplay);
+export default TimerDisplay;

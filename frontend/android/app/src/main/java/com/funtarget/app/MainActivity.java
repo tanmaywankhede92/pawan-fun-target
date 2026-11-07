@@ -1,5 +1,7 @@
 package com.funtarget.app;
 
+import android.app.ActivityManager;
+import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -218,6 +220,66 @@ public class MainActivity extends BridgeActivity {
                 public boolean isAndroidTV() {
                     return isRunningOnTv();
                 }
+
+                @android.webkit.JavascriptInterface
+                public int getTotalRamMb() {
+                    try {
+                        ActivityManager actManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+                        ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
+                        if (actManager != null) {
+                            actManager.getMemoryInfo(memInfo);
+                            return (int) (memInfo.totalMem / (1024 * 1024));
+                        }
+                    } catch (Exception ignored) {}
+                    return -1;
+                }
+
+                @android.webkit.JavascriptInterface
+                public int getAvailableRamMb() {
+                    try {
+                        ActivityManager actManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+                        ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
+                        if (actManager != null) {
+                            actManager.getMemoryInfo(memInfo);
+                            return (int) (memInfo.availMem / (1024 * 1024));
+                        }
+                    } catch (Exception ignored) {}
+                    return -1;
+                }
+
+                @android.webkit.JavascriptInterface
+                public boolean isLowRamDevice() {
+                    try {
+                        ActivityManager actManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+                        if (actManager != null) {
+                            return actManager.isLowRamDevice();
+                        }
+                    } catch (Exception ignored) {}
+                    return false;
+                }
+
+                @android.webkit.JavascriptInterface
+                public int getMemoryClass() {
+                    try {
+                        ActivityManager actManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+                        if (actManager != null) {
+                            return actManager.getMemoryClass();
+                        }
+                    } catch (Exception ignored) {}
+                    return -1;
+                }
+
+                @android.webkit.JavascriptInterface
+                public void clearWebViewCache() {
+                    runOnUiThread(() -> {
+                        try {
+                            WebView wv = getBridge().getWebView();
+                            if (wv != null) {
+                                wv.clearCache(true);
+                            }
+                        } catch (Exception ignored) {}
+                    });
+                }
             },
             "Android"
         );
@@ -293,6 +355,20 @@ public class MainActivity extends BridgeActivity {
             if (webView != null) {
                 webView.evaluateJavascript(
                     "if(window.__appLock) window.__appLock()", null
+                );
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        try {
+            WebView webView = getBridge().getWebView();
+            if (webView != null) {
+                webView.evaluateJavascript(
+                    "if(window.__onTrimMemory) window.__onTrimMemory(" + level + ")", null
                 );
             }
         } catch (Exception ignored) {

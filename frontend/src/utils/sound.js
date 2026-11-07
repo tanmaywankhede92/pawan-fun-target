@@ -90,12 +90,15 @@ const decodeOne = (name, src) => {
 // it depends on (getSfxElement, decodeOne) is defined.
 const preloadAll = () => {
   if (typeof window === 'undefined') return;
-  if (!getCtx()) return; // no Web Audio support -> element fallback only
+  const ac = getCtx();
   for (const name of Object.keys(SOUNDS)) {
     const src = getSrc(name);
     if (src) {
-      decodeOne(name, src);
-      getSfxElement(name, src);
+      if (ac) {
+        decodeOne(name, src);
+      } else {
+        getSfxElement(name, src);
+      }
     }
   }
 };
@@ -378,6 +381,13 @@ export const stopMusic = () => {
     bgmElement = null;
   }
   bgmSrc = null;
+};
+
+export const stopAllSounds = () => {
+  stopMusic();
+  for (const name of Object.keys(SOUNDS)) {
+    stopSound(name);
+  }
 };
 
 // Run once all helpers above are defined.
