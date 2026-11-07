@@ -890,6 +890,7 @@ const HomePage = () => {
       <ScoreDisplay score={Math.max(0, scoreBalance)} />
       <TotalBetDisplay total={totalBet} />
       <WinnerDisplay winner={lastWinner} winAmount={winInfo?.win_amount} />
+      <TimerDisplayGif time={time} />
       <TimerDisplay time={time} />
       <WheelDisplay
         spinTrigger={spinCount}

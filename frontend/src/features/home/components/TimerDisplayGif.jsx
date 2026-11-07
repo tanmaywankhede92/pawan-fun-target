@@ -1,3 +1,4 @@
+import { memo } from "react";
 import FTlogoGif from "@assets/images/gifs/timerDisplay.webp";
 
 const POS = {
@@ -8,7 +9,8 @@ const POS = {
 };
 
 const GifTimerDisplay = ({ time }) => {
-  const show = time >= 10 && time <= 15;
+  // Blinks strictly at 5, 4, 3 seconds during final countdown
+  const show = time != null && time >= 3 && time <= 5;
 
   if (!show) return null;
 
@@ -17,7 +19,7 @@ const GifTimerDisplay = ({ time }) => {
       decoding="async"
       src={FTlogoGif}
       alt="celebration"
-      className="absolute pointer-events-none "
+      className="absolute pointer-events-none select-none z-[5]"
       style={{
         left: POS.left,
         top: POS.top,
@@ -29,4 +31,9 @@ const GifTimerDisplay = ({ time }) => {
 };
 
 export { POS as gifPos };
-export default GifTimerDisplay;
+
+export default memo(GifTimerDisplay, (prev, next) => {
+  const prevShow = prev.time != null && prev.time >= 3 && prev.time <= 5;
+  const nextShow = next.time != null && next.time >= 3 && next.time <= 5;
+  return prevShow === nextShow;
+});
