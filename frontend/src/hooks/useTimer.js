@@ -11,12 +11,13 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { getNow, secondsToNextMinute, onCalibrate } from "@utils/istTime";
+import { getNowFast, secondsToNextMinute, onCalibrate } from "@utils/istTime";
 
 export const useTimer = ({ onMinuteStart }) => {
-  const [time, setTime] = useState(() =>
-    secondsToNextMinute(getNow().second, getNow().millisecond),
-  );
+  const [time, setTime] = useState(() => {
+    const initial = getNowFast();
+    return secondsToNextMinute(initial.second, initial.msInSecond);
+  });
 
   const mountedRef = useRef(true);
   const onMinuteStartRef = useRef(onMinuteStart);
@@ -25,22 +26,33 @@ export const useTimer = ({ onMinuteStart }) => {
   // The IST minute we have already processed.  On every tick, if the
   // current minute differs, the boundary was crossed (or missed while
   // throttled) — fire once and advance.
-  const targetMinuteRef = useRef(getNow().minute);
+  const targetMinuteRef = useRef(getNowFast().minute);
 
   const tick = () => {
-    const now = getNow();
+    const now = getNowFast();
     const s = now.second;
-    const ms = now.millisecond;
+    const ms = now.msInSecond;
     const currentMinute = now.minute;
 
-    // Update the countdown display (supports 00 -> 60 transition at 400ms).
-    setTime(secondsToNextMinute(s, ms));
+    // Update the countdown display only when integer second changes.
+    // Prevents 10 React state updates per second on slow Android TV.
+    const remaining = secondsToNextMinute(s, ms);
+    setTime((prev) => (prev !== remaining ? remaining : prev));
 
-    // Minute boundary: fires on normal crossing AND on missed (throttled)
-    // boundaries — always exactly once per IST minute.
+    // Minute boundary: fires on normal crossing.
+    // If the app experiences an execution pause (OS sleep / tab throttle / freeze) and resumes mid-round
+    // (e.g. at 26 seconds), we advance targetMinuteRef to stay in sync with the current minute, but
+    // DO NOT trigger onMinuteStart mid-round! The wheel must only execute at scheduled :00 boundaries.
     if (targetMinuteRef.current !== currentMinute) {
       targetMinuteRef.current = currentMinute;
-      onMinuteStartRef.current();
+      const isLegitimateBoundary = s >= 58 || s <= 2;
+      if (isLegitimateBoundary && onMinuteStartRef.current) {
+        try {
+          onMinuteStartRef.current();
+        } catch (e) {
+          console.error("[useTimer] onMinuteStart error:", e);
+        }
+      }
     }
   };
 
@@ -48,7 +60,7 @@ export const useTimer = ({ onMinuteStart }) => {
   useEffect(() => {
     mountedRef.current = true;
     tick(); // immediate first tick
-    const id = setInterval(tick, 100);
+    const id = setInterval(tick, 200);
     return () => {
       mountedRef.current = false;
       clearInterval(id);
@@ -57,17 +69,14 @@ export const useTimer = ({ onMinuteStart }) => {
   }, []);
 
   // ── Calibration re-sync ────────────────────────────────────────
-  // When calibrateTime() detects a >1 s offset jump (e.g. first API
-  // response on a device with a wrong clock), re-sync targetMinuteRef
-  // to the newly-calibrated minute so we don't fire a false
-  // onMinuteStart.
+  // When calibrateTime() detects an offset jump, re-sync targetMinuteRef
+  // to the newly-calibrated minute so we don't fire a false onMinuteStart.
   useEffect(() => {
     return onCalibrate(() => {
-      const currentMinute = getNow().minute;
-      targetMinuteRef.current = currentMinute;
-      // Also correct the displayed time immediately.
-      const now = getNow();
-      setTime(secondsToNextMinute(now.second, now.millisecond));
+      const now = getNowFast();
+      targetMinuteRef.current = now.minute;
+      const remaining = secondsToNextMinute(now.second, now.msInSecond);
+      setTime((prev) => (prev !== remaining ? remaining : prev));
     });
   }, []);
 

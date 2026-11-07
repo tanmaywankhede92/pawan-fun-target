@@ -85,6 +85,7 @@ const PrePage = () => {
   };
 
   useEffect(() => {
+    let images = [];
     // Gently pre-warm critical game background and wheel image in background
     // after PrePage has painted, so opening PrePage is instantaneous on Android TV
     const timer = setTimeout(() => {
@@ -92,12 +93,21 @@ const PrePage = () => {
         if (!src) return;
         const img = new Image();
         img.src = src;
+        images.push(img);
       });
     }, 500);
 
     return () => {
       clearTimeout(timer);
       if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+      images.forEach((img) => {
+        try {
+          img.src = "";
+          img.onload = null;
+          img.onerror = null;
+        } catch {}
+      });
+      images = [];
     };
   }, []);
 

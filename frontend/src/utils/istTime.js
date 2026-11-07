@@ -18,8 +18,10 @@ export const onCalibrate = (fn) => {
   return () => calibrateListeners.delete(fn);
 };
 
+export const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000; // 19,800,000 ms
+
 export const setServerOffset = (newOffset) => {
-  const jumped = Math.abs(newOffset - serverOffsetMs) > 1000;
+  const jumped = Math.abs(newOffset - serverOffsetMs) > 2000;
   serverOffsetMs = newOffset;
   isSynced = true;
   if (jumped) {
@@ -29,9 +31,12 @@ export const setServerOffset = (newOffset) => {
 
 /**
  * Calibrate from an HTTP Date header (e.g. from backend API).
+ * If we already have accurate sub-second sync from atomic time source,
+ * do not overwrite with coarse 1-second HTTP Date header (which adds 500-1000ms jitter).
  */
 export const calibrateTime = (serverDateHeader) => {
   if (!serverDateHeader) return;
+  if (isSynced) return;
   const serverUtc = DateTime.fromHTTP(serverDateHeader);
   if (!serverUtc.isValid) return;
   const newOffset = serverUtc.toMillis() - Date.now();
@@ -43,49 +48,56 @@ export const calibrateTime = (serverDateHeader) => {
  * Fetches accurate standard atomic UTC time from reliable global time sources
  * so phone, desktop and server have 0 millisecond difference.
  */
+let isSyncing = false;
 export const syncGlobalTime = async () => {
-  const sources = [
-    async () => {
-      // Source 1: Cloudflare trace (fastest, anycast edge in India/worldwide, CORS enabled, sub-20ms)
-      const t0 = Date.now();
-      const res = await fetch("https://www.cloudflare.com/cdn-cgi/trace", { cache: "no-store" });
-      const text = await res.text();
-      const t1 = Date.now();
-      const rtt = t1 - t0;
-      const match = text.match(/ts=([0-9.]+)/);
-      if (match && match[1]) {
-        const globalUtcMs = Math.floor(parseFloat(match[1]) * 1000) + Math.floor(rtt / 2);
-        return globalUtcMs - t1;
-      }
-      throw new Error("Invalid Cloudflare trace response");
-    },
-    async () => {
-      // Source 2: TimeAPI.io (Asia/Kolkata fallback)
-      const t0 = Date.now();
-      const res = await fetch("https://timeapi.io/api/v1/time/current/zone?timeZone=Asia/Kolkata", { cache: "no-store" });
-      const data = await res.json();
-      const t1 = Date.now();
-      const rtt = t1 - t0;
-      const dtStr = data?.date_time || data?.dateTime;
-      if (dtStr) {
-        const dt = DateTime.fromISO(dtStr, { zone: "Asia/Kolkata" });
-        if (dt.isValid) {
-          const globalUtcMs = dt.toMillis() + Math.floor(rtt / 2);
+  if (isSyncing) return;
+  isSyncing = true;
+  try {
+    const sources = [
+      async () => {
+        // Source 1: Cloudflare trace (fastest, anycast edge in India/worldwide, CORS enabled, sub-20ms)
+        const t0 = Date.now();
+        const res = await fetch("https://www.cloudflare.com/cdn-cgi/trace", { cache: "no-store" });
+        const text = await res.text();
+        const t1 = Date.now();
+        const rtt = t1 - t0;
+        const match = text.match(/ts=([0-9.]+)/);
+        if (match && match[1]) {
+          const globalUtcMs = Math.floor(parseFloat(match[1]) * 1000) + Math.floor(rtt / 2);
           return globalUtcMs - t1;
         }
-      }
-      throw new Error("Invalid TimeAPI response");
-    },
-  ];
+        throw new Error("Invalid Cloudflare trace response");
+      },
+      async () => {
+        // Source 2: TimeAPI.io (Asia/Kolkata fallback)
+        const t0 = Date.now();
+        const res = await fetch("https://timeapi.io/api/v1/time/current/zone?timeZone=Asia/Kolkata", { cache: "no-store" });
+        const data = await res.json();
+        const t1 = Date.now();
+        const rtt = t1 - t0;
+        const dtStr = data?.date_time || data?.dateTime;
+        if (dtStr) {
+          const dt = DateTime.fromISO(dtStr, { zone: "Asia/Kolkata" });
+          if (dt.isValid) {
+            const globalUtcMs = dt.toMillis() + Math.floor(rtt / 2);
+            return globalUtcMs - t1;
+          }
+        }
+        throw new Error("Invalid TimeAPI response");
+      },
+    ];
 
-  for (const fetchSource of sources) {
-    try {
-      const offset = await fetchSource();
-      setServerOffset(offset);
-      return;
-    } catch {
-      // Try next reliable global source
+    for (const fetchSource of sources) {
+      try {
+        const offset = await fetchSource();
+        setServerOffset(offset);
+        return;
+      } catch {
+        // Try next reliable global source
+      }
     }
+  } finally {
+    isSyncing = false;
   }
 };
 
@@ -93,8 +105,8 @@ export const syncGlobalTime = async () => {
 if (typeof window !== "undefined") {
   syncGlobalTime();
 
-  // Re-sync every 30 seconds to continuously prevent clock drift
-  setInterval(syncGlobalTime, 30 * 1000);
+  // Re-sync every 3 minutes to continuously prevent clock drift without socket thrashing
+  setInterval(syncGlobalTime, 3 * 60 * 1000);
 
   // Also re-sync when window becomes visible or device wakes up
   document.addEventListener("visibilitychange", () => {
@@ -108,12 +120,26 @@ if (typeof window !== "undefined") {
 
 // ── IST helpers (fully calibrated against global standard time) ─────
 
+/**
+ * Ultra-fast integer arithmetic IST clock.
+ * ZERO Luxon DateTime object allocations.
+ * ZERO memory pressure / Garbage Collection pauses in Android WebView.
+ */
+export const getNowFast = () => {
+  const istMs = Date.now() + serverOffsetMs + IST_OFFSET_MS;
+  const totalSec = Math.floor(istMs / 1000);
+  const second = totalSec % 60;
+  const minute = Math.floor(totalSec / 60) % 60;
+  const msInSecond = istMs % 1000;
+  return { second, minute, msInSecond, istMs };
+};
+
 /** Current IST DateTime, calibrated against global standard time. */
 export const getNow = () =>
   DateTime.now().plus({ milliseconds: serverOffsetMs }).setZone(TIMEZONE);
 
 /** IST seconds (0-59), server-calibrated. */
-export const istSeconds = () => getNow().second;
+export const istSeconds = () => getNowFast().second;
 
 /** Seconds remaining until the next IST minute boundary.
  * - At s === 0 and ms < 350: returns 0 (displays as "00")
@@ -149,6 +175,3 @@ export const ist24hStr = (minuteOffset = 0) =>
 
 // Back-compat alias (used by old callers).
 export const istNow = getNow;
-
-// Kept for any legacy import.
-export const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;

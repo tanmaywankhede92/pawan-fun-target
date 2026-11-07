@@ -3,6 +3,7 @@ import { authService } from '@services/auth.service';
 import { STORAGE_KEYS } from '@constants';
 import { recordApiResponse } from '@utils/apiLog';
 import { clearAllPendingBets } from '@utils/pendingBet';
+import { clearPermanentImageCache } from '@utils/preloadImages';
 
 const AuthContext = createContext(null);
 
@@ -97,6 +98,12 @@ export const AuthProvider = ({ children }) => {
       }
     }
     clearAllPendingBets();
+    clearPermanentImageCache();
+    if (typeof window !== 'undefined' && window.Android && typeof window.Android.clearWebViewCache === 'function') {
+      try {
+        window.Android.clearWebViewCache();
+      } catch {}
+    }
     sessionStorage.removeItem(STORAGE_KEYS.USER);
     localStorage.removeItem(STORAGE_KEYS.USER);
     dispatch({ type: 'LOGOUT' });

@@ -1,4 +1,7 @@
+import { memo } from "react";
 import FTlogoGif from "@assets/images/gifs/FTlogo2.webp";
+import FTlogoStatic from "@assets/images/gifs/FTlogo2_static.webp";
+import { isLowSpecAndroidTv } from "@utils/deviceProfile";
 
 const POS = {
   left: "0%",
@@ -8,9 +11,13 @@ const POS = {
 };
 
 const GifDisplay = () => {
+  const isLowSpec = isLowSpecAndroidTv();
+  const imgSrc = isLowSpec ? FTlogoStatic : FTlogoGif;
+
   return (
     <img
-      src={FTlogoGif}
+      decoding="async"
+      src={imgSrc}
       alt="celebration"
       className="absolute pointer-events-none"
       style={{
@@ -25,5 +32,5 @@ const GifDisplay = () => {
 };
 
 export { POS as homeGifPos };
-export default GifDisplay;
+export default memo(GifDisplay);
 

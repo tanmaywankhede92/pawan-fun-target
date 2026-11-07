@@ -5,9 +5,14 @@ import AppRoutes from "@routes/AppRoutes";
 import FullscreenHandler from "@components/common/FullscreenHandler";
 import useTvNavigation from "@hooks/useTvNavigation";
 import { SplashScreen as CapSplash } from "@capacitor/splash-screen";
+import { applyLowSpecDeviceProfile } from "@utils/deviceProfile";
 
 const App = () => {
   useTvNavigation();
+
+  useEffect(() => {
+    applyLowSpecDeviceProfile();
+  }, []);
 
   useEffect(() => {
     // Wait for initial render paint, then smoothly fade out native splash screen

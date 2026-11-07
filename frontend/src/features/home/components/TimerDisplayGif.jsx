@@ -1,5 +1,7 @@
 import { memo } from "react";
-import FTlogoGif from "@assets/images/gifs/timerDisplay.webp";
+import timerDisplayOriginal from "@assets/images/gifs/timerDisplay.webp";
+import timerDisplayLowSpec from "@assets/images/gifs/timerDisplay_10f.webp";
+import { isLowSpecAndroidTv } from "@utils/deviceProfile";
 
 const POS = {
   left: "1.5%",
@@ -15,10 +17,13 @@ const GifTimerDisplay = ({ time }) => {
 
   if (!show) return null;
 
+  const isLowSpec = isLowSpecAndroidTv();
+  const src = isLowSpec ? timerDisplayLowSpec : timerDisplayOriginal;
+
   return (
     <img
       decoding="async"
-      src={FTlogoGif}
+      src={src}
       alt="celebration"
       className="absolute pointer-events-none select-none"
       style={{

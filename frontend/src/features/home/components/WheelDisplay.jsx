@@ -8,6 +8,7 @@ import bonus from "@assets/images/gifs/joker3.webp";
 import drum from "@assets/images/gifs/joker4.webp";
 import pointerGif from "@assets/images/gifs/DG.gif";
 import { isMobile } from "@utils/isTv";
+import { isLowSpecAndroidTv } from "@utils/deviceProfile";
 
 // ========================================================
 // 💻 1. DESKTOP / LAPTOP / BROWSER CONFIGURATION
@@ -229,6 +230,7 @@ const WheelDisplay = ({
   const [resultJoker, setResultJoker] = useState(() =>
     jokerImageFor(null, null),
   );
+  const isLowSpec = isLowSpecAndroidTv();
 
   useEffect(() => {
     const onResize = () => setDims(getDims());
@@ -540,24 +542,28 @@ const WheelDisplay = ({
           }}
         />
 
-        {/* Center spinning ball/wheel: pre-decoded in DOM for instant 0ms synchronized start */}
-        <img
-          decoding="async"
-          src={wheelGif}
-          alt="wheel gif"
-          className="absolute pointer-events-none z-10"
-          style={{
-            left: OVERLAY_POS.left,
-            top: OVERLAY_POS.top,
-            width: OVERLAY_POS.width,
-            height: OVERLAY_POS.height,
-            transform: "translate(-50%, -50%)",
-            objectFit: "contain",
-            opacity: showGif ? 1 : 0,
-            visibility: showGif ? "visible" : "hidden",
-            pointerEvents: "none",
-          }}
-        />
+        {/* Center spinning ball/wheel: adaptive rendering.
+            On low-spec TV, unmounted during stationary betting (54s) to free 31MB VRAM;
+            On Desktop/high-end, remains pre-decoded in DOM for instant 0ms synchronized start. */}
+        {(!isLowSpec || showGif) && (
+          <img
+            decoding="async"
+            src={wheelGif}
+            alt="wheel gif"
+            className="absolute pointer-events-none z-10"
+            style={{
+              left: OVERLAY_POS.left,
+              top: OVERLAY_POS.top,
+              width: OVERLAY_POS.width,
+              height: OVERLAY_POS.height,
+              transform: "translate(-50%, -50%)",
+              objectFit: "contain",
+              opacity: showGif ? 1 : 0,
+              visibility: showGif ? "visible" : "hidden",
+              pointerEvents: "none",
+            }}
+          />
+        )}
 
         {/* Center winning result: reveals the exact instant the spin stops */}
         {resultJoker && (

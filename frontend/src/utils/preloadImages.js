@@ -46,10 +46,26 @@ const allFlowImages = [
   imgSuperGoldenWheel,
 ];
 
-// Persistent global cache to prevent garbage collection from evicting GPU decoded textures
+// Global cache with explicit release capability for account transitions
 if (typeof window !== "undefined" && !window.__permanentImageCache) {
   window.__permanentImageCache = new Map();
 }
+
+export const clearPermanentImageCache = () => {
+  if (typeof window === "undefined" || !window.__permanentImageCache) return;
+  try {
+    for (const img of window.__permanentImageCache.values()) {
+      if (img) {
+        img.src = "";
+        img.onload = null;
+        img.onerror = null;
+      }
+    }
+  } catch {
+    // ignore
+  }
+  window.__permanentImageCache.clear();
+};
 
 const preloadImages = () => {
   if (typeof window === "undefined") return;
