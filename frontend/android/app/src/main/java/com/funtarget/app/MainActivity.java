@@ -277,6 +277,8 @@ public class MainActivity extends BridgeActivity {
                             if (wv != null) {
                                 wv.clearCache(true);
                             }
+                            System.gc();
+                            Runtime.getRuntime().gc();
                         } catch (Exception ignored) {}
                     });
                 }
@@ -370,6 +372,12 @@ public class MainActivity extends BridgeActivity {
                 webView.evaluateJavascript(
                     "if(window.__onTrimMemory) window.__onTrimMemory(" + level + ")", null
                 );
+            }
+            if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+                if (webView != null) {
+                    webView.clearCache(true);
+                }
+                System.gc();
             }
         } catch (Exception ignored) {
         }
