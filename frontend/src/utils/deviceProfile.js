@@ -76,24 +76,16 @@ export const getDeviceProfile = () => {
     typeof navigator.hardwareConcurrency === 'number' &&
     navigator.hardwareConcurrency <= 4;
 
-  const isLowSpec = isTv && (hasLowRamSignal || webLowRam || webLowCpu || totalRamMb <= 2200);
-
-  if (isLowSpec) {
+  // On ANY TV platform (Android TV / T-95 TV Box / FireTV / Smart TV), the GPU is an integrated
+  // embedded SoC (Mali-450 / Mali-G31) with shared unified memory and a strict ~128MB texture aperture.
+  // Regardless of whether total physical RAM is 2GB or 4GB, ALL TVs must use the memory-safe profile
+  // (static logo banner, unmounted stationary wheelGif, 10f timer bulbs) to prevent 128MB VRAM overflow
+  // and eliminate all black screen glitches and 105ms frame stutters.
+  if (isTv) {
     cachedProfile = {
       tier: DEVICE_TIER.LOW,
       isTv: true,
       isLowSpec: true,
-      totalRamMb,
-      memoryClass,
-    };
-    return cachedProfile;
-  }
-
-  if (isTv) {
-    cachedProfile = {
-      tier: DEVICE_TIER.MEDIUM,
-      isTv: true,
-      isLowSpec: false,
       totalRamMb,
       memoryClass,
     };
