@@ -53,17 +53,6 @@ if (typeof window !== "undefined" && !window.__permanentImageCache) {
 
 export const clearPermanentImageCache = () => {
   if (typeof window === "undefined" || !window.__permanentImageCache) return;
-  try {
-    for (const img of window.__permanentImageCache.values()) {
-      if (img) {
-        img.src = "";
-        img.onload = null;
-        img.onerror = null;
-      }
-    }
-  } catch {
-    // ignore
-  }
   window.__permanentImageCache.clear();
 };
 

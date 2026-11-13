@@ -39,7 +39,6 @@ import {
   clearPendingBet,
 } from "@utils/pendingBet";
 import { istSeconds, istDateStr, ist12hStr, ist24hStr } from "@utils/istTime";
-import { purgeMemoryCache } from "@utils/cacheManager";
 
 const DEBUG = false;
 
@@ -103,16 +102,6 @@ const HomePage = () => {
   const totalBetRef = useRef(0);
   const userRef = useRef(user);
   userRef.current = user;
-
-  // Track completed draws to perform an automatic silent cache purge every 5 draws (~5 minutes)
-  const completedDrawsRef = useRef(0);
-
-  // Silently release cached allocations and native WebView textures when unmounting HomePage
-  useEffect(() => {
-    return () => {
-      purgeMemoryCache();
-    };
-  }, []);
 
   const totalBet = Object.values(bets).reduce((sum, v) => sum + v, 0);
   totalBetRef.current = totalBet;
@@ -837,16 +826,6 @@ const HomePage = () => {
       const didWin = Number(bets[winner] || 0) > 0;
       setWon(didWin);
       setTaken(false);
-
-      // Automated 5-draw (~5 minute) safe memory & texture cache purge.
-      // Runs silently when the wheel has come to a complete rest, avoiding any animation stutter.
-      completedDrawsRef.current += 1;
-      if (completedDrawsRef.current >= 5) {
-        completedDrawsRef.current = 0;
-        setTimeout(() => {
-          purgeMemoryCache();
-        }, 3000);
-      }
       // Win/lose sound the moment the wheel stops (only when a bet was placed).
       if (totalBet > 0) {
         play(didWin ? "WIN" : "LOSE");
