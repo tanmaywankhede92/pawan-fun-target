@@ -25,6 +25,9 @@ const TimerDisplay = ({ time }) => {
         lineHeight: 1,
         whiteSpace: "nowrap",
         overflow: "visible",
+        transform: "translateZ(0)",
+        backfaceVisibility: "hidden",
+        contain: "paint layout",
         zIndex: 30,
       }}
     >

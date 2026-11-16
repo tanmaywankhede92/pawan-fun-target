@@ -595,7 +595,9 @@ const WheelDisplay = ({
           top: POINTER_POS.top,
           width: "14%",
           height: "auto",
-          transform: "translate(-50%, -50%)",
+          transform: "translate(-50%, -50%) translateZ(0)",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
         }}
       />
 
