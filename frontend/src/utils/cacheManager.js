@@ -5,8 +5,9 @@ import { clearPermanentImageCache } from './preloadImages';
  * 
  * Clears:
  * 1. Android WebView resource cache & initiates native GC.
- * 2. Detached unmounted Image objects in window.__permanentImageCache.
- * 3. Triggers window.gc() if exposed (e.g. V8 GC flags).
+ * 2. D b
+ * \
+ *    . V8 GC flags).
  */
 export const purgeMemoryCache = () => {
   try {
@@ -37,7 +38,7 @@ if (typeof window !== 'undefined') {
   window.__onTrimMemory = (_level) => {
     try {
       purgeMemoryCache();
-    } catch (e) {}
+    } catch (e) { }
   };
 }
 

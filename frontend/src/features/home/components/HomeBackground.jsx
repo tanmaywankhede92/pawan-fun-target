@@ -10,7 +10,6 @@ const HomeBackground = () => {
       className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none"
       style={{
         transform: "translateZ(0)",
-        willChange: "transform",
         backfaceVisibility: "hidden",
         WebkitBackfaceVisibility: "hidden",
       }}

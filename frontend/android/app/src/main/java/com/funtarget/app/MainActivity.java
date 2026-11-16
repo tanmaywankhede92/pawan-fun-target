@@ -84,25 +84,9 @@ public class MainActivity extends BridgeActivity {
     }
 
     private boolean isRunningOnTv() {
-        try {
-            android.app.UiModeManager uiModeManager = (android.app.UiModeManager) getSystemService(UI_MODE_SERVICE);
-            if (uiModeManager != null && uiModeManager.getCurrentModeType() == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION) {
-                return true;
-            }
-            android.content.pm.PackageManager pm = getPackageManager();
-            if (pm != null) {
-                if (pm.hasSystemFeature(android.content.pm.PackageManager.FEATURE_LEANBACK)
-                        || pm.hasSystemFeature("android.hardware.type.television")) {
-                    return true;
-                }
-                // Many Android TV boxes identify as large non-touchscreen devices:
-                if (!pm.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN)) {
-                    return true;
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        return false;
+        // Enforce TV behavior for this dedicated Android TV APK build.
+        // Bypasses spoofed Pixel 2 ROM build properties on generic Chinese TV boxes (T95/Allwinner).
+        return true;
     }
 
     private void suppressSoftKeyboardIfTv() {

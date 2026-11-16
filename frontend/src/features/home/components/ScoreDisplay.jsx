@@ -36,7 +36,6 @@ const ScoreDisplay = ({ score = 0 }) => {
         whiteSpace: "nowrap",
         overflow: "visible",
         transform: "translateZ(0)",
-        willChange: "contents",
         backfaceVisibility: "hidden",
         contain: "paint layout",
       }}
