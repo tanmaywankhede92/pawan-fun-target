@@ -36,9 +36,14 @@ export const getDeviceProfile = () => {
     }
   }
 
+  const isAndroidApp =
+    (typeof window !== "undefined" && Boolean(window.Android)) ||
+    (typeof window !== "undefined" && Boolean(window.Capacitor?.isNativePlatform?.()));
+
   const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
-  const isDesktop = /Windows NT|Macintosh|Mac OS X(?!.*Mobile)|CrOS|X11; Linux x86_64/i.test(ua);
+  const isDesktop = !isAndroidApp && /Windows NT|Macintosh|Mac OS X(?!.*Mobile)|CrOS|X11; Linux x86_64/i.test(ua);
   const isTv =
+    isAndroidApp ||
     isNativeTv ||
     /TV|GoogleTV|AndroidTV|SmartTV|BRAVIA|AFT|MiTV|NetCast|Tizen|WebOS/i.test(ua) ||
     (/Android/i.test(ua) && !/Mobile/i.test(ua));

@@ -35,10 +35,6 @@ const ScoreDisplay = ({ score = 0 }) => {
         textShadow: "0 0 0.5px #1b0e00",
         whiteSpace: "nowrap",
         overflow: "visible",
-        transform: "translateZ(0)",
-        willChange: "contents",
-        backfaceVisibility: "hidden",
-        contain: "paint layout",
       }}
     >
       {display}.00

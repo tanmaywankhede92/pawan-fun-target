@@ -521,10 +521,6 @@ const WheelDisplay = ({
         style={{
           transform: `scaleX(${dims.scaleX || POS.scaleX || 1})`,
           transformOrigin: "50% 50%",
-          willChange: "transform",
-          backfaceVisibility: "hidden",
-          WebkitBackfaceVisibility: "hidden",
-          isolation: "isolate",
         }}
       >
         <img
@@ -599,10 +595,7 @@ const WheelDisplay = ({
           top: POINTER_POS.top,
           width: "14%",
           height: "auto",
-          transform: "translate(-50%, -50%) translateZ(0)",
-          willChange: "transform",
-          backfaceVisibility: "hidden",
-          WebkitBackfaceVisibility: "hidden",
+          transform: "translate(-50%, -50%)",
         }}
       />
 
