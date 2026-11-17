@@ -132,6 +132,7 @@ const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
 
 // Spin starts at 60s countdown and smoothly stops at 54s countdown (total 6.0s)
+const SET_PAUSE_MS = 200; // 200ms pause when enableGlitch is active: wheel snaps to target result before rotating
 const MIN_CRUISE_MS = 1500; // Cruise through at least 1.5s of spinning before deceleration
 const MAX_SPEED = 0.65; // deg/ms = 650 deg/sec (~1.8 rev/sec) - fast, exciting and clear
 const ACCEL_TIME_MS = 400; // Smooth 0.4s spin-up
@@ -215,6 +216,7 @@ const WheelDisplay = ({
   targetWinner,
   joker,
   onComplete,
+  enableGlitch = false,
 }) => {
   const getDims = useCallback(() => {
     return {
@@ -226,7 +228,8 @@ const WheelDisplay = ({
 
   const [dims, setDims] = useState(getDims);
   const [spinning, setSpinning] = useState(false);
-    const [winner, setWinner] = useState(null);
+  const [isActuallyRotating, setIsActuallyRotating] = useState(false);
+  const [winner, setWinner] = useState(null);
   const [resultJoker, setResultJoker] = useState(() =>
     jokerImageFor(null, null),
   );
@@ -311,7 +314,8 @@ const WheelDisplay = ({
         wheelImgRef.current.style.transform = `rotate(${finalAngle}deg)`;
       }
 
-            setSpinning(false);
+      setIsActuallyRotating(false);
+      setSpinning(false);
       stop("SPIN");
       setWinner(finalWinner);
       setResultJoker(jokerImageFor(jokerRef.current, finalWinner));
@@ -335,11 +339,21 @@ const WheelDisplay = ({
 
     spinningRef.current = true;
     setSpinning(true);
-    setResultJoker(null);
-    play("SPIN", { loop: true });
+
+    if (!enableGlitch) {
+      setIsActuallyRotating(true);
+      setResultJoker(null);
+      play("SPIN", { loop: true });
+    } else {
+      setIsActuallyRotating(false);
+      // When enableGlitch is true: previous joker remains visible during 200ms pause,
+      // and audio + center spin starts only when the wheel actually starts rotating!
+    }
 
     let startTime = null;
     let lastTime = null;
+    let initialSnapDone = false;
+    let rotatingStarted = !enableGlitch;
     let currentAngle = rotationRef.current;
 
     winnerResolvedRef.current = null;
@@ -373,11 +387,43 @@ const WheelDisplay = ({
         winnerResolvedRef.current = 0;
       }
 
+      // ── Optional Spin Glitch (200ms initial snap pause) ──────────────
+      if (enableGlitch) {
+        // Snap wheel to target result position immediately so user sees the 200ms preview
+        if (!initialSnapDone && winnerResolvedRef.current !== null) {
+          initialSnapDone = true;
+          currentAngle = targetAngle(winnerResolvedRef.current);
+          rotationRef.current = currentAngle;
+          if (wheelImgRef.current) {
+            wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
+          }
+        }
+
+        // For the first SET_PAUSE_MS (200ms), wheel stays held at that result
+        if (elapsed < SET_PAUSE_MS) {
+          if (wheelImgRef.current) {
+            wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
+          }
+          rafIdRef.current = requestAnimationFrame(animate);
+          return;
+        }
+
+        // At elapsed >= SET_PAUSE_MS (200ms): wheel AND center spinner start spinning together!
+        if (!rotatingStarted) {
+          rotatingStarted = true;
+          setIsActuallyRotating(true);
+          setResultJoker(null);
+          play("SPIN", { loop: true });
+        }
+      }
+
+      const spinElapsed = enableGlitch ? Math.max(0, elapsed - SET_PAUSE_MS) : elapsed;
+
       // 2. Determine when to start deceleration:
       // Begins once winner is known AND minimum cruise time (1.5s) has passed.
       const canDecelerate =
         winnerResolvedRef.current !== null &&
-        elapsed >= MIN_CRUISE_MS;
+        spinElapsed >= MIN_CRUISE_MS;
 
       if (decelStartTimeRef.current === null && canDecelerate) {
         const w = winnerResolvedRef.current;
@@ -411,7 +457,7 @@ const WheelDisplay = ({
       // 3. Motion calculation
       if (decelStartTimeRef.current === null) {
         // Cruise phase: accelerate up to MAX_SPEED and spin at full speed alongside center GIF
-        const accel = Math.min(1, elapsed / ACCEL_TIME_MS);
+        const accel = Math.min(1, spinElapsed / ACCEL_TIME_MS);
         const speed = MAX_SPEED * accel;
         currentAngle += speed * dt;
       } else {
@@ -464,7 +510,7 @@ const WheelDisplay = ({
       stop("SPIN");
       spinningRef.current = false;
     };
-  }, [spinTrigger, finishSpin, play, stop]);
+  }, [spinTrigger, finishSpin, play, stop, enableGlitch]);
 
   // Background-tab recovery
   useEffect(() => {
@@ -488,7 +534,7 @@ const WheelDisplay = ({
     [stop],
   );
 
-  const showGif = spinning;
+  const showGif = enableGlitch ? isActuallyRotating : spinning;
 
   // ── Glitch prevention ──────────────────────────────────────────────
   // Guard: NEVER overwrite the transform while the 60fps rAF spin loop

@@ -33,12 +33,6 @@ export const purgeMemoryCache = () => {
   }
 };
 
-// Wire OS onTrimMemory signal directly to cache purge
-if (typeof window !== 'undefined') {
-  window.__onTrimMemory = (_level) => {
-    try {
-      purgeMemoryCache();
-    } catch (e) { }
-  };
-}
+// Purge is ONLY called on explicit user logout via AuthContext.
+// Never wire mid-game OS memory trim signals to texture cache eviction!
 
