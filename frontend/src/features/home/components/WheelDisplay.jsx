@@ -133,7 +133,8 @@ const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
 
 // Spin starts at 60s countdown and smoothly stops at 54s countdown (total 6.0s)
-const SET_PAUSE_MS = 70; // 70ms fast flash pause when enableGlitch is active: wheel snaps to target result before rotating
+const SET_PAUSE_MS = 40; // 40ms fast subliminal flash (approx 2 frames). Subtle, spontaneous with spin launch.
+const GLITCH_MAX_WAIT_MS = 900; // Hard deadline: wheel MUST start rotating within 900ms (at 59.1s countdown), never stalling to 57s!
 const MIN_CRUISE_MS = 1500; // Cruise through at least 1.5s of spinning before deceleration
 const MAX_SPEED = 0.65; // deg/ms = 650 deg/sec (~1.8 rev/sec) - fast, exciting and clear
 const ACCEL_TIME_MS = 400; // Smooth 0.4s spin-up
@@ -393,8 +394,10 @@ const WheelDisplay = ({
         winnerResolvedRef.current = 0;
       }
 
-      // ── Optional Spin Glitch (200ms snap pause on winning number) ──────────────
+      // ── Optional Spin Glitch (subtle spontaneous snap on launch) ──────────────
       if (enableGlitch) {
+        const pauseDuration = glitchPauseMs ?? SET_PAUSE_MS;
+
         // As soon as target winner arrives: snap wheel to winning number!
         if (!initialSnapDone && winnerResolvedRef.current !== null) {
           initialSnapDone = true;
@@ -412,11 +415,13 @@ const WheelDisplay = ({
           }
         }
 
-        const pauseDuration = glitchPauseMs ?? SET_PAUSE_MS;
+        // Hold conditions:
+        // 1. Snapped to target, waiting for the brief pauseDuration (40ms / 2 frames) before launching into motion:
+        const isPausedOnSnap = initialSnapDone && snapStartTime !== null && (now - snapStartTime < pauseDuration);
+        // 2. Waiting for winner from network, BUT strictly capped at GLITCH_MAX_WAIT_MS (900ms):
+        const isWaitingForWinnerUnderDeadline = !initialSnapDone && (elapsed < GLITCH_MAX_WAIT_MS);
 
-        // While waiting for winner to arrive, OR during the snap preview (default 200ms, or configured ms):
-        // Hold wheel completely steady on target result.
-        if (!initialSnapDone || (snapStartTime !== null && now - snapStartTime < pauseDuration)) {
+        if (isPausedOnSnap || isWaitingForWinnerUnderDeadline) {
           if (wheelImgRef.current) {
             wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
           }
@@ -424,7 +429,7 @@ const WheelDisplay = ({
           return;
         }
 
-        // The exact instant the 200ms snap pause expires: wheel & center spinner start spinning together!
+        // Launch spin immediately! (Either pause expired OR 900ms hard deadline reached)
         if (!rotatingStarted) {
           rotatingStarted = true;
           spinStartTime = now;

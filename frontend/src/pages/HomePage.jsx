@@ -48,8 +48,8 @@ const DEBUG = false;
 const ENABLE_SPIN_GLITCH = true;
 
 // Glitch preview duration in milliseconds:
-// 👈 Fast flash preview (default 70ms: bas ek halka sa flash aur wheel seedha ghoomna start!)
-const SPIN_GLITCH_PAUSE_MS = 70;
+// 👈 Fast subliminal flash preview (default 40ms: ~2 frames, subtle and spontaneous with wheel spin launch)
+const SPIN_GLITCH_PAUSE_MS = 40;
 
 const HomePage = () => {
   const { user, logout, refreshBalance, setAuth } = useAuth();
@@ -265,37 +265,56 @@ const HomePage = () => {
     // Defer balance check slightly so it doesn't trigger a full-tree re-render at the exact spin-start frame
     setTimeout(() => refreshBalance(), 1000);
 
-    // Fetch CURRENT round's result in the background while wheel is already smoothly spinning:
+    // Fetch CURRENT round's result in the background (staggered rapid polling for sub-second resolution):
     (async () => {
       const expectedDrawTime = ist24hStr(0);
-      let currentRecord = null;
-      for (let attempt = 0; attempt < 8; attempt++) {
+      let resolved = false;
+
+      const fetchOnce = async () => {
+        if (resolved) return;
         try {
           const { data } = await resultService.getCurrentResult();
           const r = data?.result?.[0];
-          if (r && r.result_time24 === expectedDrawTime) {
-            currentRecord = r;
-            break;
+          if (r && r.result_time24 === expectedDrawTime && !resolved) {
+            resolved = true;
+            const winDigit = Number(r.result) % 10;
+            const jokerVal = Number(r.joker) || 1;
+            setWheelTarget(winDigit);
+            setWheelJoker(jokerVal);
+            setResultError(false);
           }
         } catch {
-          // network retry
+          // network error / retry
         }
-        await new Promise((res) => setTimeout(res, 250));
+      };
+
+      // Staggered rapid polling: 0ms, 300ms, 650ms, 1000ms, 1500ms, 2200ms
+      const pollOffsets = [0, 300, 650, 1000, 1500, 2200];
+      for (const offset of pollOffsets) {
+        if (resolved) break;
+        if (offset === 0) {
+          fetchOnce();
+        } else {
+          setTimeout(fetchOnce, offset);
+        }
       }
 
-      if (!currentRecord) {
+      // Safety fallback after 3.2s in case draw time format or server was delayed
+      setTimeout(async () => {
+        if (resolved) return;
         try {
           const { data } = await resultService.getCurrentResult();
-          currentRecord = data?.result?.[0] || null;
-        } catch { }
-      }
-
-      const winDigit = currentRecord ? Number(currentRecord.result) % 10 : 0;
-      const jokerVal = currentRecord ? Number(currentRecord.joker) || null : 1;
-
-      setWheelTarget(winDigit);
-      setWheelJoker(jokerVal);
-      setResultError(!currentRecord);
+          const r = data?.result?.[0];
+          if (r && !resolved) {
+            resolved = true;
+            const winDigit = Number(r.result) % 10;
+            const jokerVal = Number(r.joker) || 1;
+            setWheelTarget(winDigit);
+            setWheelJoker(jokerVal);
+            setResultError(false);
+          }
+        } catch {}
+      }, 3200);
     })();
   }, [refreshBalance, totalBet, logout, navigate]);
 
