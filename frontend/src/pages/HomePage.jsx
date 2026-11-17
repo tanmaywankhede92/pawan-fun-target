@@ -38,7 +38,7 @@ import {
   loadPendingBet,
   clearPendingBet,
 } from "@utils/pendingBet";
-import { istSeconds, istDateStr, ist12hStr, ist24hStr } from "@utils/istTime";
+import { istSeconds, istDateStr, ist12hStr, ist24hStr, getNowFast } from "@utils/istTime";
 
 const DEBUG = false;
 
@@ -48,8 +48,8 @@ const DEBUG = false;
 const ENABLE_SPIN_GLITCH = true;
 
 // Glitch preview duration in milliseconds:
-// 👈 Fast subliminal flash preview (default 40ms: ~2 frames, subtle and spontaneous with wheel spin launch)
-const SPIN_GLITCH_PAUSE_MS = 40;
+// Set to 0ms for 1-frame instantaneous snap launch (ZERO freeze / ZERO pause):
+const SPIN_GLITCH_PAUSE_MS = 0;
 
 const HomePage = () => {
   const { user, logout, refreshBalance, setAuth } = useAuth();
@@ -68,6 +68,10 @@ const HomePage = () => {
   const [lastWinner, setLastWinner] = useState(null);
   const [lastJoker, setLastJoker] = useState(null);
   const [resultError, setResultError] = useState(false);
+  const lastResultIdRef = useRef(null);
+  const lastResultTimeRef = useRef(null);
+  const prefetchedResultRef = useRef(null);
+  const isPrefetchingRef = useRef(false);
   const [selectedValue, setSelectedValue] = useState(1);
   const [bets, setBets] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -75,7 +79,7 @@ const HomePage = () => {
   const [taken, setTaken] = useState(false);
   const [won, setWon] = useState(false);
   const [gameMessage, setGameMessage] = useState(
-    "Please Bet to Start Game. Minimum Bet=5",
+    "Please Bet to Start Game. Minimum Bet=1",
   );
   const [winInfo, setWinInfo] = useState(null);
   // Bumped when the wheel stops so LastWinningData reloads right away.
@@ -247,17 +251,27 @@ const HomePage = () => {
         return;
       }
     }
-    // Clear previous round results immediately so we do not show any old round result
-    setLastWinner(null);
-    setLastJoker(null);
-    setResultRevealed(false);
+    // Clear previous round win amount / taken state
     setWinInfo(null);
-    setWheelTarget(null);
-    setWheelJoker(null);
     setTaken(false);
     setResultError(false);
 
-    // Start wheel spin IMMEDIATELY at :00 boundary without blocking on network!
+    // 1. Consume prefetched result from /results/current1 (fetched 4s before :00):
+    let resolved = false;
+    const prefetched = prefetchedResultRef.current;
+    if (prefetched) {
+      resolved = true;
+      lastResultIdRef.current = prefetched.id;
+      lastResultTimeRef.current = prefetched.result_time24;
+      setWheelTarget(prefetched.winDigit);
+      setWheelJoker(prefetched.jokerVal);
+      prefetchedResultRef.current = null;
+    } else {
+      setWheelTarget(null);
+      setWheelJoker(null);
+    }
+
+    // Start wheel spin IMMEDIATELY at :00 boundary with 0ms freeze!
     setSpinStartMs(performance.now());
     setWheelSpinning(true);
     setSpinCount((c) => c + 1);
@@ -265,57 +279,67 @@ const HomePage = () => {
     // Defer balance check slightly so it doesn't trigger a full-tree re-render at the exact spin-start frame
     setTimeout(() => refreshBalance(), 1000);
 
-    // Fetch CURRENT round's result in the background (staggered rapid polling for sub-second resolution):
-    (async () => {
-      const expectedDrawTime = ist24hStr(0);
-      let resolved = false;
+    // 2. Safety fallback: If result was NOT prefetched in the last 4s,
+    // poll /results/current1 first, then /results/current:
+    if (!resolved) {
+      (async () => {
+        let attempts = 0;
+        const maxAttempts = 15; // 15 attempts * 100ms = 1.5s max
 
-      const fetchOnce = async () => {
-        if (resolved) return;
-        try {
-          const { data } = await resultService.getCurrentResult();
-          const r = data?.result?.[0];
-          if (r && r.result_time24 === expectedDrawTime && !resolved) {
-            resolved = true;
-            const winDigit = Number(r.result) % 10;
-            const jokerVal = Number(r.joker) || 1;
-            setWheelTarget(winDigit);
-            setWheelJoker(jokerVal);
-            setResultError(false);
+        const poll = async () => {
+          if (resolved) return;
+          attempts++;
+          try {
+            let res = await resultService.getCurrentResult1().catch(() => null);
+            let r = res?.data?.result?.[0];
+            if (!r || !res?.data?.ok) {
+              res = await resultService.getCurrentResult().catch(() => null);
+              r = res?.data?.result?.[0];
+            }
+
+            if (r && r.result != null && !resolved) {
+              resolved = true;
+              lastResultIdRef.current = r.id;
+              lastResultTimeRef.current = r.result_time24;
+              const winDigit = Number(r.result) % 10;
+              const jokerVal = Number(r.joker) || 1;
+              setWheelTarget(winDigit);
+              setWheelJoker(jokerVal);
+              setResultError(false);
+              return;
+            }
+          } catch {
+            // network error / retry
           }
-        } catch {
-          // network error / retry
-        }
-      };
 
-      // Staggered rapid polling: 0ms, 300ms, 650ms, 1000ms, 1500ms, 2200ms
-      const pollOffsets = [0, 300, 650, 1000, 1500, 2200];
-      for (const offset of pollOffsets) {
-        if (resolved) break;
-        if (offset === 0) {
-          fetchOnce();
-        } else {
-          setTimeout(fetchOnce, offset);
-        }
-      }
-
-      // Safety fallback after 3.2s in case draw time format or server was delayed
-      setTimeout(async () => {
-        if (resolved) return;
-        try {
-          const { data } = await resultService.getCurrentResult();
-          const r = data?.result?.[0];
-          if (r && !resolved) {
-            resolved = true;
-            const winDigit = Number(r.result) % 10;
-            const jokerVal = Number(r.joker) || 1;
-            setWheelTarget(winDigit);
-            setWheelJoker(jokerVal);
-            setResultError(false);
+          if (!resolved && attempts < maxAttempts) {
+            setTimeout(poll, 100);
           }
-        } catch {}
-      }, 3200);
-    })();
+        };
+
+        // Start first poll immediately at 0ms
+        poll();
+
+        // Safety fallback after 1.8s:
+        setTimeout(async () => {
+          if (resolved) return;
+          try {
+            const { data } = await resultService.getCurrentResult();
+            const r = data?.result?.[0];
+            if (r && !resolved) {
+              resolved = true;
+              lastResultIdRef.current = r.id;
+              lastResultTimeRef.current = r.result_time24;
+              const winDigit = Number(r.result) % 10;
+              const jokerVal = Number(r.joker) || 1;
+              setWheelTarget(winDigit);
+              setWheelJoker(jokerVal);
+              setResultError(false);
+            }
+          } catch { }
+        }, 1800);
+      })();
+    }
   }, [refreshBalance, totalBet, logout, navigate]);
 
   // ── Server-calibrated IST countdown ─────────────────────────────
@@ -333,6 +357,53 @@ const HomePage = () => {
   if (!takePending) frozenRef.current = false;
   const timerFrozen = frozenRef.current;
   const time = timerFrozen ? 0 : rawTime;
+
+  // ── Prefetch current1 result 4-5 seconds before :00 ─────────────
+  // Backend publishes the next result in /results/current1 around second 56 (4s before :00).
+  // We poll silently during seconds 55-59, hold it in prefetchedResultRef, and NEVER drop it!
+  useEffect(() => {
+    let mounted = true;
+
+    const interval = setInterval(async () => {
+      if (!mounted) return;
+      const { second } = getNowFast();
+
+      // Only poll during the 4-second pre-spin window (seconds 55 to 59):
+      if (second < 55 || second > 59) {
+        return;
+      }
+
+      // If we already have the result for the upcoming round, don't poll again
+      if (prefetchedResultRef.current) return;
+      if (isPrefetchingRef.current) return;
+
+      isPrefetchingRef.current = true;
+      try {
+        const { data } = await resultService.getCurrentResult1();
+        const r = data?.result?.[0];
+        if (mounted && data?.ok && r && r.result != null && (!lastResultIdRef.current || r.id !== lastResultIdRef.current)) {
+          const winDigit = Number(r.result) % 10;
+          const jokerVal = Number(r.joker) || 1;
+          prefetchedResultRef.current = {
+            id: r.id,
+            result_time24: r.result_time24,
+            winDigit,
+            jokerVal,
+            raw: r,
+          };
+        }
+      } catch {
+        // network retry
+      } finally {
+        isPrefetchingRef.current = false;
+      }
+    }, 350);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   // Betting lock: last 10 seconds of the minute + while the wheel is spinning.
   const clickLocked = wheelSpinning || timerFrozen || (time <= 10 && time > 0);
@@ -454,7 +525,11 @@ const HomePage = () => {
     placingRef.current = true;
     setFetching(true);
     try {
-      const ticket = Object.entries(bets)
+      const currentBets = betsRef.current;
+      const currentTotal = totalBetRef.current;
+      const currentUser = userRef.current;
+
+      const ticket = Object.entries(currentBets)
         .filter(([, amt]) => amt > 0)
         .sort((a, b) => Number(a[0]) - Number(b[0]))
         .map(([n, amt]) => `${n}-${amt}`)
@@ -466,16 +541,9 @@ const HomePage = () => {
         return;
       }
 
-      // Minimum bet validation.
-      if (totalBet < 5) {
-        manualMsg.current = true;
-        setGameMessage("Minimum bet amount is 5.");
-        return;
-      }
-
       // Balance validation: bet amount cannot exceed balance.
-      const balance = user?.balance ?? 0;
-      if (totalBet > balance) {
+      const balance = currentUser?.balance ?? 0;
+      if (currentTotal > balance) {
         manualMsg.current = true;
         setGameMessage("Score Insufficient.");
         return;
@@ -486,9 +554,9 @@ const HomePage = () => {
         drawTime: ist12hStr(1), // "03:26 PM" (12h, no seconds)
         nextdrawTime: ist24hStr(1), // "15:26" (24h, no seconds)
         ticket,
-        qty: totalBet,
-        totalAmount: totalBet,
-        username: user?.username || "",
+        qty: currentTotal,
+        totalAmount: currentTotal,
+        username: currentUser?.username || "",
       };
 
       const { data } = await recordService.insertRecord(payload);
@@ -498,8 +566,7 @@ const HomePage = () => {
         setSubmitted(true);
         const bal = Number(data?.balance);
         if (Number.isFinite(bal)) {
-          const u = userRef.current;
-          if (u) setAuth({ ...u, balance: bal });
+          if (currentUser) setAuth({ ...currentUser, balance: bal });
         }
         setBetApplied(true);
       } else {
@@ -513,7 +580,7 @@ const HomePage = () => {
       placingRef.current = false;
       setFetching(false);
     }
-  }, [bets, totalBet, user]);
+  }, [setAuth]);
 
   // Auto-OK: when the countdown hits the last 10 seconds, submit any
   // pending bets automatically. Runs once per round.
@@ -524,39 +591,45 @@ const HomePage = () => {
     }
     if (time > 0 && !autoSubmitted.current) {
       autoSubmitted.current = true;
+      const currentTotal = totalBetRef.current;
+      const isSub = submittedRef.current;
+      const isTp = takePendingRef.current;
+
       // Never auto-place while a winning Take is pending — the old bets
       // must not be resubmitted for the next draw.
-      if (!submitted && totalBet >= 5 && !takePending) {
+      if (!isSub && currentTotal > 0 && !isTp) {
         manualMsg.current = true;
         setGameMessage("Your Bet has been Accepted");
         handlePlaceBet();
-      } else if (!submitted && totalBet > 0 && totalBet < 5 && !takePending) {
-        manualMsg.current = true;
-        setGameMessage("Minimum bet amount is 5.");
       }
     }
-  }, [time, totalBet, handlePlaceBet, submitted, takePending]);
+  }, [time, handlePlaceBet]);
 
 
   // Phase message:
-  //   last 10 sec      -> "Bet Time over"
+  //   last 10 sec      -> "Your Bet has been Accepted" (if bet placed/submitted) OR "Bet Time Over."
   //   wheel spinning   -> "FOR AMUSEMENT ONLY NO CASH VALUE"
-  //   betting window   -> "Please Bet to Start Game. Minimum Bet=5"
+  //   betting window   -> "Please Bet to Start Game. Minimum Bet=1"
   // Manual messages (validation / accepted) override the betting-window prompt.
   // While a winning Take is pending, the win banner stays on screen (the
   // "Please Take the Winning Points." reminder is set at the :00 boundary).
   useEffect(() => {
     if (takePending) return;
-    if (time <= 10 && time > 0) {
-      manualMsg.current = false;
-      setGameMessage("Bet Time Over.");
-    } else if (wheelSpinning) {
+    if (wheelSpinning) {
       manualMsg.current = false;
       setGameMessage("FOR AMUSEMENT ONLY NO CASH VALUE");
+    } else if (time <= 10 && time > 0) {
+      if (submitted || submittedRef.current || totalBetRef.current > 0) {
+        manualMsg.current = true;
+        setGameMessage("Your Bet has been Accepted");
+      } else {
+        manualMsg.current = true;
+        setGameMessage("Bet Time Over.");
+      }
     } else if (!manualMsg.current && time > 12) {
-      setGameMessage("Please Bet to Start Game. Minimum Bet=5");
+      setGameMessage("Please Bet to Start Game. Minimum Bet=1");
     }
-  }, [time, wheelSpinning, takePending]);
+  }, [time, wheelSpinning, takePending, submitted]);
 
   const handleButtonAction = useCallback(
     async (id) => {
@@ -814,6 +887,8 @@ const HomePage = () => {
         if (mounted) {
           setLastWinner(Number(r.result) % 10);
           setLastJoker(Number(r.joker) || null);
+          lastResultIdRef.current = r.id;
+          lastResultTimeRef.current = r.result_time24;
           setResultError(false);
         }
       } catch {
@@ -827,6 +902,8 @@ const HomePage = () => {
               if (r && mounted) {
                 setLastWinner(Number(r.result) % 10);
                 setLastJoker(Number(r.joker) || null);
+                lastResultIdRef.current = r.id;
+                lastResultTimeRef.current = r.result_time24;
                 setResultError(false);
               }
             } catch {
@@ -923,8 +1000,8 @@ const HomePage = () => {
       <WheelDisplay
         spinTrigger={spinCount}
         spinStartMs={spinStartMs}
-        targetWinner={wheelTarget != null ? wheelTarget : lastWinner}
-        joker={wheelJoker != null ? wheelJoker : lastJoker}
+        targetWinner={wheelSpinning ? wheelTarget : lastWinner}
+        joker={wheelSpinning ? wheelJoker : lastJoker}
         onComplete={handleSpinComplete}
         enableGlitch={ENABLE_SPIN_GLITCH}
         glitchPauseMs={SPIN_GLITCH_PAUSE_MS}

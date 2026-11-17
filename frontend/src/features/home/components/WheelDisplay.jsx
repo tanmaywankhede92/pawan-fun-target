@@ -133,7 +133,7 @@ const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
 
 // Spin starts at 60s countdown and smoothly stops at 54s countdown (total 6.0s)
-const SET_PAUSE_MS = 40; // 40ms fast subliminal flash (approx 2 frames). Subtle, spontaneous with spin launch.
+const SET_PAUSE_MS = 0; // 0ms pause: wheel snaps to target in 1 frame and immediately launches into smooth rotation without freeze
 const GLITCH_MAX_WAIT_MS = 900; // Hard deadline: wheel MUST start rotating within 900ms (at 59.1s countdown), never stalling to 57s!
 const MIN_CRUISE_MS = 1500; // Cruise through at least 1.5s of spinning before deceleration
 const MAX_SPEED = 0.65; // deg/ms = 650 deg/sec (~1.8 rev/sec) - fast, exciting and clear
@@ -389,8 +389,8 @@ const WheelDisplay = ({
         winnerResolvedRef.current = targetWinnerRef.current;
       }
 
-      // Safety fallback: if no winner arrived after 2.5s of spinning, fallback to 0
-      if (winnerResolvedRef.current === null && elapsed >= 2500) {
+      // Safety fallback: if no winner arrived after 4.2s of spinning, fallback to 0
+      if (winnerResolvedRef.current === null && elapsed >= 4200) {
         winnerResolvedRef.current = 0;
       }
 
@@ -399,7 +399,8 @@ const WheelDisplay = ({
         const pauseDuration = glitchPauseMs ?? SET_PAUSE_MS;
 
         // As soon as target winner arrives: snap wheel to winning number!
-        if (!initialSnapDone && winnerResolvedRef.current !== null) {
+        // Guard: Only snap if the wheel has NOT started rotating yet.
+        if (!initialSnapDone && !rotatingStarted && winnerResolvedRef.current !== null) {
           initialSnapDone = true;
           snapStartTime = now;
           const target = targetAngle(winnerResolvedRef.current);
@@ -416,8 +417,8 @@ const WheelDisplay = ({
         }
 
         // Hold conditions:
-        // 1. Snapped to target, waiting for the brief pauseDuration (40ms / 2 frames) before launching into motion:
-        const isPausedOnSnap = initialSnapDone && snapStartTime !== null && (now - snapStartTime < pauseDuration);
+        // 1. Snapped to target, waiting for pauseDuration (if any > 0) before launching into motion:
+        const isPausedOnSnap = initialSnapDone && snapStartTime !== null && pauseDuration > 0 && (now - snapStartTime < pauseDuration);
         // 2. Waiting for winner from network, BUT strictly capped at GLITCH_MAX_WAIT_MS (900ms):
         const isWaitingForWinnerUnderDeadline = !initialSnapDone && (elapsed < GLITCH_MAX_WAIT_MS);
 

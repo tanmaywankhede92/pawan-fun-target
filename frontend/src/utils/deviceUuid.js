@@ -18,10 +18,10 @@ const makeUuid = () => {
 const getStorage = () => {
   try {
     if (typeof localStorage !== "undefined") return localStorage;
-  } catch {}
+  } catch { }
   try {
     if (typeof sessionStorage !== "undefined") return sessionStorage;
-  } catch {}
+  } catch { }
   return null;
 };
 
