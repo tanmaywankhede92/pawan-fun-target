@@ -48,8 +48,8 @@ const DEBUG = false;
 const ENABLE_SPIN_GLITCH = true;
 
 // Glitch preview duration in milliseconds:
-// 👈 Yaha se aap 100, 150, ya 200ms jo bhi chahein easily change kar sakte hain!
-const SPIN_GLITCH_PAUSE_MS = 200;
+// 👈 Fast flash preview (default 70ms: bas ek halka sa flash aur wheel seedha ghoomna start!)
+const SPIN_GLITCH_PAUSE_MS = 70;
 
 const HomePage = () => {
   const { user, logout, refreshBalance, setAuth } = useAuth();

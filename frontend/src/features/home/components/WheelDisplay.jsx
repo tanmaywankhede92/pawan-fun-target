@@ -133,7 +133,7 @@ const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
 
 // Spin starts at 60s countdown and smoothly stops at 54s countdown (total 6.0s)
-const SET_PAUSE_MS = 100; // 100ms pause when enableGlitch is active: wheel snaps to target result before rotating
+const SET_PAUSE_MS = 70; // 70ms fast flash pause when enableGlitch is active: wheel snaps to target result before rotating
 const MIN_CRUISE_MS = 1500; // Cruise through at least 1.5s of spinning before deceleration
 const MAX_SPEED = 0.65; // deg/ms = 650 deg/sec (~1.8 rev/sec) - fast, exciting and clear
 const ACCEL_TIME_MS = 400; // Smooth 0.4s spin-up
