@@ -43,9 +43,13 @@ import { istSeconds, istDateStr, ist12hStr, ist24hStr } from "@utils/istTime";
 const DEBUG = false;
 
 // ── Spin Mode Configuration ───────────────────────────────────────
-// Set to `true` to enable the 200ms initial snap pause before spinning (requested by clients who want the preview glitch).
+// Set to `true` to enable the snap pause before spinning (requested by clients who want the preview glitch).
 // Set to `false` for 100% smooth continuous spin without initial snap preview.
 const ENABLE_SPIN_GLITCH = true;
+
+// Glitch preview duration in milliseconds:
+// 👈 Yaha se aap 100, 150, ya 200ms jo bhi chahein easily change kar sakte hain!
+const SPIN_GLITCH_PAUSE_MS = 200;
 
 const HomePage = () => {
   const { user, logout, refreshBalance, setAuth } = useAuth();
@@ -904,6 +908,8 @@ const HomePage = () => {
         joker={wheelJoker != null ? wheelJoker : lastJoker}
         onComplete={handleSpinComplete}
         enableGlitch={ENABLE_SPIN_GLITCH}
+        glitchPauseMs={SPIN_GLITCH_PAUSE_MS}
+        isBettingLocked={clickLocked}
       />
       <GifDisplay />
       {resultError && (

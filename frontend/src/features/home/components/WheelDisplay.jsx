@@ -7,6 +7,7 @@ import goldie from "@assets/images/gifs/joker2.webp";
 import bonus from "@assets/images/gifs/joker3.webp";
 import drum from "@assets/images/gifs/joker4.webp";
 import pointerGif from "@assets/images/gifs/DG.gif";
+import pointerStatic from "@assets/images/gifs/DG_black.png";
 import { isMobile } from "@utils/isTv";
 import { isLowSpecAndroidTv } from "@utils/deviceProfile";
 
@@ -132,7 +133,7 @@ const SECTORS = 10;
 const SECTOR_ANGLE = 360 / SECTORS;
 
 // Spin starts at 60s countdown and smoothly stops at 54s countdown (total 6.0s)
-const SET_PAUSE_MS = 200; // 200ms pause when enableGlitch is active: wheel snaps to target result before rotating
+const SET_PAUSE_MS = 100; // 100ms pause when enableGlitch is active: wheel snaps to target result before rotating
 const MIN_CRUISE_MS = 1500; // Cruise through at least 1.5s of spinning before deceleration
 const MAX_SPEED = 0.65; // deg/ms = 650 deg/sec (~1.8 rev/sec) - fast, exciting and clear
 const ACCEL_TIME_MS = 400; // Smooth 0.4s spin-up
@@ -217,6 +218,8 @@ const WheelDisplay = ({
   joker,
   onComplete,
   enableGlitch = false,
+  glitchPauseMs = SET_PAUSE_MS,
+  isBettingLocked = false,
 }) => {
   const getDims = useCallback(() => {
     return {
@@ -408,9 +411,11 @@ const WheelDisplay = ({
           }
         }
 
-        // While waiting for winner to arrive, OR during the 200ms snap preview:
+        const pauseDuration = glitchPauseMs ?? SET_PAUSE_MS;
+
+        // While waiting for winner to arrive, OR during the snap preview (default 200ms, or configured ms):
         // Hold wheel completely steady on target result.
-        if (!initialSnapDone || (snapStartTime !== null && now - snapStartTime < SET_PAUSE_MS)) {
+        if (!initialSnapDone || (snapStartTime !== null && now - snapStartTime < pauseDuration)) {
           if (wheelImgRef.current) {
             wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
           }
@@ -644,10 +649,13 @@ const WheelDisplay = ({
       </div>
 
       {/* 2. Pointer moved completely OUTSIDE the wheel's scaleX GPU layer into its own isolated layer.
-             Eliminates Chromium/Mali GPU damage rect clipping artifact (blinking golden box). */}
+             Eliminates Chromium/Mali GPU damage rect clipping artifact (blinking golden box).
+             - Normal betting (54s to 11s): Blinking DG.gif (red/black animation).
+             - Last 10s betting lock + wheel spin until complete: Static black pointer (no red blinking!). */}
       <img
         decoding="async"
-        src={pointerGif}
+        src={isBettingLocked || spinning ? pointerStatic : pointerGif}
+        key={isBettingLocked || spinning ? "pointer-static" : "pointer-gif"}
         alt="pointer"
         className="absolute pointer-events-none z-30"
         style={{
