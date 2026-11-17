@@ -352,6 +352,8 @@ const WheelDisplay = ({
 
     let startTime = null;
     let lastTime = null;
+    let snapStartTime = null;
+    let spinStartTime = null;
     let initialSnapDone = false;
     let rotatingStarted = !enableGlitch;
     let currentAngle = rotationRef.current;
@@ -382,25 +384,33 @@ const WheelDisplay = ({
         winnerResolvedRef.current = targetWinnerRef.current;
       }
 
-      // Safety fallback: if no winner arrived after 3.5s of spinning, fallback to 0
-      if (winnerResolvedRef.current === null && elapsed >= 3500) {
+      // Safety fallback: if no winner arrived after 2.5s of spinning, fallback to 0
+      if (winnerResolvedRef.current === null && elapsed >= 2500) {
         winnerResolvedRef.current = 0;
       }
 
-      // ── Optional Spin Glitch (200ms initial snap pause) ──────────────
+      // ── Optional Spin Glitch (200ms snap pause on winning number) ──────────────
       if (enableGlitch) {
-        // Snap wheel to target result position immediately so user sees the 200ms preview
+        // As soon as target winner arrives: snap wheel to winning number!
         if (!initialSnapDone && winnerResolvedRef.current !== null) {
           initialSnapDone = true;
-          currentAngle = targetAngle(winnerResolvedRef.current);
+          snapStartTime = now;
+          const target = targetAngle(winnerResolvedRef.current);
+          const currentMod = ((currentAngle % 360) + 360) % 360;
+          const targetMod = ((target % 360) + 360) % 360;
+          let diff = (targetMod - currentMod) % 360;
+          if (diff > 180) diff -= 360;
+          if (diff < -180) diff += 360;
+          currentAngle = currentAngle + diff;
           rotationRef.current = currentAngle;
           if (wheelImgRef.current) {
             wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
           }
         }
 
-        // For the first SET_PAUSE_MS (200ms), wheel stays held at that result
-        if (elapsed < SET_PAUSE_MS) {
+        // While waiting for winner to arrive, OR during the 200ms snap preview:
+        // Hold wheel completely steady on target result.
+        if (!initialSnapDone || (snapStartTime !== null && now - snapStartTime < SET_PAUSE_MS)) {
           if (wheelImgRef.current) {
             wheelImgRef.current.style.transform = `rotate(${currentAngle}deg)`;
           }
@@ -408,22 +418,26 @@ const WheelDisplay = ({
           return;
         }
 
-        // At elapsed >= SET_PAUSE_MS (200ms): wheel AND center spinner start spinning together!
+        // The exact instant the 200ms snap pause expires: wheel & center spinner start spinning together!
         if (!rotatingStarted) {
           rotatingStarted = true;
+          spinStartTime = now;
           setIsActuallyRotating(true);
           setResultJoker(null);
           play("SPIN", { loop: true });
         }
       }
 
-      const spinElapsed = enableGlitch ? Math.max(0, elapsed - SET_PAUSE_MS) : elapsed;
+      const spinElapsed = enableGlitch
+        ? (spinStartTime !== null ? now - spinStartTime : 0)
+        : elapsed;
 
       // 2. Determine when to start deceleration:
-      // Begins once winner is known AND minimum cruise time (1.5s) has passed.
+      // Begins once winner is known AND minimum cruise time has passed.
+      const minCruiseTime = enableGlitch ? 1000 : MIN_CRUISE_MS;
       const canDecelerate =
         winnerResolvedRef.current !== null &&
-        spinElapsed >= MIN_CRUISE_MS;
+        spinElapsed >= minCruiseTime;
 
       if (decelStartTimeRef.current === null && canDecelerate) {
         const w = winnerResolvedRef.current;
@@ -431,8 +445,8 @@ const WheelDisplay = ({
         decelStartTimeRef.current = now;
         decelStartAngleRef.current = currentAngle;
 
-        // Target stopping at TOTAL_MAX_SPIN_MS (6000ms / 54s countdown)
-        const remainingToDeadline = Math.max(1500, TOTAL_MAX_SPIN_MS - elapsed);
+        // Target stopping at TOTAL_MAX_SPIN_MS (6000ms / exact 54.0s countdown)
+        const remainingToDeadline = Math.max(1000, TOTAL_MAX_SPIN_MS - elapsed);
         const idealDecelDist = Math.round((MAX_SPEED * remainingToDeadline) / 2);
         const currentMod = ((currentAngle % 360) + 360) % 360;
         const target = targetAngle(w);
@@ -469,7 +483,7 @@ const WheelDisplay = ({
           decelStartAngleRef.current +
           (decelFinalAngleRef.current - decelStartAngleRef.current) * easeOut;
 
-        // Finish spin: Wheel naturally reaches speed 0 at target angle, stopping at 54s
+        // Finish spin: Wheel naturally reaches speed 0 at target angle, stopping at exact 54s countdown
         if (u >= 1 || elapsed >= TOTAL_MAX_SPIN_MS) {
           currentAngle = decelFinalAngleRef.current;
           rotationRef.current = currentAngle;
@@ -491,12 +505,12 @@ const WheelDisplay = ({
 
     rafIdRef.current = requestAnimationFrame(animate);
 
-    // Watchdog safety timeout
+    // Watchdog safety timeout (unconditionally stops at TOTAL_MAX_SPIN_MS so it never spills into 53s)
     safetyTimeoutRef.current = setTimeout(() => {
       if (spinningRef.current) {
         finishSpin(winnerResolvedRef.current);
       }
-    }, TOTAL_MAX_SPIN_MS + 200);
+    }, TOTAL_MAX_SPIN_MS);
 
     return () => {
       if (rafIdRef.current != null) {
