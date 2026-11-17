@@ -351,16 +351,10 @@ public class MainActivity extends BridgeActivity {
     public void onTrimMemory(int level) {
         super.onTrimMemory(level);
         try {
-            WebView webView = getBridge().getWebView();
-            if (webView != null) {
-                webView.evaluateJavascript(
-                    "if(window.__onTrimMemory) window.__onTrimMemory(" + level + ")", null
-                );
-            }
-            if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
-                if (webView != null) {
-                    webView.clearCache(true);
-                }
+            // DO NOT call webView.clearCache(true) or flush GPU textures mid-game!
+            // Evicting active GPU textures under Chromium 89 and Mali-450 causes
+            // immediate GL context loss and SurfaceFlinger BufferQueue deadlocks.
+            if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL) {
                 System.gc();
             }
         } catch (Exception ignored) {
