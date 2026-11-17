@@ -910,6 +910,7 @@ const HomePage = () => {
         enableGlitch={ENABLE_SPIN_GLITCH}
         glitchPauseMs={SPIN_GLITCH_PAUSE_MS}
         isBettingLocked={clickLocked}
+        isSpinning={wheelSpinning}
       />
       <GifDisplay />
       {resultError && (

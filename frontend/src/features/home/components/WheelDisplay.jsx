@@ -220,6 +220,7 @@ const WheelDisplay = ({
   enableGlitch = false,
   glitchPauseMs = SET_PAUSE_MS,
   isBettingLocked = false,
+  isSpinning = false,
 }) => {
   const getDims = useCallback(() => {
     return {
