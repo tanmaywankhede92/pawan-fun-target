@@ -105,8 +105,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const setAuth = useCallback((user) => {
-    clearAllPendingBets();
-      sessionStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    sessionStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
     dispatch({ type: 'AUTH_SUCCESS', payload: { user } });
   }, []);
 

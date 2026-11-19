@@ -84,9 +84,32 @@ public class MainActivity extends BridgeActivity {
     }
 
     private boolean isRunningOnTv() {
-        // Enforce TV behavior for this dedicated Android TV APK build.
-        // Bypasses spoofed Pixel 2 ROM build properties on generic Chinese TV boxes (T95/Allwinner).
-        return true;
+        try {
+            android.app.UiModeManager uiModeManager = (android.app.UiModeManager) getSystemService(UI_MODE_SERVICE);
+            if (uiModeManager != null && uiModeManager.getCurrentModeType() == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION) {
+                return true;
+            }
+
+            android.content.pm.PackageManager pm = getPackageManager();
+            if (pm != null) {
+                if (pm.hasSystemFeature(android.content.pm.PackageManager.FEATURE_LEANBACK)
+                        || pm.hasSystemFeature("android.hardware.type.television")) {
+                    return true;
+                }
+
+                // Telephony feature is ONLY present on mobile phones:
+                if (pm.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TELEPHONY)) {
+                    return false;
+                }
+
+                // Non-touch devices are Android TV boxes:
+                if (!pm.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TOUCHSCREEN)) {
+                    return true;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return false;
     }
 
     private void suppressSoftKeyboardIfTv() {
@@ -203,6 +226,32 @@ public class MainActivity extends BridgeActivity {
                 @android.webkit.JavascriptInterface
                 public boolean isAndroidTV() {
                     return isRunningOnTv();
+                }
+
+                @android.webkit.JavascriptInterface
+                public void showKeyboard() {
+                    runOnUiThread(() -> {
+                        try {
+                            android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                            WebView wv = getBridge().getWebView();
+                            if (imm != null && wv != null) {
+                                imm.showSoftInput(wv, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+                            }
+                        } catch (Exception ignored) {}
+                    });
+                }
+
+                @android.webkit.JavascriptInterface
+                public void hideKeyboard() {
+                    runOnUiThread(() -> {
+                        try {
+                            android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                            WebView wv = getBridge().getWebView();
+                            if (imm != null && wv != null) {
+                                imm.hideSoftInputFromWindow(wv.getWindowToken(), 0);
+                            }
+                        } catch (Exception ignored) {}
+                    });
                 }
 
                 @android.webkit.JavascriptInterface

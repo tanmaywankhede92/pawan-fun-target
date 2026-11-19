@@ -357,6 +357,8 @@ const HomePage = () => {
   if (!takePending) frozenRef.current = false;
   const timerFrozen = frozenRef.current;
   const time = timerFrozen ? 0 : rawTime;
+  const timeRef = useRef(time);
+  timeRef.current = time;
 
   // ── Prefetch current1 result 4-5 seconds before :00 ─────────────
   // Backend publishes the next result in /results/current1 around second 56 (4s before :00).
@@ -466,6 +468,7 @@ const HomePage = () => {
     // A new bet for the next result stops the winner blink and starts
     // a fresh round.
     if (resultRevealedRef.current) {
+      resultRevealedRef.current = false;
       setBets({});
       betOrder.current = [];
       setResultRevealed(false);
@@ -515,8 +518,8 @@ const HomePage = () => {
     betOrder.current = [];
     setCancelSpecificUsed(false);
     setBetApplied(true);
-    setScoreBalance(user?.balance ?? 0);
-    clearPendingBet(user?.username || "");
+    setScoreBalance(userRef.current?.balance ?? user?.balance ?? 0);
+    clearPendingBet(userRef.current?.username || user?.username || "");
   }, [user?.balance, user?.username]);
 
   // Place the bet via the backend. Ticket = "num-amount" pairs.
@@ -561,14 +564,31 @@ const HomePage = () => {
 
       const { data } = await recordService.insertRecord(payload);
       if (data?.success) {
-        manualMsg.current = true;
-        setGameMessage("Your Bet has been Accepted");
         setSubmitted(true);
-        const bal = Number(data?.balance);
-        if (Number.isFinite(bal)) {
-          if (currentUser) setAuth({ ...currentUser, balance: bal });
+        if (timeRef.current !== 10) {
+          manualMsg.current = true;
+          setGameMessage("Your Bet has been Accepted");
         }
+
+        // Resolve new authoritative balance after bet acceptance:
+        // 1. Check if backend explicitly returned updated balance
+        const apiBal = data?.balance ?? data?.data?.balance ?? data?.user?.balance;
+        const balNum = Number(apiBal);
+
+        // 2. Otherwise deduct the placed bet amount from the current balance
+        const currentBal = Number(currentUser?.balance ?? 0);
+        const resolvedBal = Number.isFinite(balNum)
+          ? balNum
+          : Math.max(0, currentBal - currentTotal);
+
+        if (currentUser) {
+          setAuth({ ...currentUser, balance: resolvedBal });
+        }
+        setScoreBalance(resolvedBal);
         setBetApplied(true);
+
+        // Sync with backend database in background
+        refreshBalance().catch(() => {});
       } else {
         manualMsg.current = true;
         setGameMessage(data?.message || "Bet failed");
@@ -580,7 +600,7 @@ const HomePage = () => {
       placingRef.current = false;
       setFetching(false);
     }
-  }, [setAuth]);
+  }, [setAuth, refreshBalance]);
 
   // Auto-OK: when the countdown hits the last 10 seconds, submit any
   // pending bets automatically. Runs once per round.
@@ -598,8 +618,6 @@ const HomePage = () => {
       // Never auto-place while a winning Take is pending — the old bets
       // must not be resubmitted for the next draw.
       if (!isSub && currentTotal > 0 && !isTp) {
-        manualMsg.current = true;
-        setGameMessage("Your Bet has been Accepted");
         handlePlaceBet();
       }
     }
@@ -607,7 +625,7 @@ const HomePage = () => {
 
 
   // Phase message:
-  //   last 10 sec      -> "Your Bet has been Accepted" (if bet placed/submitted) OR "Bet Time Over."
+  //   last 10 sec      -> "Bet Time Over."
   //   wheel spinning   -> "FOR AMUSEMENT ONLY NO CASH VALUE"
   //   betting window   -> "Please Bet to Start Game. Minimum Bet=1"
   // Manual messages (validation / accepted) override the betting-window prompt.
@@ -619,11 +637,14 @@ const HomePage = () => {
       manualMsg.current = false;
       setGameMessage("FOR AMUSEMENT ONLY NO CASH VALUE");
     } else if (time <= 10 && time > 0) {
-      if (submitted || submittedRef.current || totalBetRef.current > 0) {
+      if (time === 10) {
+        manualMsg.current = false;
+        setGameMessage("Bet Time Over.");
+      } else if (submitted || submittedRef.current || totalBetRef.current > 0) {
         manualMsg.current = true;
         setGameMessage("Your Bet has been Accepted");
       } else {
-        manualMsg.current = true;
+        manualMsg.current = false;
         setGameMessage("Bet Time Over.");
       }
     } else if (!manualMsg.current && time > 12) {
@@ -690,7 +711,9 @@ const HomePage = () => {
             // The deducted amount goes straight back to the balance.
             setScoreBalance((prev) => prev + cancelledAmt);
             if (betOrder.current.length === 0) {
-              clearPendingBet(user?.username || "");
+              clearPendingBet(userRef.current?.username || user?.username || "");
+              setBetApplied(true);
+              setScoreBalance(userRef.current?.balance ?? user?.balance ?? 0);
             }
           }
           setCancelSpecificUsed(true);
@@ -796,13 +819,15 @@ const HomePage = () => {
                 setGameMessage(data?.message || "Take failed. Try again.");
                 return;
               }
-              // Just update auth balance from server — score animation is
-              // already running above.
-              const bal = Number(data?.balance);
-              if (Number.isFinite(bal)) {
-                const u = userRef.current;
-                if (u) setAuth({ ...u, balance: bal });
-              }
+              // Update auth balance from server response or roll-up target
+              const apiBal = data?.balance ?? data?.data?.balance ?? data?.user?.balance;
+              const balNum = Number(apiBal);
+              const resolvedBal = Number.isFinite(balNum)
+                ? balNum
+                : preBalance + winAmt;
+              const u = userRef.current;
+              if (u) setAuth({ ...u, balance: resolvedBal });
+              refreshBalance().catch(() => {});
             })
             .catch(() => {
               manualMsg.current = true;

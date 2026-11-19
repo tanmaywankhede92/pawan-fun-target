@@ -6,7 +6,7 @@ const getDeviceType = () => {
   try {
     const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
     if (typeof window !== 'undefined' && window.Android && typeof window.Android.isAndroidTV === 'function') {
-      return 'TV';
+      return window.Android.isAndroidTV() ? 'TV' : 'M';
     }
     if (/Android|iPhone|iPad|Mobile/i.test(ua)) return 'M';
     return 'W';
