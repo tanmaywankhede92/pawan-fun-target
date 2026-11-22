@@ -43,12 +43,8 @@ import { istSeconds, istDateStr, ist12hStr, ist24hStr, getNowFast } from "@utils
 const DEBUG = false;
 
 // ── Spin Mode Configuration ───────────────────────────────────────
-// Set to `true` to enable the snap pause before spinning (requested by clients who want the preview glitch).
-// Set to `false` for 100% smooth continuous spin without initial snap preview.
-const ENABLE_SPIN_GLITCH = true;
-
-// Glitch preview duration in milliseconds:
-// Set to 0ms for 1-frame instantaneous snap launch (ZERO freeze / ZERO pause):
+// Smooth continuous spin starting directly from winning result number at :00 (no jump, no pause)
+const ENABLE_SPIN_GLITCH = false;
 const SPIN_GLITCH_PAUSE_MS = 0;
 
 const HomePage = () => {
