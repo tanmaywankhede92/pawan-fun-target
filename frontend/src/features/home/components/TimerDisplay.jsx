@@ -1,9 +1,9 @@
 const POS = {
   left: "3.0%",
-  top: "32.5%",
+  top: "33.1%",
   width: "18.0%",
-  height: "8.0%",
-  fontSize: "clamp(16px, min(2.5vw, 4.6vh), 34px)",
+  height: "7.2%",
+  fontSize: "clamp(16px, min(2.7vw, 3.8vh), 38px)",
 };
 
 const TimerDisplay = ({ time }) => {
@@ -28,6 +28,7 @@ const TimerDisplay = ({ time }) => {
         transform: "translateZ(0)",
         backfaceVisibility: "hidden",
         contain: "paint layout",
+        paddingTop: "0.2vh",
         zIndex: 30,
       }}
     >

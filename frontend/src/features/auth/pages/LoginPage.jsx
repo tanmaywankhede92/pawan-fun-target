@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "@hooks/useAuth";
@@ -19,10 +19,31 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const blurTimerRef = useRef(null);
   const isPhone = isMobile();
   const { login } = useAuth();
   const navigate = useNavigate();
   const { play } = useSound();
+
+  const handleFocus = useCallback(() => {
+    if (blurTimerRef.current) {
+      clearTimeout(blurTimerRef.current);
+      blurTimerRef.current = null;
+    }
+    setInputFocused(true);
+  }, []);
+
+  const handleBlur = useCallback(() => {
+    if (blurTimerRef.current) {
+      clearTimeout(blurTimerRef.current);
+    }
+    // Delay resetting focus so tapping the Enter button on mobile
+    // touchscreens isn't canceled or mis-aimed by an immediate CSS shift animation
+    blurTimerRef.current = setTimeout(() => {
+      setInputFocused(false);
+      blurTimerRef.current = null;
+    }, 250);
+  }, []);
 
   const handleEnter = useCallback(async () => {
     const trimmedUser = username.trim().toLowerCase().replace(/^gk/i, "");
@@ -55,7 +76,9 @@ const LoginPage = () => {
 
   const handleKeyDown = useCallback(
     (e) => {
-      if (e.key === "Enter") handleEnter();
+      if (e.key === "Enter" || e.keyCode === 13 || e.which === 13) {
+        handleEnter();
+      }
     },
     [handleEnter],
   );
@@ -75,15 +98,15 @@ const LoginPage = () => {
         value={username}
         onChange={(val) => setUsername((val || "").toLowerCase())}
         onKeyDown={handleKeyDown}
-        onFocus={() => setInputFocused(true)}
-        onBlur={() => setInputFocused(false)}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
       />
       <PasswordInput
         value={password}
         onChange={setPassword}
         onKeyDown={handleKeyDown}
-        onFocus={() => setInputFocused(true)}
-        onBlur={() => setInputFocused(false)}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
       />
       <EnterButton onClick={handleEnter} loading={loading} />
       <CloseButton onClick={handleClose} />

@@ -18,6 +18,10 @@ const EnterButton = ({ onClick, loading }) => {
         min-h-[40px] min-w-[80px] hover:text-white hover:bg-black/50
         transition-colors duration-150 
       "
+      onPointerDown={(e) => {
+        // Prevent premature input blur on touch tap so click event fires reliably
+        e.preventDefault();
+      }}
       onKeyDown={(e) => {
         if (
           e.key === "Enter" ||

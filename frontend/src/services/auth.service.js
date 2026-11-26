@@ -5,10 +5,12 @@ import { deviceUuid } from '@utils/deviceUuid';
 const getDeviceType = () => {
   try {
     const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
-    if (typeof window !== 'undefined' && window.Android && typeof window.Android.isAndroidTV === 'function') {
-      return window.Android.isAndroidTV() ? 'TV' : 'M';
+    // Native Android APK (both TV and Mobile Phone APK) must report 'TV'
+    // to match the backend authorized game terminal device configuration:
+    if (typeof window !== 'undefined' && (window.Android || window.Capacitor?.isNativePlatform?.())) {
+      return 'TV';
     }
-    if (/Android|iPhone|iPad|Mobile/i.test(ua)) return 'M';
+    // Web browsers on desktop or mobile report 'W' (Web)
     return 'W';
   } catch {
     return 'W';
