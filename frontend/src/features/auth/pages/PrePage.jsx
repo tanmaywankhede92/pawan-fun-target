@@ -5,6 +5,7 @@ import { useSound } from "@hooks/useSound";
 import { authService } from "@services/auth.service";
 import { useEffect, useState, useRef, useCallback } from "react";
 import useGameSessionGuard from "@hooks/useGameSessionGuard";
+import { isAndroidTv, isMobile } from "@utils/isTv";
 
 import homeBg from "@assets/images/home/homeImg.webp";
 import wheelImg from "@assets/images/wheel/wheel.webp";
@@ -52,6 +53,7 @@ const GAME_LIST = [
 // (from the login data), a scrollable game list that enters the game on
 // click, and a logout button.
 const PrePage = () => {
+  const isDesktop = !isAndroidTv() && !isMobile();
   const navigate = useNavigate();
   const { user, logout, setAuth, refreshBalance } = useAuth();
   const { play, stop, stopBgm } = useSound();
@@ -105,7 +107,7 @@ const PrePage = () => {
           img.src = "";
           img.onload = null;
           img.onerror = null;
-        } catch {}
+        } catch { }
       });
       images = [];
     };
@@ -445,7 +447,7 @@ const PrePage = () => {
 
       {/* Scrollable Game List inside wooden ladder frame */}
       <div
-        className="prepage-games-container"
+        className={`prepage-games-container ${isDesktop ? "prepage-desktop" : ""}`}
         role="region"
         aria-label="Games List"
       >
@@ -469,7 +471,7 @@ const PrePage = () => {
                 alignItems: "center",
                 justifyContent: "flex-start",
                 width: "100%",
-                height: "28px",
+                height: "25px",
                 minHeight: "28px",
                 maxHeight: "28px",
                 padding: "2px 6px",
@@ -478,6 +480,7 @@ const PrePage = () => {
                 overflow: "hidden",
                 flexShrink: 0,
                 border: "none",
+                ...(isDesktop ? { background: "transparent", backgroundColor: "transparent" } : {}),
               }}
               onFocus={(e) => {
                 setSelectedGameId(game.id);
@@ -520,7 +523,7 @@ const PrePage = () => {
                   maxHeight: "20px",
                   flex: "0 0 32px",
                   objectFit: "cover",
-                  border: "1px solid #ffffff",
+                  border: isDesktop ? "none" : "1px solid #ffffff",
                   borderRadius: "2px",
                   display: "block",
                   marginRight: "12px",
