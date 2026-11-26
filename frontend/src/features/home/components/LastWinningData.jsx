@@ -3,7 +3,7 @@ import { resultService } from "@services/result.service";
 import { DISPLAY_FONT } from "@constants/displayFont";
 
 const POS = {
-  right: "2.3%",
+  right: "2.4%",
   width: "20.3%",
   height: "7.8%",
   top: "32.5%",

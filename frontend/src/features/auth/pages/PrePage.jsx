@@ -57,7 +57,7 @@ const PrePage = () => {
   const navigate = useNavigate();
   const { user, logout, setAuth, refreshBalance } = useAuth();
   const { play, stop, stopBgm } = useSound();
-  const [selectedGameId, setSelectedGameId] = useState("funtarget");
+  const [selectedGameId, setSelectedGameId] = useState(null);
   const [hoveredGameId, setHoveredGameId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [rejecting, setRejecting] = useState(false);
@@ -113,20 +113,7 @@ const PrePage = () => {
     };
   }, []);
 
-  // Auto-focus "FunTarget game" so on Android TV users can press OK to enter immediately
-  useEffect(() => {
-    const t = setTimeout(() => {
-      if (gameRef.current) {
-        gameRef.current.focus({ preventScroll: true });
-        setSelectedGameId("funtarget");
-        gameRef.current.scrollIntoView({
-          block: "nearest",
-          behavior: "smooth",
-        });
-      }
-    }, 150);
-    return () => clearTimeout(t);
-  }, []);
+  // Initial selection is null by default until user hovers or navigates to a game
 
   const handleGameSelect = (game) => {
     play("CLICK");
@@ -471,16 +458,15 @@ const PrePage = () => {
                 alignItems: "center",
                 justifyContent: "flex-start",
                 width: "100%",
-                height: "25px",
+                height: "28px",
                 minHeight: "28px",
                 maxHeight: "28px",
                 padding: "2px 6px",
+                margin: 0,
                 boxSizing: "border-box",
                 borderRadius: "3px",
                 overflow: "hidden",
                 flexShrink: 0,
-                border: "none",
-                ...(isDesktop ? { background: "transparent", backgroundColor: "transparent" } : {}),
               }}
               onFocus={(e) => {
                 setSelectedGameId(game.id);
@@ -523,8 +509,9 @@ const PrePage = () => {
                   maxHeight: "20px",
                   flex: "0 0 32px",
                   objectFit: "cover",
-                  border: isDesktop ? "none" : "1px solid #ffffff",
+                  border: "1px solid #ffffff",
                   borderRadius: "2px",
+                  boxSizing: "border-box",
                   display: "block",
                   marginRight: "12px",
                 }}
@@ -537,7 +524,7 @@ const PrePage = () => {
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
-                  fontSize: "11px",
+                  fontSize: "12.5px",
                   fontWeight: 700,
                   color: "#ffffff",
                   lineHeight: 1.1,
