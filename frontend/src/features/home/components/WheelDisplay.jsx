@@ -140,7 +140,7 @@ const SECTOR_ANGLE = 360 / SECTORS;
 //   75 ms  = ~4-5 frames (standard clean glitch)
 //   100 ms = ~6 frames (thoda zyada dikhega)
 // ============================================================================
-export const GLITCH_PREVIEW_MS = 60; // 👈 SIRF IS NUMBER KO AAP APNE HISAB SE KAM YA ZYADA KAR SAKTE HAIN
+export const GLITCH_PREVIEW_MS = 20; // 👈 SIRF IS NUMBER KO AAP APNE HISAB SE KAM YA ZYADA KAR SAKTE HAIN
 
 // Spin starts at 60s countdown and smoothly stops at 54s countdown (total 6.0s)
 const MIN_CRUISE_MS = 1500; // Cruise through at least 1.5s of spinning before deceleration

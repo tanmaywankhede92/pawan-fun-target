@@ -47,6 +47,12 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "funtarget_v${variant.versionName}.apk"
+        }
+    }
 }
 
 repositories {
@@ -68,13 +74,6 @@ dependencies {
 }
 
 apply from: 'capacitor.build.gradle'
-
-android {
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-}
 
 try {
     def servicesJSON = file('google-services.json')

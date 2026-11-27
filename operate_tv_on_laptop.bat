@@ -6,7 +6,7 @@ color 0A
 set TV_IP=192.168.1.64
 if not "%~1"=="" set TV_IP=%~1
 
-set SCRCPY_DIR=C:\Users\USER\AppData\Local\Microsoft\WinGet\Packages\Genymobile.scrcpy_Microsoft.Winget.Source_8wekyb3d8bbwe\scrcpy-win64-v4.1
+set SCRCPY_DIR=C:\Users\Asus\AppData\Local\Microsoft\WinGet\Packages\Genymobile.scrcpy_Microsoft.Winget.Source_8wekyb3d8bbwe\scrcpy-win64-v5.0.1
 
 echo ========================================================
 echo   Connecting to Android TV at %TV_IP%:5555...

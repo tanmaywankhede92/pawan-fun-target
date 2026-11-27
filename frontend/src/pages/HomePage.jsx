@@ -75,7 +75,7 @@ const HomePage = () => {
   const [taken, setTaken] = useState(false);
   const [won, setWon] = useState(false);
   const [gameMessage, setGameMessage] = useState(
-    "Please Bet to Start Game. Minimum Bet=1",
+    "Please Bet to Start Game. Minimum Bet=5",
   );
   const [winInfo, setWinInfo] = useState(null);
   // Bumped when the wheel stops so LastWinningData reloads right away.
@@ -584,7 +584,7 @@ const HomePage = () => {
         setBetApplied(true);
 
         // Sync with backend database in background
-        refreshBalance().catch(() => {});
+        refreshBalance().catch(() => { });
       } else {
         manualMsg.current = true;
         setGameMessage(data?.message || "Bet failed");
@@ -623,7 +623,7 @@ const HomePage = () => {
   // Phase message:
   //   last 10 sec      -> "Bet Time Over."
   //   wheel spinning   -> "FOR AMUSEMENT ONLY NO CASH VALUE"
-  //   betting window   -> "Please Bet to Start Game. Minimum Bet=1"
+  //   betting window   -> "Please Bet to Start Game. Minimum Bet=5"
   // Manual messages (validation / accepted) override the betting-window prompt.
   // While a winning Take is pending, the win banner stays on screen (the
   // "Please Take the Winning Points." reminder is set at the :00 boundary).
@@ -644,7 +644,7 @@ const HomePage = () => {
         setGameMessage("Bet Time Over.");
       }
     } else if (!manualMsg.current && time > 12) {
-      setGameMessage("Please Bet to Start Game. Minimum Bet=1");
+      setGameMessage("Please Bet to Start Game. Minimum Bet=5");
     }
   }, [time, wheelSpinning, takePending, submitted]);
 
@@ -823,7 +823,7 @@ const HomePage = () => {
                 : preBalance + winAmt;
               const u = userRef.current;
               if (u) setAuth({ ...u, balance: resolvedBal });
-              refreshBalance().catch(() => {});
+              refreshBalance().catch(() => { });
             })
             .catch(() => {
               manualMsg.current = true;
