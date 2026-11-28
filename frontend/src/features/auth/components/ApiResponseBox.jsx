@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { subscribeResponseStatus } from "@utils/apiLog";
+import { subscribeResponseStatus, getApiLog, consumeLogoutFlag } from "@utils/apiLog";
 
 // Calibrated to align directly with "Response :- " on 1672x941 login-bg.png:
 const POS = {
@@ -19,9 +19,29 @@ const ApiResponseBox = () => {
   const timerRef = useRef(null);
 
   // 1. Initial startup sequence & network connectivity handling:
+  // - If arriving from Logout: show logout response message (7 blinks -> stable)
   // - If connected: "Internet Connected" (2 blinks) + "Please Now Login" (5 blinks) = TOTAL 7 blinks -> then stable
   // - If offline: "Internet not Connected" (5 blinks -> stable until reconnected)
   useEffect(() => {
+    // Check if user just logged out
+    const apiLog = getApiLog();
+    const isLogout = consumeLogoutFlag();
+    const logoutMsg = apiLog?.logout?.body?.message || (isLogout ? "User Logged Out Successfully" : null);
+
+    if (logoutMsg) {
+      setStatus({
+        message: logoutMsg,
+        blinkCount: 7,
+        seq: Date.now(),
+      });
+      setIsBlinking(true);
+
+      timerRef.current = setTimeout(() => {
+        setIsBlinking(false);
+      }, 7 * BLINK_CYCLE_MS);
+      return;
+    }
+
     const runStartupFlow = (online) => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
@@ -148,7 +168,7 @@ const ApiResponseBox = () => {
             align-items: center;
             font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
             
-            font-size: clamp(12px, 1.6vw, 20px);
+            font-size: clamp(16px, 2.6vw, 28px);
             color: #F8B500;
             white-space: nowrap;
             pointer-events: none;

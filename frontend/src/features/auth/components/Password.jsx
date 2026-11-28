@@ -11,17 +11,24 @@ const POS = {
 };
 
 const PasswordInput = ({ value = "", onChange, onKeyDown, onFocus, onBlur }) => {
-  const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const { play } = useSound();
   const isTv = isAndroidTv();
   const inputRef = useRef(null);
 
-  const displayMask = showPassword ? (value || "") : "*".repeat((value || "").length);
+  // Maximum 15 characters allowed
+  const safeVal = (value || "").slice(0, 15);
+  const displayMask = "*".repeat(safeVal.length);
+
+  const handleChange = (e) => {
+    // Restrict strictly to max 15 characters; ignore anything beyond 15
+    const clean = (e.target.value || "").slice(0, 15);
+    onChange(clean);
+  };
 
   return (
     <div
-      className="absolute ft-login-pos flex items-center  cursor-text "
+      className="absolute ft-login-pos flex items-center cursor-text select-none"
       onClick={() => inputRef.current?.focus()}
       style={{
         left: POS.left,
@@ -32,11 +39,13 @@ const PasswordInput = ({ value = "", onChange, onKeyDown, onFocus, onBlur }) => 
         paddingLeft: "14px",
         paddingRight: "10px",
         borderRadius: "4px",
-
+        zIndex: 10,
         overflow: "hidden",
+        userSelect: "none",
+        WebkitUserSelect: "none",
       }}
     >
-      {/* Visual asterisks mask and blinking cursor matching reference TV photo */}
+      {/* Visual asterisks mask matching the exact font and style */}
       <div
         className="flex items-center pointer-events-none select-none overflow-hidden"
         style={{
@@ -44,21 +53,27 @@ const PasswordInput = ({ value = "", onChange, onKeyDown, onFocus, onBlur }) => 
           fontSize: POS.fontSize,
           fontWeight: 400,
           color: "#1a1a1a",
-          letterSpacing: "1px",
+          letterSpacing: "0.5px",
           lineHeight: 1,
           whiteSpace: "nowrap",
+          userSelect: "none",
+          WebkitUserSelect: "none",
         }}
       >
-        <span>{displayMask}</span>
+        <span className="select-none" style={{ userSelect: "none", WebkitUserSelect: "none" }}>
+          {displayMask}
+        </span>
         {isFocused && (
           <span
-            className="ft-cursor-blink"
+            className="ft-cursor-blink select-none"
             style={{
               fontSize: POS.fontSize,
               fontWeight: 300,
               color: "#1a1a1a",
               marginLeft: "1px",
               lineHeight: 1,
+              userSelect: "none",
+              WebkitUserSelect: "none",
             }}
           >
             |
@@ -66,14 +81,19 @@ const PasswordInput = ({ value = "", onChange, onKeyDown, onFocus, onBlur }) => 
         )}
       </div>
 
-      {/* Hidden functional input capturing typing and IME */}
+      {/* Hidden functional input: type='password', maxLength=15, selection prevented */}
       <input
         ref={inputRef}
-        type="text"
+        type="password"
         inputMode={isTv ? "none" : "text"}
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value)}
+        maxLength={15}
+        value={safeVal}
+        onChange={handleChange}
         onKeyDown={onKeyDown}
+        onSelect={(e) => {
+          // Collapse selection so highlight never shows or reveals text
+          e.target.selectionStart = e.target.selectionEnd;
+        }}
         onFocus={(e) => {
           setIsFocused(true);
           if (onFocus) onFocus(e);
@@ -84,14 +104,29 @@ const PasswordInput = ({ value = "", onChange, onKeyDown, onFocus, onBlur }) => 
         }}
         autoComplete="current-password"
         spellCheck="false"
-        className="absolute inset-0 w-full h-full border-none outline-none cursor-text p-0 m-0 bg-transparent"
+        className="absolute inset-0 w-full h-full border-none outline-none cursor-text p-0 m-0 bg-transparent select-none ft-no-select"
         style={{
           color: "transparent",
           caretColor: "transparent",
           background: "transparent",
           zIndex: 2,
+          userSelect: "none",
+          WebkitUserSelect: "none",
         }}
       />
+
+      <style>
+        {`
+          .ft-no-select::selection {
+            background: transparent !important;
+            color: transparent !important;
+          }
+          .ft-no-select::-moz-selection {
+            background: transparent !important;
+            color: transparent !important;
+          }
+        `}
+      </style>
     </div>
   );
 };

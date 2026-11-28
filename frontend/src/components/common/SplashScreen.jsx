@@ -21,12 +21,12 @@ const SplashScreen = () => {
   const [phase, setPhase] = useState("show");
 
   useEffect(() => {
-    PRELOAD_IMAGES.forEach((p) => p.catch(() => {}));
+    PRELOAD_IMAGES.forEach((p) => p.catch(() => { }));
 
     const tFade = setTimeout(() => setPhase("fade"), SPLASH_MS - 300);
     const tHide = setTimeout(() => {
       setPhase("hide");
-      CapSplash.hide({ fadeOutDuration: 300 }).catch(() => {});
+      CapSplash.hide({ fadeOutDuration: 300 }).catch(() => { });
     }, SPLASH_MS);
     return () => {
       clearTimeout(tFade);

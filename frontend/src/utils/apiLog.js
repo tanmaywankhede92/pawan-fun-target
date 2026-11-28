@@ -9,6 +9,7 @@ const listeners = new Set();
 let statusStore = null;
 let statusSeq = 0;
 const statusListeners = new Set();
+let isLogoutPending = false;
 
 const emit = () => listeners.forEach((fn) => fn(store));
 const emitStatus = () => statusListeners.forEach((fn) => fn(statusStore));
@@ -26,10 +27,23 @@ export const recordApiResponse = (type, payload) => {
   };
   emit();
 
-  // If login failed, automatically set response status with 7 blinks
+  // If login response received with message
   if (type === "login" && payload?.body?.message) {
     setResponseStatus(payload.body.message, 7);
   }
+
+  // If logout occurred, set logout response status with 7 blinks
+  if (type === "logout") {
+    isLogoutPending = true;
+    const msg = payload?.body?.message || "User Logged Out Successfully";
+    setResponseStatus(msg, 7);
+  }
+};
+
+export const consumeLogoutFlag = () => {
+  const pending = isLogoutPending;
+  isLogoutPending = false;
+  return pending;
 };
 
 export const getApiLog = () => store;

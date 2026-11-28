@@ -20,6 +20,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const [isCloseActive, setIsCloseActive] = useState(false);
   const blurTimerRef = useRef(null);
   const isPhone = isMobile();
   const { login } = useAuth();
@@ -58,20 +59,6 @@ const LoginPage = () => {
 
     const trimmedUser = username.trim().toLowerCase().replace(/^gk/i, "");
 
-    // 2. Validate 10-digit LoginID (matches original TV game behavior from video)
-    if (!trimmedUser || trimmedUser.length !== 10) {
-      play("CLICK");
-      setResponseStatus("Please Enter Ten Digit LoginID", 7);
-      return;
-    }
-
-    // 3. Password presence check
-    if (!password) {
-      play("CLICK");
-      setResponseStatus("check userId and Password", 7);
-      return;
-    }
-
     play("CLICK");
     setLoading(true);
     try {
@@ -91,7 +78,7 @@ const LoginPage = () => {
         setResponseStatus(errMsg, 7);
       } else {
         toast.error(errMsg);
-        setResponseStatus(errMsg || "check userId and Password", 7);
+        setResponseStatus(errMsg, 7);
       }
       setPassword("");
     } finally {
@@ -117,7 +104,7 @@ const LoginPage = () => {
 
   return (
     <LoginOverlay isShifted={isPhone && inputFocused}>
-      <GameBackground />
+      <GameBackground isCloseActive={isCloseActive} />
 
       <UsernameInput
         value={username}
@@ -134,7 +121,7 @@ const LoginPage = () => {
         onBlur={handleBlur}
       />
       <EnterButton onClick={handleEnter} loading={loading} />
-      <CloseButton onClick={handleClose} />
+      <CloseButton onClick={handleClose} onActiveChange={setIsCloseActive} />
 
       <ApiResponseBox />
     </LoginOverlay>

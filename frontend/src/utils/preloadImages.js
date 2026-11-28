@@ -1,4 +1,5 @@
 import loginBg from "../assets/images/login/login-bg.webp";
+import loginBgGlow from "../assets/images/login/login-bg-glow.png";
 import prevBg from "../assets/images/background/PrevBG.png";
 import homeBg from "../assets/images/home/homeImg.webp";
 import prevImg from "../assets/images/background/PrevBG.png";
@@ -24,6 +25,7 @@ import imgSuperGoldenWheel from "../assets/gamelist/SuperGoldenWheel.jpeg";
 
 const allFlowImages = [
   loginBg,
+  loginBgGlow,
   prevBg,
   homeBg,
   prevImg,

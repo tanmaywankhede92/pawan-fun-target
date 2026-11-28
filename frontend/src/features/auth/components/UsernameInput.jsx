@@ -13,16 +13,18 @@ const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
   const isTv = isAndroidTv();
   const inputRef = useRef(null);
 
-  const displayVal = (value || "").replace(/^gk/i, "");
+  // Digits only, maximum 8 digits
+  const displayVal = (value || "").replace(/^gk/i, "").replace(/[^0-9]/g, "").slice(0, 8);
 
   const handleChange = (e) => {
-    const raw = e.target.value.toLowerCase().replace(/^gk/i, "");
-    onChange(raw);
+    // Only numbers allowed, max 8 digits
+    const digitsOnly = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
+    onChange(digitsOnly);
   };
 
   return (
     <div
-      className="absolute ft-login-pos flex items-center  cursor-text "
+      className="absolute ft-login-pos flex items-center cursor-text"
       onClick={() => inputRef.current?.focus()}
       style={{
         left: POS.left,
@@ -33,7 +35,7 @@ const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
         paddingLeft: "14px",
         paddingRight: "10px",
         borderRadius: "4px",
-
+        zIndex: 10,
         overflow: "hidden",
       }}
     >
@@ -54,7 +56,9 @@ const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
       <input
         ref={inputRef}
         type="text"
-        inputMode={isTv ? "none" : "text"}
+        inputMode={isTv ? "none" : "numeric"}
+        pattern="[0-9]*"
+        maxLength={8}
         value={displayVal}
         onChange={handleChange}
         onKeyDown={onKeyDown}
