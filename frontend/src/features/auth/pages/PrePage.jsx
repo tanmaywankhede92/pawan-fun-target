@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import prevBg from "@assets/images/background/PrevBG.webp";
+import prevBg from "../../../assets/images/background/PrevBG.png"
 import { useAuth } from "@hooks/useAuth";
 import { useSound } from "@hooks/useSound";
 import { authService } from "@services/auth.service";

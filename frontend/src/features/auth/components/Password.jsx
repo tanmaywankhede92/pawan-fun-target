@@ -3,10 +3,10 @@ import { useSound } from "@hooks/useSound";
 import { isAndroidTv } from "@utils/isTv";
 
 const POS = {
-  left: "25.2%",
-  top: "89.4%",
-  width: "23%",
-  height: "4.7%",
+  left: "27.25%",
+  top: "88.5%",
+  width: "14.4%",
+  height: "4.4%",
   fontSize: "clamp(12px, 2.5vh, 19px)",
 };
 
@@ -21,7 +21,7 @@ const PasswordInput = ({ value = "", onChange, onKeyDown, onFocus, onBlur }) => 
 
   return (
     <div
-      className="absolute ft-login-pos flex items-center bg-white cursor-text"
+      className="absolute ft-login-pos flex items-center  cursor-text "
       onClick={() => inputRef.current?.focus()}
       style={{
         left: POS.left,

@@ -251,6 +251,26 @@
   animation: ft-blink 0.8s ease-in-out infinite;
 }
 
+@keyframes ft-close-pulse {
+  0% {
+    transform: scale(0.96);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1.03);
+  }
+}
+
+.ft-close-glow-pulse {
+  animation: ft-close-pulse 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.ft-close-glow-hover {
+  transform: scale(1.03);
+}
+
 /* Login: keep the page glued to the visible area when the mobile keyboard
    opens — no scroll, no pan. */
 .ft-login-root {

@@ -13,6 +13,7 @@ import { useSound } from "@hooks/useSound";
 import { closeApplication } from "@utils/closeApplication";
 import { deviceUuid } from "@utils/deviceUuid";
 import { isMobile } from "@utils/isTv";
+import { setResponseStatus } from "@utils/apiLog";
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
@@ -46,9 +47,31 @@ const LoginPage = () => {
   }, []);
 
   const handleEnter = useCallback(async () => {
-    const trimmedUser = username.trim().toLowerCase().replace(/^gk/i, "");
-    if (!trimmedUser || !password) return;
     if (loading) return;
+
+    // 1. Internet connection check
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      play("CLICK");
+      setResponseStatus("Internet not Connected", 5);
+      return;
+    }
+
+    const trimmedUser = username.trim().toLowerCase().replace(/^gk/i, "");
+
+    // 2. Validate 10-digit LoginID (matches original TV game behavior from video)
+    if (!trimmedUser || trimmedUser.length !== 10) {
+      play("CLICK");
+      setResponseStatus("Please Enter Ten Digit LoginID", 7);
+      return;
+    }
+
+    // 3. Password presence check
+    if (!password) {
+      play("CLICK");
+      setResponseStatus("check userId and Password", 7);
+      return;
+    }
+
     play("CLICK");
     setLoading(true);
     try {
@@ -60,13 +83,15 @@ const LoginPage = () => {
       });
       navigate(result.redirect || "/pre", { replace: true });
     } catch (err) {
-      const errMsg = err?.message || "Invalid username or password";
+      const errMsg = err?.message || "check userId and Password";
 
       // If user is already logged in on another device, warn and do NOT bypass/enter
       if (typeof errMsg === "string" && errMsg.toLowerCase().includes("already logged in")) {
         toast.warn(errMsg || "User is already logged in on another device!");
+        setResponseStatus(errMsg, 7);
       } else {
         toast.error(errMsg);
+        setResponseStatus(errMsg || "check userId and Password", 7);
       }
       setPassword("");
     } finally {
@@ -117,4 +142,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-  

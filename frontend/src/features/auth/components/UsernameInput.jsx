@@ -2,10 +2,10 @@ import { useRef } from "react";
 import { isAndroidTv } from "@utils/isTv";
 
 const POS = {
-  left: "25.2%",
-  top: "78.6%",
-  width: "23%",
-  height: "4.7%",
+  left: "27.3%",
+  top: "79.2%",
+  width: "14.6%",
+  height: "4.4%",
   fontSize: "clamp(12px, 2.5vh, 19px)",
 };
 
@@ -22,7 +22,7 @@ const UsernameInput = ({ value, onChange, onKeyDown, onFocus, onBlur }) => {
 
   return (
     <div
-      className="absolute ft-login-pos flex items-center bg-white cursor-text"
+      className="absolute ft-login-pos flex items-center  cursor-text "
       onClick={() => inputRef.current?.focus()}
       style={{
         left: POS.left,

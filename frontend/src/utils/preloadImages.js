@@ -1,7 +1,7 @@
 import loginBg from "../assets/images/login/login-bg.webp";
-import prevBg from "../assets/images/background/PrevBG.webp";
+import prevBg from "../assets/images/background/PrevBG.png";
 import homeBg from "../assets/images/home/homeImg.webp";
-import prevImg from "../assets/images/background/prevImg.webp";
+import prevImg from "../assets/images/background/PrevBG.png";
 import wheelImg from "../assets/images/wheel/wheel.webp";
 
 // 16 gamelist thumbnails
