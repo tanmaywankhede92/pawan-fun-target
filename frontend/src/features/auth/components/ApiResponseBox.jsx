@@ -19,7 +19,7 @@ const ApiResponseBox = () => {
   const timerRef = useRef(null);
 
   // 1. Initial startup sequence & network connectivity handling:
-  // - If connected: "Internet Connected" (2 blinks) -> "Please Now Login" (7 blinks -> stable)
+  // - If connected: "Internet Connected" (2 blinks) + "Please Now Login" (5 blinks) = TOTAL 7 blinks -> then stable
   // - If offline: "Internet not Connected" (5 blinks -> stable until reconnected)
   useEffect(() => {
     const runStartupFlow = (online) => {
@@ -37,19 +37,19 @@ const ApiResponseBox = () => {
         });
         setIsBlinking(true);
 
-        // Step 2: After 2 blinks (2 * 450ms = 900ms), transition to "Please Now Login" (blinks 7 times)
+        // Step 2: After 2 blinks (2 * 450ms = 900ms), transition to "Please Now Login" (blinks 5 times: 2 + 5 = 7 total)
         timerRef.current = setTimeout(() => {
           setStatus({
             message: "Please Now Login",
-            blinkCount: 7,
+            blinkCount: 5,
             seq: Date.now(),
           });
           setIsBlinking(true);
 
-          // Step 3: After 7 blinks (7 * 450ms = 3150ms), stay stable
+          // Step 3: After 5 blinks (5 * 450ms = 2250ms), stay stable
           timerRef.current = setTimeout(() => {
             setIsBlinking(false);
-          }, 7 * BLINK_CYCLE_MS);
+          }, 5 * BLINK_CYCLE_MS);
         }, 2 * BLINK_CYCLE_MS);
       } else {
         // Offline: "Internet not Connected" (blinks 5 times, then stays stable until reconnected)
